@@ -145,11 +145,11 @@ class ProbeRunner(private val context: Context) {
      * Q5 is the actual viability answer: does the tethering stack select our TUN?
      *
      * The spike does not start tethering itself — the user enables the hotspot
-     * from Settings — so this reads whatever the stack currently reports and
-     * lets the operator correlate.
+     * from Settings — so this polls whatever the stack reports until it either
+     * settles on the owned TUN or the settle deadline passes.
      */
     private fun observeUpstream(report: ProbeReportBuilder, interfaceName: String) {
-        val observation = inspector.observe()
+        val observation = awaitUpstreamSettle(interfaceName)
         val isOnlyOwnedTun = observation.interfaceNames.isNotEmpty() &&
             observation.interfaceNames.all { it == interfaceName }
 
@@ -170,6 +170,30 @@ class ProbeRunner(private val context: Context) {
                 append(observation.rawOutput.take(DUMP_EXCERPT_CHARS))
             },
         )
+    }
+
+    /**
+     * Polls the upstream until it settles on the owned TUN, or the deadline passes.
+     *
+     * Upstream reselection is asynchronous: setPreferTestNetworks(true) does not
+     * move an already-chosen upstream synchronously, and the first device run
+     * read wlan0 microseconds after setting the preference. Returning the last
+     * observation on timeout keeps the failure detail honest rather than
+     * reporting an empty result.
+     */
+    private fun awaitUpstreamSettle(interfaceName: String): UpstreamObservation {
+        val deadline = System.currentTimeMillis() + UPSTREAM_SETTLE_MS
+        var latest = inspector.observe()
+
+        while (System.currentTimeMillis() < deadline) {
+            val hasSettled = latest.interfaceNames.isNotEmpty() &&
+                latest.interfaceNames.all { it == interfaceName }
+            if (hasSettled) return latest
+
+            Thread.sleep(UPSTREAM_POLL_MS)
+            latest = inspector.observe()
+        }
+        return latest
     }
 
     /**
@@ -243,6 +267,15 @@ class ProbeRunner(private val context: Context) {
         const val TUN_PREFIX_LENGTH = 24
 
         const val DUMP_EXCERPT_CHARS = 4000
+
+        /**
+         * R4.4 requires waiting for the framework to settle but fixes no
+         * duration. 15s is long enough to cover an observed reselection and
+         * short enough to keep a failing run interactive; E-2's 20-cycle bar
+         * should be used to tune it.
+         */
+        const val UPSTREAM_SETTLE_MS = 15_000L
+        const val UPSTREAM_POLL_MS = 1_000L
         const val IPV6_FORWARDING_PATH = "/proc/sys/net/ipv6/conf/all/forwarding"
         const val IPV6_ACCEPT_RA_PATH = "/proc/sys/net/ipv6/conf/all/accept_ra"
 
