@@ -255,6 +255,8 @@ class ProbeRunner(private val context: Context) {
         val didStop = control.stopWifiTethering()
         val (didStart, startDetail) = control.startWifiTethering()
 
+        if (didStart) reassertPreferenceAfterRestart()
+
         when {
             didStart -> observeUpstream(report, interfaceName, "restart: stopped=$didStop")
             else -> report.recordFail(
@@ -264,6 +266,29 @@ class ProbeRunner(private val context: Context) {
                     "stopped=$didStop, opPackage=${control.opPackageName}, start=$startDetail",
             )
         }
+    }
+
+    /**
+     * Re-asserts the test-network preference after the downstream restarts.
+     *
+     * startTethering runs UpstreamNetworkMonitor.startObserveUpstreamNetworks,
+     * which begins by calling stop() — unregistering the listen callback and
+     * clearing mNetworkMap — then registers a fresh one. A test network created
+     * before that point is gone from the map, and getCurrentPreferredUpstream
+     * finds nothing in findFirstTestNetwork no matter what the preference says.
+     *
+     * ConnectivityManager replays onAvailable for existing networks, but
+     * asynchronously: on the failing run selection ran ~100ms after the new
+     * callback registered and still saw only wlan0. Waiting for the replay and
+     * re-asserting gives the stack a populated map to select from.
+     *
+     * This is not a retry of a flaky call — setPreferTestNetworks is a plain
+     * field write, so calling it twice is free and only the timing matters.
+     */
+    private fun reassertPreferenceAfterRestart() {
+        Thread.sleep(CALLBACK_REPLAY_MS)
+        runCatching { TetheringPreferenceApi(context).setPreferTestNetworks(true) }
+            .onFailure { failure -> Log.w(TAG, "reassertPreference: ${failure.message}") }
     }
 
     /**
@@ -448,6 +473,13 @@ class ProbeRunner(private val context: Context) {
          */
         const val UPSTREAM_SETTLE_MS = 45_000L
         const val UPSTREAM_POLL_MS = 1_000L
+
+        /**
+         * Time for ConnectivityManager to replay onAvailable into the monitor's
+         * freshly registered callback. The failing run selected ~100ms after
+         * registration and saw an empty map; 2s is generous against that.
+         */
+        const val CALLBACK_REPLAY_MS = 2_000L
         const val TAG = "ProbeRunner"
         const val IPV6_FORWARDING_PATH = "/proc/sys/net/ipv6/conf/all/forwarding"
         const val IPV6_ACCEPT_RA_PATH = "/proc/sys/net/ipv6/conf/all/accept_ra"
