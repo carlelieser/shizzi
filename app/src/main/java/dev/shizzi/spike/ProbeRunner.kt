@@ -162,7 +162,7 @@ class ProbeRunner(private val context: Context) {
                 "Q5",
                 QUESTION_UPSTREAM,
                 "downstream restart failed before upstream could be observed: " +
-                    "stopped=$didStop, start=$startDetail",
+                    "stopped=$didStop, opPackage=${control.opPackageName}, start=$startDetail",
             )
         }
     }

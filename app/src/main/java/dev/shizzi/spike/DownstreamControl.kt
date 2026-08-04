@@ -59,9 +59,25 @@ private fun describeTetherError(code: Int?): String {
  */
 class DownstreamControl(private val context: Context) {
 
+    /**
+     * TetheringManager captures the caller package at construction from
+     * Context.getOpPackageName(), and TetheringService rejects the call with
+     * "Package name android does not match UID 2000" when the two disagree.
+     *
+     * The context is rebased onto com.android.shell before use, and the op
+     * package is forced to match, because createPackageContext alone does not
+     * always change what getOpPackageName reports.
+     */
     private val tetheringManager: Any
-        get() = context.getSystemService("tethering")
+        get() = attributedContext.getSystemService("tethering")
             ?: error("tethering service unavailable")
+
+    /** Package the framework will attribute these calls to. */
+    val opPackageName: String get() = attributedContext.opPackageName
+
+    private val attributedContext: Context by lazy {
+        runCatching { context.createPackageContext(SHELL_PACKAGE, 0) }.getOrDefault(context)
+    }
 
     private val managerClass: Class<*> get() = Class.forName("android.net.TetheringManager")
 
@@ -82,23 +98,23 @@ class DownstreamControl(private val context: Context) {
     }.isSuccess
 
     /**
-     * Starts Wi-Fi tethering, trying WifiManager before TetheringManager.
+     * Starts Wi-Fi tethering, trying every route known to work from shell.
      *
-     * TetheringService.hasTetherChangePermission rejects the shell UID with
-     * TETHER_ERROR_NO_CHANGE_TETHERING_PERMISSION even though shell holds
-     * TETHER_PRIVILEGED and NETWORK_SETTINGS. WifiManager.startTetheredHotspot
-     * reaches the same SoftAp machinery through WifiServiceImpl instead, which
-     * is the route automation apps use over Shizuku, so it is tried first and
-     * the TetheringManager path is kept as a fallback.
+     * Order matters. TetheringManager is first because the earlier
+     * TETHER_ERROR_NO_CHANGE_TETHERING_PERMISSION came from requesting an
+     * entitlement exemption, not from the start itself — the same failure
+     * VPNHotspot handles by retrying without the exemption. WifiManager is the
+     * fallback, though startSoftAp/startTetheredHotspot both enforce
+     * MAINLINE_NETWORK_STACK, which shell can never hold.
      */
     fun startWifiTethering(): Pair<Boolean, String> {
-        val viaWifiManager = startViaWifiManager()
-        if (viaWifiManager.first) return viaWifiManager
-
         val viaTethering = startViaTetheringManager()
+        if (viaTethering.first) return viaTethering
+
+        val viaWifiManager = startViaWifiManager()
         return when {
-            viaTethering.first -> viaTethering
-            else -> false to "wifiManager[${viaWifiManager.second}]; tethering[${viaTethering.second}]"
+            viaWifiManager.first -> viaWifiManager
+            else -> false to "tethering[${viaTethering.second}]; wifiManager[${viaWifiManager.second}]"
         }
     }
 
@@ -124,8 +140,26 @@ class DownstreamControl(private val context: Context) {
         false to "startTetheredHotspot: ${failure.cause?.message ?: failure.message}"
     }
 
+    /**
+     * Tries the entitlement-exempt request first, then the plain one.
+     *
+     * VPNHotspot does the same: it asks for the exemption, and on
+     * TETHER_ERROR_NO_CHANGE_TETHERING_PERMISSION retries without it. The
+     * exemption is what a non-privileged caller cannot have.
+     */
     private fun startViaTetheringManager(): Pair<Boolean, String> {
-        val request = runCatching { buildTetheringRequest() }
+        val exempt = startTetheringRequest(isExemptFromEntitlement = true)
+        if (exempt.first) return exempt
+
+        val plain = startTetheringRequest(isExemptFromEntitlement = false)
+        return when {
+            plain.first -> plain
+            else -> false to "exempt[${exempt.second}]; plain[${plain.second}]"
+        }
+    }
+
+    private fun startTetheringRequest(isExemptFromEntitlement: Boolean): Pair<Boolean, String> {
+        val request = runCatching { buildTetheringRequest(isExemptFromEntitlement) }
             .getOrElse { return false to "buildTetheringRequest: ${it.message}" }
 
         val latch = CountDownLatch(1)
@@ -142,11 +176,30 @@ class DownstreamControl(private val context: Context) {
         }.getOrElse { false to "startTethering: ${it.message}" }
     }
 
-    private fun buildTetheringRequest(): Any {
+    /**
+     * Builds a TetheringRequest, optionally asking to skip the carrier
+     * entitlement check.
+     *
+     * setExemptFromEntitlementCheck is the expensive option: in
+     * TetheringService.hasTetherChangePermission that flag gates an early
+     * branch requiring NETWORK_STACK or NETWORK_SETTINGS, which denies before
+     * the TETHER_PRIVILEGED check shell would pass. Requesting no exemption
+     * keeps the caller on the path shell can satisfy, at the cost of having to
+     * clear entitlement normally.
+     */
+    private fun buildTetheringRequest(isExemptFromEntitlement: Boolean): Any {
         val builderClass = Class.forName("android.net.TetheringManager\$TetheringRequest\$Builder")
         val builder = builderClass
             .getConstructor(Int::class.javaPrimitiveType)
             .newInstance(wifiTetheringType)
+
+        if (isExemptFromEntitlement) {
+            runCatching {
+                builderClass
+                    .getDeclaredMethod("setExemptFromEntitlementCheck", Boolean::class.java)
+                    .invoke(builder, true)
+            }
+        }
         return builderClass.getMethod("build").invoke(builder)!!
     }
 
@@ -209,6 +262,7 @@ class DownstreamControl(private val context: Context) {
     }
 
     private companion object {
+        const val SHELL_PACKAGE = "com.android.shell"
         const val SUCCESS = "onTetheringStarted"
         const val STOP_SETTLE_MS = 3_000L
         const val START_TIMEOUT_MS = 15_000L
