@@ -31,6 +31,7 @@ class ProbeService : IProbeService.Stub {
         val shellContext = asShellContext(context)
         runner = ProbeRunner(shellContext)
         session = TetherSession(shellContext)
+        liveInstance = this
     }
 
     override fun getContractVersion(): Int = CONTRACT_VERSION
@@ -110,6 +111,18 @@ class ProbeService : IProbeService.Stub {
     companion object {
         /** Bumped whenever the AIDL surface changes, so a stale shell process is detected (R2.5). */
         const val CONTRACT_VERSION = 2
+
+        /**
+         * Keeps the service and its session reachable across unbinds.
+         *
+         * The stub is strongly held by Shizuku only while a client is bound.
+         * The session it owns has to outlive that — the user opens the app,
+         * starts tethering, and leaves — so a static reference holds it for
+         * the life of the shell process.
+         */
+        @Suppress("unused")
+        @JvmStatic
+        private var liveInstance: ProbeService? = null
 
         private const val TAG = "ProbeService"
         private const val STACK_TRACE_CHARS = 4000

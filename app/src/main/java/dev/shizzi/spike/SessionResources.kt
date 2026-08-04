@@ -26,8 +26,18 @@ class SessionResources(
     private var network: Network? = null
     private var datapathSession: DatapathSession? = null
 
-    /** Binder whose lifetime the framework ties the test network to. */
-    private val lifetimeToken = Binder()
+    /**
+     * Binder whose lifetime the framework ties the test network to.
+     *
+     * Held in a static registry as well as here. TestNetworkAgent takes a
+     * linkToDeath on this token and tears the network down from binderDied,
+     * which fires when the token is garbage collected — not only when the
+     * process exits. The shell process outlives the binder call, but the
+     * service stub holding this object is only strongly referenced by Shizuku
+     * while a client is bound, so an unbind made the token collectable and the
+     * network died about four seconds later with "NetworkAgent channel lost".
+     */
+    private val lifetimeToken = Binder().also { token -> liveTokens += token }
 
     val interfaceName: String? get() = runCatching { tun?.interfaceName }.getOrNull()
     val acquiredNetwork: Network? get() = network
@@ -138,6 +148,10 @@ class SessionResources(
         fileDescriptor = null
         tun = null
 
+        // Only after teardownTestNetwork: dropping the token earlier would let
+        // binderDied race the explicit teardown.
+        liveTokens -= lifetimeToken
+
         problems.forEach { Log.w(TAG, "teardown problem: $it") }
         return problems
     }
@@ -145,5 +159,12 @@ class SessionResources(
     private companion object {
         const val TAG = "SessionResources"
         const val POLL_INTERVAL_MS = 200L
+
+        /**
+         * Tokens for live test networks, kept reachable for the life of the
+         * process. Entries are removed by [release], so this grows only with
+         * the number of concurrently held sessions — one, in practice.
+         */
+        val liveTokens = java.util.Collections.synchronizedSet(mutableSetOf<Binder>())
     }
 }
