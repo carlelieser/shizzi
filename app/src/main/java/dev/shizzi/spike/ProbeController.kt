@@ -9,13 +9,22 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import rikka.shizuku.Shizuku
 
+/** The four states the status indicator shows. */
+enum class UiStatus { READY, LOADING, CONNECTED, ERROR }
+
 /** What the single screen renders. */
 data class SpikeUiState(
     val shizukuState: ShizukuState = ShizukuState.NotRunning,
+    val status: UiStatus = UiStatus.READY,
     val isBusy: Boolean = false,
-    val report: String = "",
+    val detail: String = "",
+    val interfaceName: String = "",
     val lastError: String = "",
-)
+    val isDebugLogging: Boolean = false,
+) {
+    /** Shizuku must be ready before the button can do anything. */
+    val canStart: Boolean get() = shizukuState is ShizukuState.Ready && !isBusy
+}
 
 /**
  * Drives the privileged service from the app process.
@@ -81,9 +90,18 @@ class ProbeController {
         bound.runProbes(attemptTethering, AVAILABILITY_TIMEOUT_MS)
     }
 
-    suspend fun teardown(): String = withContext(Dispatchers.IO) {
+    suspend fun start(debugLogging: Boolean): String = withContext(Dispatchers.IO) {
         val bound = service()
-        bound.teardown()
+        verifyContract(bound)
+        bound.start(debugLogging)
+    }
+
+    suspend fun stop(): String = withContext(Dispatchers.IO) {
+        service().stop()
+    }
+
+    suspend fun status(): String = withContext(Dispatchers.IO) {
+        service().status
     }
 
     /** T-5: a shell process left over from a previous APK must not be used. */

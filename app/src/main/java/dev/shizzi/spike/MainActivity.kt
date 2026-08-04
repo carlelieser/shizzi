@@ -34,9 +34,10 @@ class MainActivity : ComponentActivity() {
                     val state by viewModel.state.collectAsState()
                     SpikeScreen(
                         state = state,
+                        onToggle = viewModel::toggle,
                         onRequestPermission = viewModel::requestPermission,
+                        onSetDebugLogging = viewModel::setDebugLogging,
                         onRunProbes = viewModel::runProbes,
-                        onTeardown = viewModel::teardown,
                     )
                 }
             }
