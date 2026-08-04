@@ -88,9 +88,7 @@ class ProbeService : IProbeService.Stub {
          * setupTestNetwork failed on the first two device runs.
          */
         private fun asShellContext(context: Context): Context {
-            if (context.packageName == SHELL_PACKAGE) return context
-
-            return runCatching { context.createPackageContext(SHELL_PACKAGE, 0) }
+            val rebased = runCatching { context.createPackageContext(SHELL_PACKAGE, 0) }
                 .getOrElse { failure ->
                     throw IllegalStateException(
                         "asShellContext: could not rebase context (package=" +
@@ -98,6 +96,29 @@ class ProbeService : IProbeService.Stub {
                         failure,
                     )
                 }
+            forceOpPackageName(rebased)
+            return rebased
+        }
+
+        /**
+         * Overwrites ContextImpl.mOpPackageName on [context].
+         *
+         * createPackageContext changes getPackageName but not
+         * getOpPackageName, and system services attribute calls by the latter:
+         * TetheringService rejected every start with "Package name android does
+         * not match UID 2000" while the report showed opPackage=android.
+         *
+         * Writing the field directly is safe here because this process is a
+         * short-lived shell helper we own outright.
+         */
+        private fun forceOpPackageName(context: Context) {
+            runCatching {
+                val field = context.javaClass.getDeclaredField("mOpPackageName")
+                field.isAccessible = true
+                field.set(context, SHELL_PACKAGE)
+            }.onFailure { failure ->
+                Log.w(TAG, "forceOpPackageName: ${failure.message}")
+            }
         }
     }
 }

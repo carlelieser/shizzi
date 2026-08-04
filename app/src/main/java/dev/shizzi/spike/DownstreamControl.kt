@@ -69,15 +69,11 @@ class DownstreamControl(private val context: Context) {
      * always change what getOpPackageName reports.
      */
     private val tetheringManager: Any
-        get() = attributedContext.getSystemService("tethering")
+        get() = context.getSystemService("tethering")
             ?: error("tethering service unavailable")
 
     /** Package the framework will attribute these calls to. */
-    val opPackageName: String get() = attributedContext.opPackageName
-
-    private val attributedContext: Context by lazy {
-        runCatching { context.createPackageContext(SHELL_PACKAGE, 0) }.getOrDefault(context)
-    }
+    val opPackageName: String get() = context.opPackageName
 
     private val managerClass: Class<*> get() = Class.forName("android.net.TetheringManager")
 
@@ -262,7 +258,6 @@ class DownstreamControl(private val context: Context) {
     }
 
     private companion object {
-        const val SHELL_PACKAGE = "com.android.shell"
         const val SUCCESS = "onTetheringStarted"
         const val STOP_SETTLE_MS = 3_000L
         const val START_TIMEOUT_MS = 15_000L
