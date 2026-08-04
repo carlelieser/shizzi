@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Compose supplies the real theming via MaterialTheme; this exists only so
+      the activity has a platform theme before the composition starts. Kept on
+      the DeviceDefault DayNight parent to avoid pulling in the Material
+      Components view library for a single attribute.
+    -->
+    <style name="Theme.TetherSpike" parent="@android:style/Theme.DeviceDefault.DayNight">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+    </style>
+</resources>
