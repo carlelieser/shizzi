@@ -102,6 +102,7 @@ class ProbeRunner(private val context: Context) {
         resources = group
 
         preferTestNetworksBeforeTunExists(report)
+        if (attemptTethering) restartDownstreamBeforeTun(report)
 
         val acquired = runCatching {
             group.acquire(tunAddress(), availabilityTimeoutMs)
@@ -138,6 +139,34 @@ class ProbeRunner(private val context: Context) {
                     "${failure.javaClass.simpleName}: ${failure.message}",
                 )
             }
+    }
+
+    /**
+     * Restarts the downstream before the TUN exists, so its arrival is seen.
+     *
+     * startTethering runs startObserveUpstreamNetworks, which calls stop()
+     * first: that unregisters the listen callback and clears mNetworkMap, then
+     * registers a fresh one. A TUN created beforehand has already fired its
+     * onAvailable, so it is dropped by the wipe and never re-delivered — the
+     * previous run showed exactly that, with the TUN absent from the upstream
+     * quota table for the first time.
+     *
+     * Creating the TUN after the restart puts its arrival inside the new
+     * callback's window, which is the only way both conditions hold at once:
+     * the preference already true, and the network present in the map.
+     */
+    private fun restartDownstreamBeforeTun(report: ProbeReportBuilder) {
+        val control = DownstreamControl(context)
+        val didStop = control.stopWifiTethering()
+        val (didStart, startDetail) = control.startWifiTethering()
+
+        if (!didStart) {
+            report.recordFail(
+                "Q5pre",
+                "Can the downstream restart before the TUN is created?",
+                "stopped=$didStop, opPackage=${control.opPackageName}, start=$startDetail",
+            )
+        }
     }
 
     private fun onTunAcquired(
@@ -344,37 +373,15 @@ class ProbeRunner(private val context: Context) {
             },
         )
 
-        when {
-            attemptTethering -> restartDownstreamThenObserve(report, interfaceName)
-            else -> observeUpstream(report, interfaceName, "no restart: observing the running downstream")
+        // The restart, when requested, already happened before the TUN was
+        // created, so Q5 only observes. Restarting again here would wipe the
+        // map entry this ordering exists to preserve.
+        val restartDetail = when {
+            attemptTethering -> "downstream restarted before TUN creation"
+            else -> "no restart: observing the running downstream"
         }
+        observeUpstream(report, interfaceName, restartDetail)
         probeIpv6Surface(report)
-    }
-
-    /**
-     * Restarts the downstream so upstream selection re-runs under the preference.
-     *
-     * R4.1 puts setPreferTestNetworks(true) immediately before the downstream
-     * starts. Observing without the restart measured the wrong thing: selection
-     * had already happened against wlan0 and never re-ran.
-     */
-    private fun restartDownstreamThenObserve(
-        report: ProbeReportBuilder,
-        interfaceName: String,
-    ) {
-        val control = DownstreamControl(context)
-        val didStop = control.stopWifiTethering()
-        val (didStart, startDetail) = control.startWifiTethering()
-
-        when {
-            didStart -> observeUpstream(report, interfaceName, "restart: stopped=$didStop")
-            else -> report.recordFail(
-                "Q5",
-                QUESTION_UPSTREAM,
-                "downstream restart failed before upstream could be observed: " +
-                    "stopped=$didStop, opPackage=${control.opPackageName}, start=$startDetail",
-            )
-        }
     }
 
     /**
