@@ -122,7 +122,31 @@ class ProbeRunner(private val context: Context) {
             "ConnectivityManager reported available; netId handle=${resources?.acquiredNetwork}",
         )
         probeUpstreamEligibility(report)
+        probeDatapath(report)
         probeTetheringPreference(report, interfaceName, attemptTethering)
+    }
+
+    /**
+     * Starts the userspace stack before tethering begins.
+     *
+     * Ordering matters: clients that associate before the datapath is reading
+     * would send into a TUN nothing drains, so the stack comes up first.
+     */
+    private fun probeDatapath(report: ProbeReportBuilder) {
+        val group = resources
+        if (group == null) {
+            report.recordSkip("Q7", QUESTION_DATAPATH, "no session resources")
+            return
+        }
+
+        runCatching { group.startDatapath(TUN_MTU) }.fold(
+            onSuccess = {
+                report.recordPass("Q7", QUESTION_DATAPATH, "netstack attached to TUN fd, mtu=$TUN_MTU")
+            },
+            onFailure = { failure ->
+                report.recordFail("Q7", QUESTION_DATAPATH, "${failure.javaClass.simpleName}: ${failure.message}")
+            },
+        )
     }
 
     private fun onTunFailed(report: ProbeReportBuilder, failure: Throwable) {
@@ -361,6 +385,7 @@ class ProbeRunner(private val context: Context) {
             "Q2" to "Does createTunInterface() return a usable TUN?",
             "Q3" to "Does setupTestNetwork() produce an available network?",
             "Q3b" to QUESTION_ELIGIBILITY,
+            "Q7" to QUESTION_DATAPATH,
             "Q4" to QUESTION_PREFER,
             "Q5" to QUESTION_UPSTREAM,
             "Q6" to QUESTION_IPV6,
@@ -388,6 +413,12 @@ class ProbeRunner(private val context: Context) {
         /** TEST-NET-1 per spec R3.2. */
         const val TUN_ADDRESS = "192.0.2.2"
         const val TUN_PREFIX_LENGTH = 24
+
+        /**
+         * Link MTU for the TUN (R5.5 default). Egress is direct rather than
+         * tunnelled, so there is no encapsulation overhead to subtract yet.
+         */
+        const val TUN_MTU = 1500
 
         const val DUMP_EXCERPT_CHARS = 4000
 
@@ -426,5 +457,6 @@ class ProbeRunner(private val context: Context) {
         const val QUESTION_ELIGIBILITY =
             "Does the test network carry the capabilities tethering requires of an upstream?"
         const val QUESTION_IPV6 = "Is the downstream IPv6 state observable for R6.4 planning?"
+        const val QUESTION_DATAPATH = "Does the userspace stack attach to the TUN fd?"
     }
 }

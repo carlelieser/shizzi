@@ -5,6 +5,8 @@ import android.net.Network
 import android.os.Binder
 import android.os.ParcelFileDescriptor
 import android.util.Log
+import datapath.Datapath
+import datapath.Session as DatapathSession
 
 /**
  * The atomic resource group of R3.5: TUN fd, framework interface, network
@@ -22,6 +24,7 @@ class SessionResources(
     private var tun: TunHandle? = null
     private var fileDescriptor: ParcelFileDescriptor? = null
     private var network: Network? = null
+    private var datapathSession: DatapathSession? = null
 
     /** Binder whose lifetime the framework ties the test network to. */
     private val lifetimeToken = Binder()
@@ -47,6 +50,31 @@ class SessionResources(
 
         network = awaitAvailability(name, availabilityTimeoutMs)
         return name
+    }
+
+    /**
+     * Starts the userspace stack that consumes the TUN.
+     *
+     * Nothing in the kernel forwards packets out of a test network's TUN, so
+     * without this tethered clients get a DHCP lease and no connectivity. The
+     * datapath joins the same atomic group as the fd it reads: [release] stops
+     * it before the fd it is reading from is closed.
+     *
+     * @throws IllegalStateException naming the fd, so a failure here is
+     *   distinguishable from a TUN or test-network failure.
+     */
+    fun startDatapath(mtu: Int) {
+        val descriptor = fileDescriptor
+            ?: error("startDatapath: no TUN fd; acquire() must succeed first")
+
+        datapathSession = runCatching { Datapath.start(descriptor.fd.toLong(), mtu.toLong()) }
+            .getOrElse { failure ->
+                throw IllegalStateException(
+                    "startDatapath: userspace stack failed to attach to fd " +
+                        "${descriptor.fd} (mtu=$mtu)",
+                    failure,
+                )
+            }
     }
 
     /**
@@ -88,6 +116,14 @@ class SessionResources(
      */
     fun release(): List<String> {
         val problems = mutableListOf<String>()
+
+        // Before the fd: the stack is actively reading it, and closing it first
+        // leaves reads racing against a descriptor the kernel may have reused.
+        datapathSession?.let { session ->
+            runCatching { session.stop() }
+                .onFailure { problems += "datapath.stop: ${it.message}" }
+        }
+        datapathSession = null
 
         network?.let { acquired ->
             runCatching { testNetworkApi.teardownTestNetwork(acquired) }
