@@ -8,6 +8,7 @@ package datapath
 
 import (
 	"fmt"
+	"net"
 
 	"gvisor.dev/gvisor/pkg/tcpip"
 	"gvisor.dev/gvisor/pkg/tcpip/link/fdbased"
@@ -62,6 +63,8 @@ func Start(tunFD int, mtu int) (*Session, error) {
 	netStack.SetSpoofing(nicID, true)
 
 	netStack.SetRouteTable([]tcpip.Route{{Destination: header4Subnet(), NIC: nicID}})
+
+	installForwarders(netStack, &net.Dialer{Timeout: dialTimeout})
 
 	return &Session{stack: netStack}, nil
 }
