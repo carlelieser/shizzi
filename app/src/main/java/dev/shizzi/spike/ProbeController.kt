@@ -40,7 +40,12 @@ class ProbeController {
     private val userServiceArgs = Shizuku.UserServiceArgs(
         ComponentName(BuildConfig.APPLICATION_ID, ProbeService::class.java.name),
     )
-        .daemon(false)
+        // The session outlives the binder call that starts it: the test network
+        // is tied to a Binder token held in this process, and a non-daemon
+        // service is reaped once the call returns, taking the network with it.
+        // That showed up as "TestNetworkAgent: NetworkAgent channel lost" about
+        // four seconds after start() returned, with the upstream reverting.
+        .daemon(true)
         .processNameSuffix("probe")
         .debuggable(true)
         .version(ProbeService.CONTRACT_VERSION)
@@ -113,8 +118,15 @@ class ProbeController {
         }
     }
 
+    /**
+     * Drops the binding without destroying the shell process.
+     *
+     * Passing remove=true would tear down the daemon, and with it the test
+     * network the session depends on. Leaving the UI must not drop tethered
+     * clients; only an explicit stop() ends the session.
+     */
     fun unbind() {
-        runCatching { Shizuku.unbindUserService(userServiceArgs, connection, true) }
+        runCatching { Shizuku.unbindUserService(userServiceArgs, connection, false) }
         boundService = null
     }
 
