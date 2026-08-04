@@ -101,6 +101,8 @@ class ProbeRunner(private val context: Context) {
         val group = SessionResources(testNetworkApi, context.connectivityManager())
         resources = group
 
+        preferTestNetworksBeforeTunExists(report)
+
         val acquired = runCatching {
             group.acquire(tunAddress(), availabilityTimeoutMs)
         }
@@ -109,6 +111,33 @@ class ProbeRunner(private val context: Context) {
             onSuccess = { name -> onTunAcquired(report, name, attemptTethering) },
             onFailure = { failure -> onTunFailed(report, failure) },
         )
+    }
+
+    /**
+     * Sets the test-network preference before the TUN exists.
+     *
+     * Tethering.setPreferTestNetworks only writes the flag — the disassembly is
+     * a Handler.post of setPreferTestNetworks then sendTetherResult, with no
+     * reselection. Upstream selection re-runs only on an event: a network
+     * arriving or leaving, or the retry timer.
+     *
+     * So the flag must already be true when the test network arrives, or that
+     * arrival is evaluated with it false and nothing re-evaluates afterwards.
+     * Setting it here makes the TUN's own onAvailable the event that selects
+     * it. Q8 confirmed that event does reach the monitor.
+     *
+     * Q4 still records the call the spec asks about (R4.1); this earlier call
+     * is about ordering, not about whether the API is accepted.
+     */
+    private fun preferTestNetworksBeforeTunExists(report: ProbeReportBuilder) {
+        runCatching { TetheringPreferenceApi(context).setPreferTestNetworks(true) }
+            .onFailure { failure ->
+                report.recordFail(
+                    "Q4pre",
+                    "Can the preference be set before the TUN is created?",
+                    "${failure.javaClass.simpleName}: ${failure.message}",
+                )
+            }
     }
 
     private fun onTunAcquired(
