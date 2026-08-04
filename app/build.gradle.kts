@@ -1,6 +1,8 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    // Required from Kotlin 2.0 onward whenever buildFeatures.compose is enabled.
+    id("org.jetbrains.kotlin.plugin.compose")
 }
 
 android {
@@ -33,10 +35,7 @@ android {
     buildFeatures {
         compose = true
         aidl = true
-    }
-
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.15"
+        buildConfig = true
     }
 
     packaging {

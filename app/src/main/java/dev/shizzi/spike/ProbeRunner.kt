@@ -221,7 +221,7 @@ class ProbeRunner(private val context: Context) {
     }
 
     private fun tunAddress(): LinkAddress =
-        LinkAddress(InetAddress.getByName(TUN_ADDRESS), TUN_PREFIX_LENGTH)
+        buildLinkAddress(InetAddress.getByName(TUN_ADDRESS), TUN_PREFIX_LENGTH)
 
     private fun environment(): JSONObject = JSONObject().apply {
         put("device", "${Build.MANUFACTURER} ${Build.MODEL}")

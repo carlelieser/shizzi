@@ -25,7 +25,7 @@
         android:allowBackup="false"
         android:label="Tether Spike"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Material3.DynamicColors.DayNight">
+        android:theme="@style/Theme.TetherSpike">
 
         <activity
             android:name=".MainActivity"

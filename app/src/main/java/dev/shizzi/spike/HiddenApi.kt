@@ -5,10 +5,12 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.LinkAddress
 import android.net.Network
+import android.net.NetworkCapabilities
 import android.os.Build
 import android.os.IBinder
 import android.os.ParcelFileDescriptor
 import java.lang.reflect.Method
+import java.net.InetAddress
 
 /**
  * Every hidden/system API this prototype depends on, named and described in one
@@ -88,8 +90,52 @@ object HiddenApiCatalog {
             notes = "THE load-bearing call. @TestApi, added in T. Absent below " +
                 "33, which is why the feature floor is API 33 (spec 1.3).",
         ),
+        HiddenApiPath(
+            id = "LinkAddress.<init>",
+            className = "android.net.LinkAddress",
+            memberName = "<init>",
+            since = 30,
+            notes = "The (InetAddress, int) constructor is package-private, so " +
+                "the TUN address must be built reflectively.",
+        ),
+        HiddenApiPath(
+            id = "NetworkCapabilities.TRANSPORT_TEST",
+            className = "android.net.NetworkCapabilities",
+            memberName = "TRANSPORT_TEST",
+            since = 30,
+            notes = "@hide constant (value 7 on AOSP). Read reflectively rather " +
+                "than hardcoded so a renumbering surfaces as a probe failure.",
+        ),
     )
 }
+
+/**
+ * Builds a [LinkAddress] without the package-private constructor.
+ *
+ * Kotlin cannot call it directly even with the hidden-API exemptions lifted,
+ * because the restriction is a compile-time visibility rule rather than the
+ * runtime greylist.
+ */
+fun buildLinkAddress(address: InetAddress, prefixLength: Int): LinkAddress {
+    val constructor = LinkAddress::class.java
+        .getDeclaredConstructor(InetAddress::class.java, Int::class.javaPrimitiveType)
+    constructor.isAccessible = true
+    return constructor.newInstance(address, prefixLength)
+}
+
+/**
+ * Reads NetworkCapabilities.TRANSPORT_TEST at runtime.
+ *
+ * Falls back to the known AOSP value only when reflection fails, and the caller
+ * reports which path was taken so a silent mismatch cannot masquerade as a
+ * working test network.
+ */
+fun resolveTransportTest(): Int = runCatching {
+    NetworkCapabilities::class.java.getField("TRANSPORT_TEST").getInt(null)
+}.getOrDefault(TRANSPORT_TEST_AOSP_FALLBACK)
+
+/** TRANSPORT_TEST as defined on AOSP; used only if the field cannot be read. */
+const val TRANSPORT_TEST_AOSP_FALLBACK = 7
 
 /** Outcome of resolving one hidden API path. */
 sealed interface Resolution {

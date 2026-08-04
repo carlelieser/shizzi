@@ -29,7 +29,7 @@ class ProbeController {
     private var pendingBind: CompletableDeferred<IProbeService>? = null
 
     private val userServiceArgs = Shizuku.UserServiceArgs(
-        ComponentName(BuildConfigPackage.NAME, ProbeService::class.java.name),
+        ComponentName(BuildConfig.APPLICATION_ID, ProbeService::class.java.name),
     )
         .daemon(false)
         .processNameSuffix("probe")
@@ -106,9 +106,4 @@ class ProbeController {
         /** R3.3 suggests a 10s bound on test-network availability. */
         const val AVAILABILITY_TIMEOUT_MS = 10_000
     }
-}
-
-/** Indirection so the controller does not import generated BuildConfig directly. */
-object BuildConfigPackage {
-    const val NAME: String = "dev.shizzi.spike"
 }

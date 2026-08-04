@@ -66,7 +66,7 @@ class SessionResources(
         val found = arrayOfNulls<Network>(1)
 
         val request = NetworkRequest.Builder()
-            .addTransportType(NetworkCapabilities.TRANSPORT_TEST)
+            .addTransportType(resolveTransportTest())
             .removeCapability(NetworkCapabilities.NET_CAPABILITY_TRUSTED)
             .removeCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
             .build()
