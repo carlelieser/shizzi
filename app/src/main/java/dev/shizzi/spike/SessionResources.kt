@@ -2,6 +2,7 @@ package dev.shizzi.spike
 
 import android.net.ConnectivityManager
 import android.net.Network
+import android.net.NetworkRequest
 import android.os.Binder
 import android.os.ParcelFileDescriptor
 import android.util.Log
@@ -25,19 +26,10 @@ class SessionResources(
     private var fileDescriptor: ParcelFileDescriptor? = null
     private var network: Network? = null
     private var datapathSession: DatapathSession? = null
+    private var keepAliveCallback: ConnectivityManager.NetworkCallback? = null
 
-    /**
-     * Binder whose lifetime the framework ties the test network to.
-     *
-     * Held in a static registry as well as here. TestNetworkAgent takes a
-     * linkToDeath on this token and tears the network down from binderDied,
-     * which fires when the token is garbage collected — not only when the
-     * process exits. The shell process outlives the binder call, but the
-     * service stub holding this object is only strongly referenced by Shizuku
-     * while a client is bound, so an unbind made the token collectable and the
-     * network died about four seconds later with "NetworkAgent channel lost".
-     */
-    private val lifetimeToken = Binder().also { token -> liveTokens += token }
+    /** Binder whose lifetime the framework ties the test network to. */
+    private val lifetimeToken = Binder()
 
     val interfaceName: String? get() = runCatching { tun?.interfaceName }.getOrNull()
     val acquiredNetwork: Network? get() = network
@@ -59,7 +51,40 @@ class SessionResources(
         testNetworkApi.setupTestNetwork(name, lifetimeToken)
 
         network = awaitAvailability(name, availabilityTimeoutMs)
+        requestKeepAlive()
         return name
+    }
+
+    /**
+     * Holds a NetworkRequest so the framework does not linger the network away.
+     *
+     * Tethering consuming a network as its upstream is not a NetworkRequest.
+     * With nothing requesting it, ConnectivityService lingers the test network
+     * as soon as it connects and destroys it when the timer expires — observed
+     * as "handleLingerComplete for [N TEST]" about four seconds after start,
+     * with the upstream reverting to cellular.
+     *
+     * requestNetwork rather than registerNetworkCallback: only a request keeps
+     * a network alive; a listen callback observes without holding it.
+     */
+    private fun requestKeepAlive() {
+        val request = NetworkRequest.Builder()
+            .clearCapabilities()
+            .addTransportType(resolveTransportTest())
+            .build()
+
+        val callback = object : ConnectivityManager.NetworkCallback() {}
+        keepAliveCallback = callback
+
+        runCatching { connectivityManager.requestNetwork(request, callback) }
+            .onFailure { failure ->
+                keepAliveCallback = null
+                throw IllegalStateException(
+                    "requestKeepAlive: could not request the test network, " +
+                        "it would be lingered away within seconds",
+                    failure,
+                )
+            }
     }
 
     /**
@@ -127,6 +152,14 @@ class SessionResources(
     fun release(): List<String> {
         val problems = mutableListOf<String>()
 
+        // Releasing the request first lets the framework linger the network
+        // normally rather than racing our explicit teardown.
+        keepAliveCallback?.let { callback ->
+            runCatching { connectivityManager.unregisterNetworkCallback(callback) }
+                .onFailure { problems += "unregisterNetworkCallback: ${it.message}" }
+        }
+        keepAliveCallback = null
+
         // Before the fd: the stack is actively reading it, and closing it first
         // leaves reads racing against a descriptor the kernel may have reused.
         datapathSession?.let { session ->
@@ -148,10 +181,6 @@ class SessionResources(
         fileDescriptor = null
         tun = null
 
-        // Only after teardownTestNetwork: dropping the token earlier would let
-        // binderDied race the explicit teardown.
-        liveTokens -= lifetimeToken
-
         problems.forEach { Log.w(TAG, "teardown problem: $it") }
         return problems
     }
@@ -159,12 +188,5 @@ class SessionResources(
     private companion object {
         const val TAG = "SessionResources"
         const val POLL_INTERVAL_MS = 200L
-
-        /**
-         * Tokens for live test networks, kept reachable for the life of the
-         * process. Entries are removed by [release], so this grows only with
-         * the number of concurrently held sessions — one, in practice.
-         */
-        val liveTokens = java.util.Collections.synchronizedSet(mutableSetOf<Binder>())
     }
 }
