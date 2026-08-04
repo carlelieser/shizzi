@@ -9,3 +9,6 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# gomobile output: the AAR is a build product of /datapath, rebuilt by Gradle.
+/app/libs/*.aar
