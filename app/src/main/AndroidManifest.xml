@@ -36,12 +36,20 @@
             </intent-filter>
         </activity>
 
-        <!-- R1.1 / R2.3: provider is how Shizuku hands us the binder; not exported. -->
+        <!--
+          R1.1: the provider is how the Shizuku server reaches into this app to
+          deliver the binder, so it must be exported — ShizukuProvider asserts
+          this at attach time and throws otherwise.
+
+          R2.3's "not exported" applies to the UserService, not here. Access is
+          gated instead by INTERACT_ACROSS_USERS_FULL, a signature-level
+          permission no ordinary app can hold.
+        -->
         <provider
             android:name="rikka.shizuku.ShizukuProvider"
             android:authorities="${applicationId}.shizuku"
             android:enabled="true"
-            android:exported="false"
+            android:exported="true"
             android:multiprocess="false"
             android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
 
