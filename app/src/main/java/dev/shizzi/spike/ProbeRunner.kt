@@ -2,6 +2,7 @@ package dev.shizzi.spike
 
 import android.content.Context
 import android.net.LinkAddress
+import android.net.Network
 import android.net.NetworkCapabilities
 import android.os.Build
 import android.os.Process
@@ -123,6 +124,7 @@ class ProbeRunner(private val context: Context) {
         )
         probeUpstreamEligibility(report)
         probeDatapath(report)
+        probeUpstreamCallback(report, interfaceName)
         probeTetheringPreference(report, interfaceName, attemptTethering)
     }
 
@@ -149,6 +151,76 @@ class ProbeRunner(private val context: Context) {
         )
     }
 
+    /**
+     * Q8: does a listen callback ever fire for the test network?
+     *
+     * UpstreamNetworkMonitor populates mNetworkMap only from its own
+     * NetworkCallback: handleAvailable is what inserts, and handleNetCap
+     * returns early when the network is not already in the map. If onAvailable
+     * never arrives, findFirstTestNetwork has nothing to find no matter what
+     * mPreferTestNetworks says — which is exactly the observed failure.
+     *
+     * This registers the same request the monitor builds on API 33+
+     * (clearCapabilities, forbidding LOCAL_NETWORK) and reports whether the
+     * framework delivers our TUN through it. That is the value every previous
+     * theory assumed and none measured.
+     */
+    private fun probeUpstreamCallback(report: ProbeReportBuilder, interfaceName: String) {
+        val network = resources?.acquiredNetwork
+        if (network == null) {
+            report.recordSkip("Q8", QUESTION_CALLBACK, "no test network")
+            return
+        }
+
+        val observed = awaitCallbackDelivery(interfaceName)
+        report.record(
+            id = "Q8",
+            question = QUESTION_CALLBACK,
+            outcome = if (observed.first) ProbeOutcome.PASS else ProbeOutcome.FAIL,
+            detail = observed.second,
+        )
+    }
+
+    /**
+     * Registers the monitor's listen request and waits for our TUN to arrive.
+     *
+     * Returns whether it was delivered, plus the verbatim outcome: a rejected
+     * registration and a silent non-delivery are different findings and must
+     * not be reported the same way.
+     */
+    private fun awaitCallbackDelivery(interfaceName: String): Pair<Boolean, String> {
+        val manager = context.connectivityManager()
+        val latch = java.util.concurrent.CountDownLatch(1)
+        val seen = java.util.Collections.synchronizedList(mutableListOf<String>())
+
+        val callback = object : android.net.ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(available: Network) {
+                val name = manager.getLinkProperties(available)?.interfaceName ?: "?"
+                seen += name
+                if (name == interfaceName) latch.countDown()
+            }
+        }
+
+        val request = android.net.NetworkRequest.Builder()
+            .clearCapabilities()
+            .build()
+
+        return runCatching {
+            manager.registerNetworkCallback(request, callback)
+            val delivered = latch.await(CALLBACK_WAIT_MS, java.util.concurrent.TimeUnit.MILLISECONDS)
+            runCatching { manager.unregisterNetworkCallback(callback) }
+
+            delivered to when {
+                delivered -> "onAvailable delivered $interfaceName; all seen=$seen"
+                else -> "onAvailable never delivered $interfaceName within ${CALLBACK_WAIT_MS}ms; " +
+                    "all seen=$seen"
+            }
+        }.getOrElse { failure ->
+            false to "registerNetworkCallback rejected: " +
+                "${failure.javaClass.simpleName}: ${failure.message}"
+        }
+    }
+
     private fun onTunFailed(report: ProbeReportBuilder, failure: Throwable) {
         val message = "${failure.javaClass.simpleName}: ${failure.message}"
         // Distinguish "TUN never created" from "created but never became available":
@@ -166,6 +238,7 @@ class ProbeRunner(private val context: Context) {
             }
         }
         report.recordSkip("Q3b", QUESTION_ELIGIBILITY, "no test network")
+        report.recordSkip("Q8", QUESTION_CALLBACK, "no test network")
         report.recordSkip("Q4", QUESTION_PREFER, "no test network")
         report.recordSkip("Q5", QUESTION_UPSTREAM, "no test network")
         report.recordSkip("Q6", QUESTION_IPV6, "no test network")
@@ -395,6 +468,7 @@ class ProbeRunner(private val context: Context) {
             "Q3" to "Does setupTestNetwork() produce an available network?",
             "Q3b" to QUESTION_ELIGIBILITY,
             "Q7" to QUESTION_DATAPATH,
+            "Q8" to QUESTION_CALLBACK,
             "Q4" to QUESTION_PREFER,
             "Q5" to QUESTION_UPSTREAM,
             "Q6" to QUESTION_IPV6,
@@ -476,5 +550,11 @@ class ProbeRunner(private val context: Context) {
             "Does the test network carry the capabilities tethering requires of an upstream?"
         const val QUESTION_IPV6 = "Is the downstream IPv6 state observable for R6.4 planning?"
         const val QUESTION_DATAPATH = "Does the userspace stack attach to the TUN fd?"
+        const val QUESTION_CALLBACK =
+            "Does a NetworkCallback listen ever deliver the test network? " +
+                "(this is what populates UpstreamNetworkMonitor.mNetworkMap)"
+
+        /** Selection happens in ~100ms when it works; 5s is generous. */
+        const val CALLBACK_WAIT_MS = 5_000L
     }
 }
