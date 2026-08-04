@@ -7,12 +7,42 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
 
-/** Outcome of a downstream restart attempt. */
-data class RestartOutcome(
-    val didStop: Boolean,
-    val didStart: Boolean,
-    val detail: String,
+/**
+ * TETHER_ERROR_* values, read out of framework-tethering.jar on the API 36
+ * device under test.
+ *
+ * The framework reports these as bare ints, so a failure surfaces as
+ * "error=14" with no clue what went wrong; naming them keeps R7.5's
+ * verbatim-error requirement useful rather than cryptic.
+ */
+private val TETHER_ERROR_NAMES = mapOf(
+    0 to "NO_ERROR",
+    1 to "UNKNOWN_IFACE",
+    2 to "SERVICE_UNAVAIL",
+    3 to "UNSUPPORTED",
+    4 to "UNAVAIL_IFACE",
+    5 to "INTERNAL_ERROR",
+    6 to "TETHER_IFACE_ERROR",
+    7 to "UNTETHER_IFACE_ERROR",
+    8 to "ENABLE_FORWARDING_ERROR",
+    9 to "DISABLE_FORWARDING_ERROR",
+    10 to "IFACE_CFG_ERROR",
+    11 to "PROVISIONING_FAILED",
+    12 to "DHCPSERVER_ERROR",
+    13 to "ENTITLEMENT_UNKNOWN",
+    14 to "NO_CHANGE_TETHERING_PERMISSION",
+    15 to "NO_ACCESS_TETHERING_PERMISSION",
+    16 to "UNKNOWN_TYPE",
+    17 to "UNKNOWN_REQUEST",
+    18 to "DUPLICATE_REQUEST",
+    19 to "BLUETOOTH_SERVICE_PENDING",
+    20 to "SOFT_AP_CALLBACK_PENDING",
 )
+
+private fun describeTetherError(code: Int?): String {
+    val name = TETHER_ERROR_NAMES[code] ?: "UNKNOWN"
+    return "error=$code TETHER_ERROR_$name"
+}
 
 /**
  * Stops and starts Wi-Fi tethering through TetheringManager.
@@ -129,7 +159,8 @@ class DownstreamControl(private val context: Context) {
             }
 
             "onTetheringFailed" -> {
-                result[0] = "onTetheringFailed(error=${args?.firstOrNull()})"
+                val code = args?.firstOrNull() as? Int
+                result[0] = "onTetheringFailed(${describeTetherError(code)})"
                 latch.countDown()
             }
         }
