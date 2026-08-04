@@ -135,10 +135,36 @@ class ProbeRunner(private val context: Context) {
         )
 
         when {
-            attemptTethering -> observeUpstream(report, interfaceName)
+            attemptTethering -> restartDownstreamThenObserve(report, interfaceName)
             else -> report.recordSkip("Q5", QUESTION_UPSTREAM, "tethering probe not requested")
         }
         probeIpv6Surface(report)
+    }
+
+    /**
+     * Restarts the downstream so upstream selection re-runs under the preference.
+     *
+     * R4.1 puts setPreferTestNetworks(true) immediately before the downstream
+     * starts. Observing without the restart measured the wrong thing: selection
+     * had already happened against wlan0 and never re-ran.
+     */
+    private fun restartDownstreamThenObserve(
+        report: ProbeReportBuilder,
+        interfaceName: String,
+    ) {
+        val control = DownstreamControl(context)
+        val didStop = control.stopWifiTethering()
+        val (didStart, startDetail) = control.startWifiTethering()
+
+        when {
+            didStart -> observeUpstream(report, interfaceName, "restart: stopped=$didStop")
+            else -> report.recordFail(
+                "Q5",
+                QUESTION_UPSTREAM,
+                "downstream restart failed before upstream could be observed: " +
+                    "stopped=$didStop, start=$startDetail",
+            )
+        }
     }
 
     /**
@@ -148,7 +174,11 @@ class ProbeRunner(private val context: Context) {
      * from Settings — so this polls whatever the stack reports until it either
      * settles on the owned TUN or the settle deadline passes.
      */
-    private fun observeUpstream(report: ProbeReportBuilder, interfaceName: String) {
+    private fun observeUpstream(
+        report: ProbeReportBuilder,
+        interfaceName: String,
+        restartDetail: String,
+    ) {
         val observation = awaitUpstreamSettle(interfaceName)
         val isOnlyOwnedTun = observation.interfaceNames.isNotEmpty() &&
             observation.interfaceNames.all { it == interfaceName }
@@ -166,6 +196,7 @@ class ProbeRunner(private val context: Context) {
             detail = buildString {
                 append("owned=$interfaceName; ")
                 append("observed=${observation.interfaceNames}; ")
+                append("$restartDetail; ")
                 append("timedOut=${observation.didTimeout}\n--- dumpsys excerpt ---\n")
                 append(observation.rawOutput.take(DUMP_EXCERPT_CHARS))
             },

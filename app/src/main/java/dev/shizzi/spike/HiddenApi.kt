@@ -91,6 +91,23 @@ object HiddenApiCatalog {
                 "33, which is why the feature floor is API 33 (spec 1.3).",
         ),
         HiddenApiPath(
+            id = "TetheringManager.startTethering",
+            className = "android.net.TetheringManager",
+            memberName = "startTethering",
+            since = 30,
+            notes = "Takes (TetheringRequest, Executor, StartTetheringCallback), " +
+                "all hidden. Needs TETHER_PRIVILEGED, which shell holds. No " +
+                "`cmd tethering` equivalent exists, so reflection is the only path.",
+        ),
+        HiddenApiPath(
+            id = "TetheringManager.stopTethering",
+            className = "android.net.TetheringManager",
+            memberName = "stopTethering",
+            since = 30,
+            notes = "Takes the int tethering type (0 = TETHERING_WIFI). Required " +
+                "to restart the downstream so upstream selection re-runs (R4.4).",
+        ),
+        HiddenApiPath(
             id = "LinkAddress.<init>",
             className = "android.net.LinkAddress",
             memberName = "<init>",
