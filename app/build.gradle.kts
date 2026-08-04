@@ -5,6 +5,51 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+/**
+ * Builds the Go datapath into an AAR.
+ *
+ * The AAR is a build product, not a checked-in binary: leaving a stale one in
+ * the tree is how the shell process ends up running a datapath that does not
+ * match the source next to it.
+ *
+ * gomobile is not on Gradle's PATH under Android Studio, so the toolchain is
+ * located explicitly and the task fails loudly when it is missing rather than
+ * silently producing an APK with no datapath in it.
+ */
+val gomobileBind by tasks.registering(Exec::class) {
+    val goModule = rootProject.layout.projectDirectory.dir("datapath")
+    val outputAar = layout.buildDirectory.file("gomobile/datapath.aar")
+
+    inputs.dir(goModule).withPropertyName("goSources")
+    outputs.file(outputAar).withPropertyName("aar")
+
+    val goBin = File(System.getProperty("user.home"), "go/bin")
+    val ndk = android.ndkDirectory
+
+    workingDir = goModule.asFile
+    environment("PATH", "${goBin.absolutePath}:${System.getenv("PATH")}")
+    environment("ANDROID_NDK_HOME", ndk.absolutePath)
+    environment("ANDROID_HOME", android.sdkDirectory.absolutePath)
+
+    doFirst {
+        val gomobile = File(goBin, "gomobile")
+        check(gomobile.exists()) {
+            "gomobile not found at ${gomobile.absolutePath} — " +
+                "run: go install golang.org/x/mobile/cmd/gomobile@latest && gomobile init"
+        }
+        outputAar.get().asFile.parentFile.mkdirs()
+    }
+
+    commandLine(
+        File(goBin, "gomobile").absolutePath,
+        "bind",
+        "-target=android/arm64",
+        "-androidapi", "24",
+        "-o", outputAar.get().asFile.absolutePath,
+        ".",
+    )
+}
+
 android {
     namespace = "dev.shizzi.spike"
     compileSdk = 35
@@ -15,6 +60,13 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "0.1-spike"
+
+        // The datapath AAR ships arm64 only. Filtering here keeps the APK from
+        // claiming ABIs whose libgojni.so it does not contain, which would fail
+        // at load time on a 32-bit device rather than at install.
+        ndk {
+            abiFilters += "arm64-v8a"
+        }
     }
 
     buildTypes {
@@ -43,7 +95,13 @@ android {
     }
 }
 
+// The Go datapath must exist before Kotlin compiles against it.
+tasks.named("preBuild") { dependsOn(gomobileBind) }
+
 dependencies {
+    // The gomobile AAR, built from /datapath by the task above.
+    implementation(files(layout.buildDirectory.file("gomobile/datapath.aar")))
+
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("androidx.activity:activity-compose:1.9.3")
