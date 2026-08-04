@@ -1,33 +1,47 @@
 package dev.shizzi.spike;
 
 /**
- * Privileged probe surface, executed inside the Shizuku-spawned shell process.
+ * Privileged session surface, executed inside the Shizuku-spawned shell process.
  *
- * Deliberately tiny: the spike answers viability questions, so the only
- * operations are "run the probes" and "tear everything down". The session
- * lifecycle of the real product (R2.2 start/stop/getStatus) is not modelled
- * here.
+ * Shaped per R2.2: start, stop, getStatus. The probe sequence remains available
+ * as a diagnostic because it is how every failure in this stack has been
+ * diagnosed, but it is no longer the primary operation.
  */
 interface IProbeService {
 
     /**
-     * Runs the full probe sequence and returns a JSON report.
+     * Brings up protected tethering and leaves it up.
      *
-     * Blocking. Never throws across the binder: every failure is captured as a
-     * probe result inside the report so the UI can surface it verbatim (R7.5).
+     * Restarts the downstream, creates the TUN, starts the userspace datapath,
+     * and verifies the tethering stack selected the owned interface. Returns a
+     * JSON status. Blocking, and never throws across the binder: failures are
+     * reported in the status so the UI can surface them verbatim (R7.5).
      *
-     * @param socksHost unused by the spike; reserved so the contract does not
-     *                  change shape when the datapath lands.
+     * On any failure the session is torn down before returning, so a failed
+     * start never leaves clients on a physical upstream (R6.1).
      */
-    String runProbes(boolean attemptTethering, int availabilityTimeoutMs);
+    String start(boolean debugLogging);
 
     /**
-     * Releases anything the probe run left behind, in fail-closed order:
-     * downstream first, then the test network (R6.1).
-     *
-     * Safe to call when no probe run is active.
+     * Tears the session down in fail-closed order: downstream first, then the
+     * test network (R6.1). Safe to call when no session is active.
      */
-    String teardown();
+    String stop();
+
+    /**
+     * Current session state as JSON, without changing anything.
+     *
+     * Cheap enough to poll: it reports what this process holds and does not
+     * shell out to dumpsys.
+     */
+    String getStatus();
+
+    /**
+     * Runs the full diagnostic probe sequence and returns a JSON report.
+     *
+     * Independent of the session: acquires and releases its own resources.
+     */
+    String runProbes(boolean attemptTethering, int availabilityTimeoutMs);
 
     /** Contract version, checked by the app to detect a stale shell process (R2.5). */
     int getContractVersion();
