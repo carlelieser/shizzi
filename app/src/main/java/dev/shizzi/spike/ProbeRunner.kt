@@ -455,7 +455,16 @@ class ProbeRunner(private val context: Context) {
          * from the run before. The test network carries no INTERNET capability,
          * so it settles more slowly than a validated Wi-Fi upstream.
          */
-        const val UPSTREAM_SETTLE_MS = 45_000L
+        /**
+         * How long Q5 waits for upstream selection to settle.
+         *
+         * Was 45s, chasing a timing theory that proved wrong: when selection
+         * picks the TUN it does so in ~100ms, and the loop returns as soon as
+         * it sees that. The deadline is therefore only ever paid in full on
+         * failure, which made every failing run cost 45s to learn what the
+         * first second already showed.
+         */
+        const val UPSTREAM_SETTLE_MS = 8_000L
         const val UPSTREAM_POLL_MS = 1_000L
         const val TAG = "ProbeRunner"
         const val IPV6_FORWARDING_PATH = "/proc/sys/net/ipv6/conf/all/forwarding"
