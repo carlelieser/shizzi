@@ -91,6 +91,15 @@ object HiddenApiCatalog {
                 "33, which is why the feature floor is API 33 (spec 1.3).",
         ),
         HiddenApiPath(
+            id = "WifiManager.startTetheredHotspot",
+            className = "android.net.wifi.WifiManager",
+            memberName = "startTetheredHotspot",
+            since = 30,
+            notes = "@SystemApi. Reaches SoftAp through WifiServiceImpl rather " +
+                "than TetheringService, whose hasTetherChangePermission rejects " +
+                "shell. Passing a null SoftApConfiguration uses the saved hotspot.",
+        ),
+        HiddenApiPath(
             id = "TetheringManager.startTethering",
             className = "android.net.TetheringManager",
             memberName = "startTethering",

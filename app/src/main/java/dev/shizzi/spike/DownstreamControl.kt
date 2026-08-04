@@ -82,12 +82,49 @@ class DownstreamControl(private val context: Context) {
     }.isSuccess
 
     /**
-     * Starts Wi-Fi tethering via the TetheringRequest builder.
+     * Starts Wi-Fi tethering, trying WifiManager before TetheringManager.
      *
-     * Blocks until the framework reports success or failure, bounded by
-     * [START_TIMEOUT_MS] so a stalled service cannot wedge the probe run (R4.6).
+     * TetheringService.hasTetherChangePermission rejects the shell UID with
+     * TETHER_ERROR_NO_CHANGE_TETHERING_PERMISSION even though shell holds
+     * TETHER_PRIVILEGED and NETWORK_SETTINGS. WifiManager.startTetheredHotspot
+     * reaches the same SoftAp machinery through WifiServiceImpl instead, which
+     * is the route automation apps use over Shizuku, so it is tried first and
+     * the TetheringManager path is kept as a fallback.
      */
     fun startWifiTethering(): Pair<Boolean, String> {
+        val viaWifiManager = startViaWifiManager()
+        if (viaWifiManager.first) return viaWifiManager
+
+        val viaTethering = startViaTetheringManager()
+        return when {
+            viaTethering.first -> viaTethering
+            else -> false to "wifiManager[${viaWifiManager.second}]; tethering[${viaTethering.second}]"
+        }
+    }
+
+    /**
+     * Calls WifiManager.startTetheredHotspot(SoftApConfiguration) reflectively.
+     *
+     * Passing null uses the device's saved hotspot configuration, which is what
+     * the spec wants: section 1.2 excludes SSID/password/band control.
+     */
+    private fun startViaWifiManager(): Pair<Boolean, String> = runCatching {
+        val wifiManager = context.getSystemService(Context.WIFI_SERVICE)
+            ?: return false to "wifi service unavailable"
+
+        val configClass = Class.forName("android.net.wifi.SoftApConfiguration")
+        val method = wifiManager.javaClass.getMethod("startTetheredHotspot", configClass)
+        val accepted = method.invoke(wifiManager, null) as? Boolean ?: false
+
+        when {
+            accepted -> true to "startTetheredHotspot accepted"
+            else -> false to "startTetheredHotspot returned false"
+        }
+    }.getOrElse { failure ->
+        false to "startTetheredHotspot: ${failure.cause?.message ?: failure.message}"
+    }
+
+    private fun startViaTetheringManager(): Pair<Boolean, String> {
         val request = runCatching { buildTetheringRequest() }
             .getOrElse { return false to "buildTetheringRequest: ${it.message}" }
 
