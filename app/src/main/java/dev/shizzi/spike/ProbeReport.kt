@@ -53,6 +53,25 @@ class ProbeReportBuilder {
         hiddenApiFindings += resolutions
     }
 
+    /**
+     * Records the outcome of releasing the session as spec case T-2.
+     *
+     * An empty problem list is a PASS worth stating: T-2 asks whether the run
+     * leaves an orphaned testtun or a leaked fd behind, and silence would be
+     * indistinguishable from never having checked.
+     */
+    fun recordReleaseProblems(problems: List<String>) {
+        record(
+            id = "T-2",
+            question = "Does the run release its TUN, fd, and test network?",
+            outcome = if (problems.isEmpty()) ProbeOutcome.PASS else ProbeOutcome.FAIL,
+            detail = when {
+                problems.isEmpty() -> "released cleanly"
+                else -> problems.joinToString("; ")
+            },
+        )
+    }
+
     /** True when no probe failed; skipped probes do not count as failures. */
     val hasFailure: Boolean get() = results.any { it.outcome == ProbeOutcome.FAIL }
 

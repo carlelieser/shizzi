@@ -2,8 +2,10 @@ package dev.shizzi.spike
 
 import android.content.Context
 import android.net.LinkAddress
+import android.net.NetworkCapabilities
 import android.os.Build
 import android.os.Process
+import android.util.Log
 import org.json.JSONObject
 import java.net.InetAddress
 
@@ -19,17 +21,43 @@ class ProbeRunner(private val context: Context) {
     private val inspector = UpstreamInspector()
     private var resources: SessionResources? = null
 
+    /**
+     * Runs the probe sequence and always releases the session it created.
+     *
+     * Releasing here rather than only in [teardown] is a correctness fix, not
+     * tidiness: teardown is a separate binder call driven by its own button, so
+     * an un-torn-down run left its test network alive. Successive runs then
+     * stacked orphaned testtun interfaces (17 through 21 across five runs), and
+     * the stack's CMD_RETRY_UPSTREAM timer reselected among the leftovers —
+     * which is what made Q5 read a different interface than the one it owned.
+     */
     fun run(attemptTethering: Boolean, availabilityTimeoutMs: Int): String {
         val report = ProbeReportBuilder()
         report.recordHiddenApiResolutions(testNetworkApi.resolveAll())
 
         val canProceed = probeIdentityAndPlatform(report)
-        when {
-            canProceed -> probeNetworkPath(report, attemptTethering, availabilityTimeoutMs)
-            else -> skipRemaining(report, "blocked by Q0/Q1 failure")
+        try {
+            when {
+                canProceed -> probeNetworkPath(report, attemptTethering, availabilityTimeoutMs)
+                else -> skipRemaining(report, "blocked by Q0/Q1 failure")
+            }
+        } finally {
+            releaseSession(report)
         }
 
         return report.build(environment())
+    }
+
+    /**
+     * Releases the session, recording any problems as T-2 evidence.
+     *
+     * A silent release would hide exactly the leak the spec's T-2 case is about,
+     * so the outcome goes in the report rather than only the log.
+     */
+    private fun releaseSession(report: ProbeReportBuilder) {
+        val problems = resources?.release() ?: return
+        resources = null
+        report.recordReleaseProblems(problems)
     }
 
     /** Q0/Q1: are we actually shell, on a build new enough, with the service present? */
@@ -93,6 +121,7 @@ class ProbeRunner(private val context: Context) {
             "Does setupTestNetwork() produce an available network?",
             "ConnectivityManager reported available; netId handle=${resources?.acquiredNetwork}",
         )
+        probeUpstreamEligibility(report)
         probeTetheringPreference(report, interfaceName, attemptTethering)
     }
 
@@ -112,9 +141,55 @@ class ProbeRunner(private val context: Context) {
                 report.recordSkip("Q3", "Does setupTestNetwork() produce an available network?", "no TUN to register")
             }
         }
+        report.recordSkip("Q3b", QUESTION_ELIGIBILITY, "no test network")
         report.recordSkip("Q4", QUESTION_PREFER, "no test network")
         report.recordSkip("Q5", QUESTION_UPSTREAM, "no test network")
         report.recordSkip("Q6", QUESTION_IPV6, "no test network")
+    }
+
+    /**
+     * Q3b: is the test network recognisable to the stack's test-network branch?
+     *
+     * UpstreamNetworkMonitor.getCurrentPreferredUpstream on this build reads:
+     *
+     *     if (mPreferTestNetworks) {
+     *         state = findFirstTestNetwork(mNetworkMap.values());
+     *         if (state != null) return state;
+     *     }
+     *
+     * The branch returns before any INTERNET, cellular, or DUN check, and
+     * findFirstTestNetwork filters on TRANSPORT_TEST alone. So the eligibility
+     * criterion is the test transport, not NET_CAPABILITY_INTERNET — which
+     * TestNetworkService never grants and exposes no parameter to add.
+     *
+     * INTERNET is still reported: absent it, the network is unusable as a
+     * general default route, which constrains the datapath design even though
+     * it does not block tethering upstream selection.
+     */
+    private fun probeUpstreamEligibility(report: ProbeReportBuilder) {
+        val network = resources?.acquiredNetwork
+        if (network == null) {
+            report.recordSkip("Q3b", QUESTION_ELIGIBILITY, "no test network")
+            return
+        }
+
+        val capabilities = context.connectivityManager().getNetworkCapabilities(network)
+        if (capabilities == null) {
+            report.recordFail("Q3b", QUESTION_ELIGIBILITY, "getNetworkCapabilities returned null")
+            return
+        }
+
+        val hasTestTransport = capabilities.hasTransport(resolveTransportTest())
+        val hasInternet = capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+
+        report.record(
+            id = "Q3b",
+            question = QUESTION_ELIGIBILITY,
+            outcome = if (hasTestTransport) ProbeOutcome.PASS else ProbeOutcome.FAIL,
+            detail = "TRANSPORT_TEST=$hasTestTransport (the selection criterion); " +
+                "INTERNET=$hasInternet (informational: never granted by " +
+                "TestNetworkService); raw=$capabilities",
+        )
     }
 
     private fun probeTetheringPreference(
@@ -197,11 +272,26 @@ class ProbeRunner(private val context: Context) {
                 append("owned=$interfaceName; ")
                 append("observed=${observation.interfaceNames}; ")
                 append("$restartDetail; ")
-                append("timedOut=${observation.didTimeout}\n--- dumpsys excerpt ---\n")
-                append(observation.rawOutput.take(DUMP_EXCERPT_CHARS))
+                append("timedOut=${observation.didTimeout}\n--- selection lines ---\n")
+                append(selectionLines(observation.rawOutput))
             },
         )
     }
+
+    /**
+     * Keeps only the dumpsys lines that bear on upstream selection.
+     *
+     * The raw dump opens with several KB of static tetherable-regex and DHCP
+     * config, so a leading excerpt spent its whole budget before reaching
+     * anything decision-relevant. These keys carry the actual signal: the chosen
+     * upstream, the quota table the TUN was missing from, and the DUN and
+     * automatic-selection flags that constrain the choice.
+     */
+    private fun selectionLines(rawOutput: String): String =
+        rawOutput.lineSequence()
+            .filter { line -> SELECTION_KEYS.any { key -> line.contains(key) } }
+            .joinToString("\n")
+            .take(DUMP_EXCERPT_CHARS)
 
     /**
      * Polls the upstream until it settles on the owned TUN, or the deadline passes.
@@ -220,6 +310,7 @@ class ProbeRunner(private val context: Context) {
             val hasSettled = latest.interfaceNames.isNotEmpty() &&
                 latest.interfaceNames.all { it == interfaceName }
             if (hasSettled) return latest
+            Log.i(TAG, "awaitUpstreamSettle: waiting for $interfaceName, saw ${latest.interfaceNames}")
 
             Thread.sleep(UPSTREAM_POLL_MS)
             latest = inspector.observe()
@@ -269,6 +360,7 @@ class ProbeRunner(private val context: Context) {
         listOf(
             "Q2" to "Does createTunInterface() return a usable TUN?",
             "Q3" to "Does setupTestNetwork() produce an available network?",
+            "Q3b" to QUESTION_ELIGIBILITY,
             "Q4" to QUESTION_PREFER,
             "Q5" to QUESTION_UPSTREAM,
             "Q6" to QUESTION_IPV6,
@@ -299,19 +391,40 @@ class ProbeRunner(private val context: Context) {
 
         const val DUMP_EXCERPT_CHARS = 4000
 
+        /** dumpsys tethering substrings that bear on which upstream is chosen. */
+        val SELECTION_KEYS = listOf(
+            "Current upstream",
+            "Upstream wanted",
+            "Upstream quota",
+            "isDunRequired",
+            "chooseUpstreamAutomatically",
+            "Exempted",
+            "testtun",
+        )
+
         /**
          * R4.4 requires waiting for the framework to settle but fixes no
          * duration. 15s is long enough to cover an observed reselection and
          * short enough to keep a failing run interactive; E-2's 20-cycle bar
          * should be used to tune it.
          */
-        const val UPSTREAM_SETTLE_MS = 15_000L
+        /**
+         * Device logs show selection reaching the TUN several seconds after the
+         * downstream restart, and a 15s window closed first: Q5 read wlan0 while
+         * the dump's own log showed "Found upstream interface(s): [testtun18]"
+         * from the run before. The test network carries no INTERNET capability,
+         * so it settles more slowly than a validated Wi-Fi upstream.
+         */
+        const val UPSTREAM_SETTLE_MS = 45_000L
         const val UPSTREAM_POLL_MS = 1_000L
+        const val TAG = "ProbeRunner"
         const val IPV6_FORWARDING_PATH = "/proc/sys/net/ipv6/conf/all/forwarding"
         const val IPV6_ACCEPT_RA_PATH = "/proc/sys/net/ipv6/conf/all/accept_ra"
 
         const val QUESTION_PREFER = "Does TetheringManager.setPreferTestNetworks exist and accept the call?"
         const val QUESTION_UPSTREAM = "Does the tethering stack report the owned testtunN as sole upstream?"
+        const val QUESTION_ELIGIBILITY =
+            "Does the test network carry the capabilities tethering requires of an upstream?"
         const val QUESTION_IPV6 = "Is the downstream IPv6 state observable for R6.4 planning?"
     }
 }

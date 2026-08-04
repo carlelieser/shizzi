@@ -101,6 +101,10 @@ class ProbeController {
     }
 
     private companion object {
+        /**
+         * Binding is fast; the probe run itself is not. Q5 waits up to 45s for
+         * upstream selection to settle, so this bound covers only the bind.
+         */
         const val BIND_TIMEOUT_MS = 10_000L
 
         /** R3.3 suggests a 10s bound on test-network availability. */
