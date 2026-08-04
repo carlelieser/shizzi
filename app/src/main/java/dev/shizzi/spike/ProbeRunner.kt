@@ -216,6 +216,15 @@ class ProbeRunner(private val context: Context) {
         )
     }
 
+    /**
+     * Sets the preference, then observes selection either side of a restart.
+     *
+     * [attemptTethering] false no longer skips Q5. Q5 passed once on a run where
+     * the downstream was already up and no restart happened, and has failed on
+     * every run that restarted it — so "observe without restarting" is the
+     * comparison that separates those two cases. Skipping the probe measured
+     * nothing and hid the one condition under which it is known to work.
+     */
     private fun probeTetheringPreference(
         report: ProbeReportBuilder,
         interfaceName: String,
@@ -235,7 +244,7 @@ class ProbeRunner(private val context: Context) {
 
         when {
             attemptTethering -> restartDownstreamThenObserve(report, interfaceName)
-            else -> report.recordSkip("Q5", QUESTION_UPSTREAM, "tethering probe not requested")
+            else -> observeUpstream(report, interfaceName, "no restart: observing the running downstream")
         }
         probeIpv6Surface(report)
     }
