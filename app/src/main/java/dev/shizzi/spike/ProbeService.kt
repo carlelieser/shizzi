@@ -18,8 +18,13 @@ class ProbeService : IProbeService.Stub {
     @Suppress("unused")
     constructor() : this(acquireSystemContext())
 
+    /**
+     * Shizuku prefers this constructor and supplies a context whose package name
+     * is "android", so the shell rebasing has to happen here too — doing it only
+     * in the no-arg path leaves the real code path unfixed.
+     */
     constructor(context: Context) {
-        runner = ProbeRunner(context)
+        runner = ProbeRunner(asShellContext(context))
     }
 
     override fun getContractVersion(): Int = CONTRACT_VERSION
@@ -53,16 +58,46 @@ class ProbeService : IProbeService.Stub {
         private const val TAG = "ProbeService"
         private const val STACK_TRACE_CHARS = 4000
 
+        /** The shell package, whose UID (2000) this process actually runs as. */
+        private const val SHELL_PACKAGE = "com.android.shell"
+
         /**
-         * Obtains a system Context inside the shell process, which has no
-         * Application object of its own.
+         * Obtains a Context attributed to the shell package.
+         *
+         * ActivityThread.getSystemContext() alone returns a context whose
+         * package name is "android". Framework services that validate the
+         * calling package against the calling UID then reject the call with
+         * "Package android does not belong to 2000", which is what the first
+         * device run of setupTestNetwork hit.
+         *
+         * Rebasing onto com.android.shell makes the package match the UID.
          */
         @SuppressLint("PrivateApi", "DiscouragedPrivateApi")
         private fun acquireSystemContext(): Context {
             val activityThread = Class.forName("android.app.ActivityThread")
             val systemMain = activityThread.getMethod("systemMain").invoke(null)
-            val getSystemContext = activityThread.getMethod("getSystemContext")
-            return getSystemContext.invoke(systemMain) as Context
+            return activityThread.getMethod("getSystemContext").invoke(systemMain) as Context
+        }
+
+        /**
+         * Rebases [context] onto the shell package.
+         *
+         * Framework services validate the calling package against the calling
+         * UID. A context reporting package "android" from a UID-2000 process is
+         * rejected with "Package android does not belong to 2000", which is how
+         * setupTestNetwork failed on the first two device runs.
+         */
+        private fun asShellContext(context: Context): Context {
+            if (context.packageName == SHELL_PACKAGE) return context
+
+            return runCatching { context.createPackageContext(SHELL_PACKAGE, 0) }
+                .getOrElse { failure ->
+                    throw IllegalStateException(
+                        "asShellContext: could not rebase context (package=" +
+                            "${context.packageName}) onto $SHELL_PACKAGE",
+                        failure,
+                    )
+                }
         }
     }
 }

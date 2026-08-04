@@ -173,12 +173,29 @@ class TestNetworkApi(private val context: Context) {
         val owner = runCatching { Class.forName(path.className) }.getOrNull()
             ?: return Resolution.Missing(path, "class not found: ${path.className}")
 
-        if (path.memberName == "<class>") return Resolution.Found(path)
+        return when (path.memberName) {
+            "<class>" -> Resolution.Found(path)
+            "<init>" -> resolveConstructor(owner, path)
+            else -> resolveMethodOrField(owner, path)
+        }
+    }
 
-        val hasMember = owner.declaredMethods.any { it.name == path.memberName }
+    private fun resolveConstructor(owner: Class<*>, path: HiddenApiPath): Resolution = when {
+        owner.declaredConstructors.isNotEmpty() -> Resolution.Found(path)
+        else -> Resolution.Missing(path, "no declared constructor on ${path.className}")
+    }
+
+    /**
+     * Members are looked up as methods *and* fields: the catalog holds constants
+     * such as TRANSPORT_TEST alongside methods, and checking only declaredMethods
+     * reports every constant as missing.
+     */
+    private fun resolveMethodOrField(owner: Class<*>, path: HiddenApiPath): Resolution {
+        val hasMethod = owner.declaredMethods.any { it.name == path.memberName }
+        val hasField = owner.declaredFields.any { it.name == path.memberName }
         return when {
-            hasMember -> Resolution.Found(path)
-            else -> Resolution.Missing(path, "no method '${path.memberName}' on ${path.className}")
+            hasMethod || hasField -> Resolution.Found(path)
+            else -> Resolution.Missing(path, "no method or field '${path.memberName}' on ${path.className}")
         }
     }
 

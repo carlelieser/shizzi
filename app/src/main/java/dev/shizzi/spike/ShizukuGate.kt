@@ -31,12 +31,23 @@ object ShizukuGate {
         if (Build.VERSION.SDK_INT < FEATURE_MIN_API) {
             return ShizukuState.UnsupportedPlatform(Build.VERSION.SDK_INT)
         }
-        if (!Shizuku.pingBinder()) return resolveAbsentBinder()
+        if (!isBinderLive()) return resolveAbsentBinder()
         if (Shizuku.isPreV11()) return ShizukuState.NotRunning
         if (!hasPermission()) return ShizukuState.PermissionRequired
 
         val uid = runCatching { Shizuku.getUid() }.getOrDefault(-1)
         return ShizukuState.Ready(uid = uid, isRoot = uid == ROOT_UID)
+    }
+
+    /**
+     * pingBinder() alone reports false until the sticky binder-received callback
+     * has been delivered, which made the UI claim Shizuku was stopped while a
+     * probe run against it was succeeding. getUid() throws only when there is
+     * genuinely no binder, so it settles the question directly.
+     */
+    private fun isBinderLive(): Boolean {
+        if (Shizuku.pingBinder()) return true
+        return runCatching { Shizuku.getUid() }.isSuccess
     }
 
     /**

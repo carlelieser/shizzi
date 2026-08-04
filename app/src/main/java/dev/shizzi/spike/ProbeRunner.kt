@@ -229,6 +229,8 @@ class ProbeRunner(private val context: Context) {
         put("sdkInt", Build.VERSION.SDK_INT)
         put("release", Build.VERSION.RELEASE)
         put("uid", Process.myUid())
+        // Must match the UID's package or framework services reject the calls.
+        put("contextPackage", context.packageName)
     }
 
     private companion object {

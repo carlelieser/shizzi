@@ -2,13 +2,9 @@ package dev.shizzi.spike
 
 import android.net.ConnectivityManager
 import android.net.Network
-import android.net.NetworkCapabilities
-import android.net.NetworkRequest
 import android.os.Binder
 import android.os.ParcelFileDescriptor
 import android.util.Log
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 
 /**
  * The atomic resource group of R3.5: TUN fd, framework interface, network
@@ -26,7 +22,6 @@ class SessionResources(
     private var tun: TunHandle? = null
     private var fileDescriptor: ParcelFileDescriptor? = null
     private var network: Network? = null
-    private var callback: ConnectivityManager.NetworkCallback? = null
 
     /** Binder whose lifetime the framework ties the test network to. */
     private val lifetimeToken = Binder()
@@ -62,47 +57,37 @@ class SessionResources(
      * exactly the R4.3 race.
      */
     private fun awaitAvailability(interfaceName: String, timeoutMs: Int): Network {
-        val latch = CountDownLatch(1)
-        val found = arrayOfNulls<Network>(1)
+        val deadline = System.currentTimeMillis() + timeoutMs
 
-        val request = NetworkRequest.Builder()
-            .addTransportType(resolveTransportTest())
-            .removeCapability(NetworkCapabilities.NET_CAPABILITY_TRUSTED)
-            .removeCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
-            .build()
-
-        val registered = object : ConnectivityManager.NetworkCallback() {
-            override fun onAvailable(available: Network) {
-                found[0] = available
-                latch.countDown()
-            }
+        while (System.currentTimeMillis() < deadline) {
+            findNetworkOn(interfaceName)?.let { return it }
+            Thread.sleep(POLL_INTERVAL_MS)
         }
-
-        connectivityManager.registerNetworkCallback(request, registered)
-        callback = registered
-
-        val didAppear = latch.await(timeoutMs.toLong(), TimeUnit.MILLISECONDS)
-        check(didAppear) {
-            "test network '$interfaceName' did not become available within ${timeoutMs}ms"
-        }
-        return found[0] ?: error("test network '$interfaceName' reported available with null Network")
+        error("test network '$interfaceName' did not become available within ${timeoutMs}ms")
     }
+
+    /**
+     * Locates the framework Network bound to [interfaceName].
+     *
+     * Polling rather than registerNetworkCallback: from the shell UID that call
+     * is rejected with "Package android does not belong to 2000" even when the
+     * context is rebased onto com.android.shell, while the network itself
+     * registers fine. getAllNetworks/getLinkProperties carry no such check.
+     */
+    private fun findNetworkOn(interfaceName: String): Network? =
+        connectivityManager.allNetworks.firstOrNull { candidate ->
+            connectivityManager.getLinkProperties(candidate)?.interfaceName == interfaceName
+        }
 
     /**
      * Releases every held resource, continuing past individual failures.
      *
      * Teardown is the one place where continuing after an error is correct: a
-     * failure to unregister a callback must not prevent closing the fd. Each
-     * failure is still surfaced in the returned summary rather than swallowed.
+     * failed teardownTestNetwork must not prevent closing the fd. Each failure
+     * is still surfaced in the returned summary rather than swallowed.
      */
     fun release(): List<String> {
         val problems = mutableListOf<String>()
-
-        callback?.let { registered ->
-            runCatching { connectivityManager.unregisterNetworkCallback(registered) }
-                .onFailure { problems += "unregisterNetworkCallback: ${it.message}" }
-        }
-        callback = null
 
         network?.let { acquired ->
             runCatching { testNetworkApi.teardownTestNetwork(acquired) }
@@ -123,5 +108,6 @@ class SessionResources(
 
     private companion object {
         const val TAG = "SessionResources"
+        const val POLL_INTERVAL_MS = 200L
     }
 }
