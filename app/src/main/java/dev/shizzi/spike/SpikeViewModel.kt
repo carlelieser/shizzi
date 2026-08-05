@@ -25,12 +25,19 @@ class SpikeViewModel : ViewModel() {
     }
 
     /**
-     * Reports a session that ended without the user stopping it.
+     * Reports a session that ended without the user stopping it, and drops the
+     * hotspot it left behind.
      *
      * Arrives on a binder thread, so the state update has to be thread-safe;
      * MutableStateFlow.update is. Showing CONNECTED after the shell process is
      * gone is worse than showing an error: the user has no way to tell that
      * tethered clients have silently fallen back to the phone's own upstream.
+     *
+     * The teardown matters more than the message. A device test showed the
+     * shell process dying on SIGTERM leaves the hotspot tethered and tethering
+     * reverting to cellular, with clients still attached and browsing — and
+     * the in-process shutdown hook cannot catch that, because ART does not run
+     * hooks on signal death. This process survives, so it does the cleanup.
      */
     private fun reportSessionLost() {
         internalState.update { current ->
@@ -39,8 +46,27 @@ class SpikeViewModel : ViewModel() {
                 status = UiStatus.ERROR,
                 detail = "",
                 interfaceName = "",
-                lastError = "Session ended: the Shizuku service stopped. " +
-                    "Check Shizuku is running, then press Start.",
+                lastError = "Session ended unexpectedly — dropping the hotspot…",
+            )
+        }
+        viewModelScope.launch { releaseOrphanedDownstream() }
+    }
+
+    /** Drops the leftover hotspot, reporting either outcome verbatim (R7.5). */
+    private suspend fun releaseOrphanedDownstream() {
+        val problem = runCatching { controller.releaseOrphanedDownstream() }
+            .getOrElse { failure -> "teardown failed: ${failure.message}" }
+
+        internalState.update { current ->
+            current.copy(
+                status = UiStatus.ERROR,
+                lastError = when (problem) {
+                    null -> "Session ended: the Shizuku service stopped. " +
+                        "The hotspot was turned off. Press Start to reconnect."
+
+                    else -> "Session ended and the hotspot may still be on: " +
+                        "$problem — turn it off in Settings."
+                },
             )
         }
     }
