@@ -32,6 +32,8 @@ class TetherSession(private val context: Context) {
     private var state = SessionState.IDLE
     private var detail = "not started"
     private var interfaceName: String? = null
+    private var watchdog: SessionWatchdog? = null
+    private var shutdownHook: Thread? = null
 
     val isActive: Boolean get() = state == SessionState.ACTIVE
 
@@ -74,7 +76,59 @@ class TetherSession(private val context: Context) {
 
         state = SessionState.ACTIVE
         detail = "tethered clients routing through $name"
+
+        installShutdownHook()
+        startWatchdog(name)
         return status()
+    }
+
+    /**
+     * Drops the downstream if this process exits through System.exit.
+     *
+     * Covers exactly one path: ShizukuServiceStarter calling System.exit when
+     * the server it depends on goes away. That is a real path — it is how the
+     * 13.5.4 crash took this process down — but it is the only one.
+     *
+     * ART does not unwind shutdown hooks on signal death, so SIGTERM and
+     * SIGKILL both bypass this entirely; a device test confirmed SIGTERM
+     * leaves the hotspot tethered with no hook output. Recovery for those
+     * cases lives in the app process, which outlives this one (see
+     * SpikeViewModel's session-lost handling).
+     */
+    private fun installShutdownHook() {
+        val hook = Thread {
+            Log.w(TAG, "process exiting with session active; dropping downstream")
+            runCatching { DownstreamControl(context).stopWifiTethering() }
+        }
+
+        runCatching { Runtime.getRuntime().addShutdownHook(hook) }
+            .onSuccess { shutdownHook = hook }
+            .onFailure { Log.w(TAG, "installShutdownHook: ${it.message}") }
+    }
+
+    /** Stops the session if the tunnel stops being the sole upstream (R6.1). */
+    private fun startWatchdog(name: String) {
+        val guard = SessionWatchdog(name) { problem -> tearDownAfterDrift(problem) }
+        watchdog = guard
+        guard.start()
+    }
+
+    /**
+     * Stops the session because the upstream drifted, reporting why.
+     *
+     * A teardown failure is kept alongside the drift rather than overwritten by
+     * it: "the hotspot is still up" is the more dangerous of the two, and it is
+     * the one the plain drift message would hide.
+     */
+    private fun tearDownAfterDrift(problem: String) {
+        stop()
+
+        val teardownProblem = detail.takeIf { state == SessionState.ERROR }
+        state = SessionState.ERROR
+        detail = when (teardownProblem) {
+            null -> problem
+            else -> "$problem; teardown incomplete: $teardownProblem"
+        }
     }
 
     private fun restartDownstream() {
@@ -102,10 +156,20 @@ class TetherSession(private val context: Context) {
         error("verifyUpstream: expected only $name, tethering reports $observed")
     }
 
-    /** Releases everything in fail-closed order: downstream first (R6.1). */
+    /**
+     * Releases everything in fail-closed order: downstream first (R6.1).
+     *
+     * Reports ERROR when the downstream could not be confirmed down. Claiming
+     * "stopped" while the hotspot is still broadcasting is the one lie with
+     * real consequence here — clients stay connected through the physical
+     * upstream, which is what the session exists to prevent.
+     */
     fun stop(): String {
-        runCatching { DownstreamControl(context).stopWifiTethering() }
-            .onFailure { Log.w(TAG, "stop: downstream ${it.message}") }
+        watchdog?.stop()
+        watchdog = null
+        removeShutdownHook()
+
+        val downstreamProblem = releaseDownstream()
 
         resources?.release()?.forEach { Log.w(TAG, "stop: $it") }
         resources = null
@@ -114,9 +178,38 @@ class TetherSession(private val context: Context) {
             .onFailure { Log.w(TAG, "stop: preference ${it.message}") }
 
         interfaceName = null
-        state = SessionState.IDLE
-        detail = "stopped"
+        state = if (downstreamProblem == null) SessionState.IDLE else SessionState.ERROR
+        detail = downstreamProblem ?: "stopped"
         return status()
+    }
+
+    /** @return null once no downstream is tethered, else what is still up. */
+    private fun releaseDownstream(): String? {
+        val control = DownstreamControl(context)
+
+        val didAccept = runCatching { control.stopWifiTethering() }
+            .getOrElse { failure ->
+                Log.w(TAG, "stop: downstream ${failure.message}")
+                false
+            }
+
+        val stillTethered = runCatching { DownstreamInspector().findTetheredDownstream() }
+            .getOrElse { failure -> "could not verify downstream: ${failure.message}" }
+
+        return when {
+            stillTethered != null -> stillTethered
+            didAccept -> null
+            else -> "stopTethering was rejected, but no downstream remains tethered"
+        }
+    }
+
+    private fun removeShutdownHook() {
+        shutdownHook?.let { hook ->
+            // Throws if the JVM is already shutting down, which is exactly when
+            // the hook should stay installed.
+            runCatching { Runtime.getRuntime().removeShutdownHook(hook) }
+        }
+        shutdownHook = null
     }
 
     fun status(): String = JSONObject().apply {

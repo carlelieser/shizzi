@@ -16,6 +16,24 @@ plugins {
  * located explicitly and the task fails loudly when it is missing rather than
  * silently producing an APK with no datapath in it.
  */
+/**
+ * A stable fingerprint of the shell-side sources.
+ *
+ * The daemon survives APK replacement and will not reload a class it has
+ * already loaded, so the app needs a value that changes when the code does —
+ * and only then. A timestamp would change on every configuration and defeat
+ * Gradle's up-to-date checks; hashing the sources does not.
+ */
+fun sourceFingerprint(projectDir: File): Int {
+    val sources = File(projectDir, "src/main/java")
+    if (!sources.isDirectory) return 0
+
+    return sources.walkTopDown()
+        .filter { it.isFile && it.extension == "kt" }
+        .sortedBy { it.path }
+        .fold(7) { hash, file -> hash * 31 + file.readText().hashCode() }
+}
+
 val gomobileBind by tasks.registering(Exec::class) {
     val goModule = rootProject.layout.projectDirectory.dir("datapath")
     val outputAar = layout.buildDirectory.file("gomobile/datapath.aar")
@@ -60,6 +78,14 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "0.1-spike"
+
+        // Identifies the build to the shell-side daemon, which survives APK
+        // replacement and will not reload an already-loaded class. Without a
+        // per-build value a rebuilt implementation keeps running old code
+        // behind an unchanged AIDL surface, silently. Derived from the source
+        // rather than the clock so it is stable across rebuilds of unchanged
+        // code and does not defeat Gradle's up-to-date checks.
+        buildConfigField("int", "SERVICE_BUILD_ID", "${sourceFingerprint(projectDir)}")
 
         // The datapath AAR ships arm64 only. Filtering here keeps the APK from
         // claiming ABIs whose libgojni.so it does not contain, which would fail

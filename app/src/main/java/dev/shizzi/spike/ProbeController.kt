@@ -143,16 +143,49 @@ class ProbeController {
         service().stop()
     }
 
+    /**
+     * Drops a downstream left tethered by a shell process that died.
+     *
+     * The app process outlives the shell process — it survived at
+     * oom_score_adj 0 through every observed death — so it is the only place
+     * that can still act. A device test showed SIGTERM leaves the hotspot
+     * tethered and tethering falling back to cellular with clients attached,
+     * which the in-process shutdown hook cannot catch.
+     *
+     * This binds a *new* shell process purely to issue the teardown: the old
+     * one is gone along with the session object it owned, and stop() on the
+     * fresh instance still tears down the downstream that outlived it.
+     *
+     * @return null on success, else why the downstream could not be dropped.
+     */
+    suspend fun releaseOrphanedDownstream(): String? = withContext(Dispatchers.IO) {
+        runCatching { service().stop() }
+            .fold(
+                onSuccess = { null },
+                onFailure = { failure ->
+                    "could not reach Shizuku to drop the hotspot: ${failure.message}"
+                },
+            )
+    }
+
     suspend fun status(): String = withContext(Dispatchers.IO) {
         service().status
     }
 
-    /** T-5: a shell process left over from a previous APK must not be used. */
+    /**
+     * T-5: a shell process left over from a previous APK must not be used.
+     *
+     * The daemon survives APK replacement by design, and an already-loaded
+     * class is not reloaded — so a rebuilt implementation keeps running the old
+     * code behind an unchanged AIDL surface. Keying the version on the build
+     * rather than the interface makes that detectable: a debug build carries
+     * its APK timestamp, so any reinstall invalidates a running daemon.
+     */
     private fun verifyContract(bound: IProbeService) {
         val remote = bound.contractVersion
         check(remote == ProbeService.CONTRACT_VERSION) {
-            "UserService contract mismatch: app expects ${ProbeService.CONTRACT_VERSION}, " +
-                "shell process reports $remote — force-stop Shizuku and retry"
+            "UserService is stale: app is build ${ProbeService.CONTRACT_VERSION}, " +
+                "shell process reports $remote — press Stop then Start to reload it"
         }
     }
 

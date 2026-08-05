@@ -109,8 +109,15 @@ class ProbeService : IProbeService.Stub {
     }
 
     companion object {
-        /** Bumped whenever the AIDL surface changes, so a stale shell process is detected (R2.5). */
-        const val CONTRACT_VERSION = 2
+        /**
+         * Identifies the build, so a stale shell process is detected (R2.5).
+         *
+         * Derived from the sources rather than hand-bumped: the AIDL surface
+         * can stay identical while the implementation behind it changes, and
+         * the daemon survives APK replacement without reloading its classes.
+         * A hand-maintained number silently misses exactly that case.
+         */
+        val CONTRACT_VERSION = BuildConfig.SERVICE_BUILD_ID
 
         /**
          * Keeps the service and its session reachable across unbinds.

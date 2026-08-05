@@ -86,6 +86,10 @@ class DownstreamControl(private val context: Context) {
      * The wait is a fixed settle rather than a callback: stopTethering's
      * completion callback shape has changed across releases, and the spike only
      * needs the downstream to be down before restarting it.
+     *
+     * Returns whether the call was accepted, which is not the same as the
+     * hotspot being down — use [verifyDownstreamStopped] when that distinction
+     * matters, as it does on teardown.
      */
     fun stopWifiTethering(): Boolean = runCatching {
         val method = managerClass.getMethod("stopTethering", Int::class.javaPrimitiveType)
