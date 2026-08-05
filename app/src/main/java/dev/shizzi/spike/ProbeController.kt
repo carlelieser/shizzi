@@ -7,6 +7,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import org.json.JSONObject
 import rikka.shizuku.Shizuku
 
 /** The four states the status indicator shows. */
@@ -24,6 +25,46 @@ data class SpikeUiState(
 ) {
     /** Shizuku must be ready before the button can do anything. */
     val canStart: Boolean get() = shizukuState is ShizukuState.Ready && !isBusy
+}
+
+/**
+ * Folds a privileged call's result into the rendered state.
+ *
+ * A thrown exception and a status reporting ERROR are different failures — a
+ * dead binder versus the session refusing to come up — so both are surfaced
+ * rather than collapsed into one message.
+ *
+ * Lives beside the state it produces rather than in a ViewModel: the session
+ * outlives any one screen, so the service folds these results too.
+ */
+fun SpikeUiState.applyOutcome(outcome: Result<String>): SpikeUiState {
+    val failure = outcome.exceptionOrNull()
+    if (failure != null) {
+        return copy(
+            isBusy = false,
+            status = UiStatus.ERROR,
+            lastError = "${failure.javaClass.simpleName}: ${failure.message}",
+        )
+    }
+
+    val parsed = runCatching { JSONObject(outcome.getOrDefault("{}")) }.getOrNull()
+    val sessionState = parsed?.optString("state").orEmpty()
+    val sessionDetail = parsed?.optString("detail").orEmpty()
+
+    return copy(
+        isBusy = false,
+        status = statusFor(sessionState),
+        detail = sessionDetail,
+        interfaceName = parsed?.optString("interface").orEmpty().takeIf { it != "null" }.orEmpty(),
+        lastError = if (sessionState == "ERROR") sessionDetail else "",
+    )
+}
+
+private fun statusFor(sessionState: String): UiStatus = when (sessionState) {
+    "ACTIVE" -> UiStatus.CONNECTED
+    "ERROR" -> UiStatus.ERROR
+    "STARTING" -> UiStatus.LOADING
+    else -> UiStatus.READY
 }
 
 /**

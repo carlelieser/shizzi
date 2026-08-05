@@ -1,78 +1,69 @@
 package dev.shizzi.spike
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.json.JSONObject
 
 /**
- * Single source of UI truth. Operations serialize through [SpikeUiState.isBusy]
- * so the button cannot be re-entered while a privileged call is in flight (R7.6).
+ * Renders whatever the session service is doing, and asks it to start or stop.
+ *
+ * The session deliberately does not live here. An Activity's ViewModel dies
+ * when the user swipes the app away, and with it the death recipient that
+ * drops an orphaned hotspot — so the session belongs to [SessionService],
+ * which outlives the UI. This holds only what the screen needs.
  */
-class SpikeViewModel : ViewModel() {
+class SpikeViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val controller = ProbeController()
-    private val internalState = MutableStateFlow(SpikeUiState())
-    val state: StateFlow<SpikeUiState> = internalState.asStateFlow()
+    /** Owned here because diagnostics are a UI action, not part of a session. */
+    private val diagnostics = ProbeController()
+
+    private val localState = MutableStateFlow(SpikeUiState())
+    val state: StateFlow<SpikeUiState> = localState.asStateFlow()
+
+    /**
+     * The collector mirroring the service's state, if one is running.
+     *
+     * refreshShizukuState runs on every onResume, so without this a second
+     * collector would be launched each time the user returns to the screen.
+     */
+    private var sessionCollector: Job? = null
 
     init {
         refreshShizukuState()
-        controller.onSessionLost = ::reportSessionLost
+        observeSession()
     }
 
     /**
-     * Reports a session that ended without the user stopping it, and drops the
-     * hotspot it left behind.
+     * Mirrors the service's state into the screen while a session is running.
      *
-     * Arrives on a binder thread, so the state update has to be thread-safe;
-     * MutableStateFlow.update is. Showing CONNECTED after the shell process is
-     * gone is worse than showing an error: the user has no way to tell that
-     * tethered clients have silently fallen back to the phone's own upstream.
-     *
-     * The teardown matters more than the message. A device test showed the
-     * shell process dying on SIGTERM leaves the hotspot tethered and tethering
-     * reverting to cellular, with clients still attached and browsing — and
-     * the in-process shutdown hook cannot catch that, because ART does not run
-     * hooks on signal death. This process survives, so it does the cleanup.
+     * The service publishes its own StateFlow; when none is running the local
+     * state stands alone, which renders as idle. Shizuku availability is
+     * tracked here either way, since it gates the button before any session
+     * exists.
      */
-    private fun reportSessionLost() {
-        internalState.update { current ->
-            current.copy(
-                isBusy = false,
-                status = UiStatus.ERROR,
-                detail = "",
-                interfaceName = "",
-                lastError = "Session ended unexpectedly — dropping the hotspot…",
-            )
-        }
-        viewModelScope.launch { releaseOrphanedDownstream() }
-    }
+    private fun observeSession() {
+        if (sessionCollector?.isActive == true) return
 
-    /** Drops the leftover hotspot, reporting either outcome verbatim (R7.5). */
-    private suspend fun releaseOrphanedDownstream() {
-        val problem = runCatching { controller.releaseOrphanedDownstream() }
-            .getOrElse { failure -> "teardown failed: ${failure.message}" }
-
-        internalState.update { current ->
-            current.copy(
-                status = UiStatus.ERROR,
-                lastError = when (problem) {
-                    null -> "Session ended: the Shizuku service stopped. " +
-                        "The hotspot was turned off. Press Start to reconnect."
-
-                    else -> "Session ended and the hotspot may still be on: " +
-                        "$problem — turn it off in Settings."
-                },
-            )
+        sessionCollector = viewModelScope.launch {
+            SessionService.liveState.collect { session ->
+                localState.update { local ->
+                    session.copy(
+                        shizukuState = local.shizukuState,
+                        isDebugLogging = local.isDebugLogging,
+                    )
+                }
+            }
         }
     }
 
     fun refreshShizukuState() {
-        internalState.update { it.copy(shizukuState = ShizukuGate.currentState()) }
+        localState.update { it.copy(shizukuState = ShizukuGate.currentState()) }
     }
 
     fun requestPermission() {
@@ -80,79 +71,40 @@ class SpikeViewModel : ViewModel() {
     }
 
     fun setDebugLogging(enabled: Boolean) {
-        internalState.update { it.copy(isDebugLogging = enabled) }
+        localState.update { it.copy(isDebugLogging = enabled) }
     }
 
     /** One button: starts when idle, stops when connected. */
     fun toggle() {
-        when (internalState.value.status) {
-            UiStatus.CONNECTED -> execute { controller.stop() }
-            else -> execute { controller.start(internalState.value.isDebugLogging) }
-        }
-    }
+        val context = getApplication<Application>()
 
-    fun runProbes() {
-        execute { controller.runProbes(true) }
+        when (localState.value.status) {
+            UiStatus.CONNECTED -> SessionService.stop(context)
+            else -> SessionService.start(context)
+        }
     }
 
     /**
-     * Runs one privileged operation, rejecting re-entry while busy.
+     * Runs the probe sequence directly rather than through the service.
      *
-     * Failures land in [SpikeUiState.lastError] verbatim (R7.5) rather than
-     * being reduced to a generic message.
+     * Diagnostics tear down everything they create and hold no session, so
+     * there is nothing for the service to outlive.
      */
-    private fun execute(operation: suspend () -> String) {
-        if (internalState.value.isBusy) return
-        internalState.update {
-            it.copy(isBusy = true, status = UiStatus.LOADING, lastError = "")
-        }
+    fun runProbes() {
+        if (localState.value.isBusy) return
+        localState.update { it.copy(isBusy = true, status = UiStatus.LOADING, lastError = "") }
 
         viewModelScope.launch {
-            val outcome = runCatching { operation() }
-            internalState.update { current -> current.applyOutcome(outcome) }
+            val outcome = runCatching { diagnostics.runProbes(true) }
+            localState.update { current -> current.applyOutcome(outcome) }
             refreshShizukuState()
         }
     }
 
-    /**
-     * Folds a privileged call's result into the rendered state.
-     *
-     * A thrown exception and a status reporting ERROR are different failures —
-     * a dead binder versus the session refusing to come up — so both are
-     * surfaced rather than collapsed into one message.
-     */
-    private fun SpikeUiState.applyOutcome(outcome: Result<String>): SpikeUiState {
-        val failure = outcome.exceptionOrNull()
-        if (failure != null) {
-            return copy(
-                isBusy = false,
-                status = UiStatus.ERROR,
-                lastError = "${failure.javaClass.simpleName}: ${failure.message}",
-            )
-        }
-
-        val parsed = runCatching { JSONObject(outcome.getOrDefault("{}")) }.getOrNull()
-        val sessionState = parsed?.optString("state").orEmpty()
-        val sessionDetail = parsed?.optString("detail").orEmpty()
-
-        return copy(
-            isBusy = false,
-            status = statusFor(sessionState),
-            detail = sessionDetail,
-            interfaceName = parsed?.optString("interface").orEmpty().takeIf { it != "null" }.orEmpty(),
-            lastError = if (sessionState == "ERROR") sessionDetail else "",
-        )
-    }
-
-    private fun statusFor(sessionState: String): UiStatus = when (sessionState) {
-        "ACTIVE" -> UiStatus.CONNECTED
-        "ERROR" -> UiStatus.ERROR
-        "STARTING" -> UiStatus.LOADING
-        else -> UiStatus.READY
-    }
-
     override fun onCleared() {
-        controller.unbind()
+        // Only the diagnostics binding: unbinding the session's would drop the
+        // death recipient that the service exists to keep registered.
+        diagnostics.unbind()
         super.onCleared()
     }
 }
