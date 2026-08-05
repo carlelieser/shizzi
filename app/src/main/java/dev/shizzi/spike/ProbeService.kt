@@ -14,6 +14,10 @@ import android.util.Log
 class ProbeService : IProbeService.Stub {
 
     private val runner: ProbeRunner
+    private val session: TetherSession
+
+    /** When false, nothing is written outside the log (settings: debug logging). */
+    private var isDebugLogging = false
 
     @Suppress("unused")
     constructor() : this(acquireSystemContext())
@@ -24,26 +28,58 @@ class ProbeService : IProbeService.Stub {
      * in the no-arg path leaves the real code path unfixed.
      */
     constructor(context: Context) {
-        runner = ProbeRunner(asShellContext(context))
+        val shellContext = asShellContext(context)
+        runner = ProbeRunner(shellContext)
+        session = TetherSession(shellContext)
+        liveInstance = this
     }
 
     override fun getContractVersion(): Int = CONTRACT_VERSION
+
+    override fun start(debugLogging: Boolean): String {
+        isDebugLogging = debugLogging
+        return publish(
+            runCatching { session.start() }
+                .getOrElse { failure -> errorReport("start", failure) },
+        )
+    }
+
+    /**
+     * Stops the session, and also releases anything a diagnostic run left
+     * behind: the two paths hold separate resources, and stopping only one
+     * would leave the other's test network alive.
+     */
+    override fun stop(): String {
+        runCatching { runner.teardown() }
+            .onFailure { failure -> Log.w(TAG, "stop: probe teardown ${failure.message}") }
+
+        return publish(
+            runCatching { session.stop() }
+                .getOrElse { failure -> errorReport("stop", failure) },
+        )
+    }
+
+    /** Not published: the UI polls this, and writing the file each time is noise. */
+    override fun getStatus(): String =
+        runCatching { session.status() }
+            .getOrElse { failure -> errorReport("getStatus", failure) }
 
     /**
      * Never throws across the binder: a RemoteException in the app process loses
      * the diagnostic detail, which is the entire product of this spike (R7.5).
      */
-    override fun runProbes(attemptTethering: Boolean, availabilityTimeoutMs: Int): String =
-        publish(
+    /**
+     * Always publishes: the probe report exists to be read off-device, and a
+     * diagnostic that cannot be retrieved is not a diagnostic.
+     */
+    override fun runProbes(attemptTethering: Boolean, availabilityTimeoutMs: Int): String {
+        isDebugLogging = true
+        return publish(
             runCatching { runner.run(attemptTethering, availabilityTimeoutMs) }
                 .getOrElse { failure -> errorReport("runProbes", failure) },
         )
+    }
 
-    override fun teardown(): String =
-        publish(
-            runCatching { runner.teardown() }
-                .getOrElse { failure -> errorReport("teardown", failure) },
-        )
 
     /**
      * Writes [report] where it can be read off-device, and returns it unchanged.
@@ -54,8 +90,10 @@ class ProbeService : IProbeService.Stub {
      * app-private storage, so the file is readable without run-as.
      */
     private fun publish(report: String): String {
-        runCatching { java.io.File(REPORT_PATH).writeText(report) }
-            .onFailure { failure -> Log.w(TAG, "publish: ${failure.message}") }
+        if (isDebugLogging) {
+            runCatching { java.io.File(REPORT_PATH).writeText(report) }
+                .onFailure { failure -> Log.w(TAG, "publish: ${failure.message}") }
+        }
         Log.i(TAG, "report: $report")
         return report
     }
@@ -72,7 +110,19 @@ class ProbeService : IProbeService.Stub {
 
     companion object {
         /** Bumped whenever the AIDL surface changes, so a stale shell process is detected (R2.5). */
-        const val CONTRACT_VERSION = 1
+        const val CONTRACT_VERSION = 2
+
+        /**
+         * Keeps the service and its session reachable across unbinds.
+         *
+         * The stub is strongly held by Shizuku only while a client is bound.
+         * The session it owns has to outlive that — the user opens the app,
+         * starts tethering, and leaves — so a static reference holds it for
+         * the life of the shell process.
+         */
+        @Suppress("unused")
+        @JvmStatic
+        private var liveInstance: ProbeService? = null
 
         private const val TAG = "ProbeService"
         private const val STACK_TRACE_CHARS = 4000

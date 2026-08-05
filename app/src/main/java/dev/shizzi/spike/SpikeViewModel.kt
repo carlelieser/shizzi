@@ -7,10 +7,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 
 /**
- * Single source of UI truth. Operations serialize through [isBusy] so the
- * controls cannot be re-entered while a privileged call is in flight (R7.6).
+ * Single source of UI truth. Operations serialize through [SpikeUiState.isBusy]
+ * so the button cannot be re-entered while a privileged call is in flight (R7.6).
  */
 class SpikeViewModel : ViewModel() {
 
@@ -20,6 +21,28 @@ class SpikeViewModel : ViewModel() {
 
     init {
         refreshShizukuState()
+        controller.onSessionLost = ::reportSessionLost
+    }
+
+    /**
+     * Reports a session that ended without the user stopping it.
+     *
+     * Arrives on a binder thread, so the state update has to be thread-safe;
+     * MutableStateFlow.update is. Showing CONNECTED after the shell process is
+     * gone is worse than showing an error: the user has no way to tell that
+     * tethered clients have silently fallen back to the phone's own upstream.
+     */
+    private fun reportSessionLost() {
+        internalState.update { current ->
+            current.copy(
+                isBusy = false,
+                status = UiStatus.ERROR,
+                detail = "",
+                interfaceName = "",
+                lastError = "Session ended: the Shizuku service stopped. " +
+                    "Check Shizuku is running, then press Start.",
+            )
+        }
     }
 
     fun refreshShizukuState() {
@@ -30,12 +53,20 @@ class SpikeViewModel : ViewModel() {
         ShizukuGate.requestPermission()
     }
 
-    fun runProbes(attemptTethering: Boolean) {
-        execute { controller.runProbes(attemptTethering) }
+    fun setDebugLogging(enabled: Boolean) {
+        internalState.update { it.copy(isDebugLogging = enabled) }
     }
 
-    fun teardown() {
-        execute { controller.teardown() }
+    /** One button: starts when idle, stops when connected. */
+    fun toggle() {
+        when (internalState.value.status) {
+            UiStatus.CONNECTED -> execute { controller.stop() }
+            else -> execute { controller.start(internalState.value.isDebugLogging) }
+        }
+    }
+
+    fun runProbes() {
+        execute { controller.runProbes(true) }
     }
 
     /**
@@ -46,19 +77,52 @@ class SpikeViewModel : ViewModel() {
      */
     private fun execute(operation: suspend () -> String) {
         if (internalState.value.isBusy) return
-        internalState.update { it.copy(isBusy = true, lastError = "") }
+        internalState.update {
+            it.copy(isBusy = true, status = UiStatus.LOADING, lastError = "")
+        }
 
         viewModelScope.launch {
             val outcome = runCatching { operation() }
-            internalState.update { current ->
-                current.copy(
-                    isBusy = false,
-                    report = outcome.getOrDefault(current.report),
-                    lastError = outcome.exceptionOrNull()?.let { "${it.javaClass.simpleName}: ${it.message}" }.orEmpty(),
-                )
-            }
+            internalState.update { current -> current.applyOutcome(outcome) }
             refreshShizukuState()
         }
+    }
+
+    /**
+     * Folds a privileged call's result into the rendered state.
+     *
+     * A thrown exception and a status reporting ERROR are different failures —
+     * a dead binder versus the session refusing to come up — so both are
+     * surfaced rather than collapsed into one message.
+     */
+    private fun SpikeUiState.applyOutcome(outcome: Result<String>): SpikeUiState {
+        val failure = outcome.exceptionOrNull()
+        if (failure != null) {
+            return copy(
+                isBusy = false,
+                status = UiStatus.ERROR,
+                lastError = "${failure.javaClass.simpleName}: ${failure.message}",
+            )
+        }
+
+        val parsed = runCatching { JSONObject(outcome.getOrDefault("{}")) }.getOrNull()
+        val sessionState = parsed?.optString("state").orEmpty()
+        val sessionDetail = parsed?.optString("detail").orEmpty()
+
+        return copy(
+            isBusy = false,
+            status = statusFor(sessionState),
+            detail = sessionDetail,
+            interfaceName = parsed?.optString("interface").orEmpty().takeIf { it != "null" }.orEmpty(),
+            lastError = if (sessionState == "ERROR") sessionDetail else "",
+        )
+    }
+
+    private fun statusFor(sessionState: String): UiStatus = when (sessionState) {
+        "ACTIVE" -> UiStatus.CONNECTED
+        "ERROR" -> UiStatus.ERROR
+        "STARTING" -> UiStatus.LOADING
+        else -> UiStatus.READY
     }
 
     override fun onCleared() {

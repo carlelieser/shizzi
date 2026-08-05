@@ -9,13 +9,22 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import rikka.shizuku.Shizuku
 
+/** The four states the status indicator shows. */
+enum class UiStatus { READY, LOADING, CONNECTED, ERROR }
+
 /** What the single screen renders. */
 data class SpikeUiState(
     val shizukuState: ShizukuState = ShizukuState.NotRunning,
+    val status: UiStatus = UiStatus.READY,
     val isBusy: Boolean = false,
-    val report: String = "",
+    val detail: String = "",
+    val interfaceName: String = "",
     val lastError: String = "",
-)
+    val isDebugLogging: Boolean = false,
+) {
+    /** Shizuku must be ready before the button can do anything. */
+    val canStart: Boolean get() = shizukuState is ShizukuState.Ready && !isBusy
+}
 
 /**
  * Drives the privileged service from the app process.
@@ -28,10 +37,26 @@ class ProbeController {
     private var boundService: IProbeService? = null
     private var pendingBind: CompletableDeferred<IProbeService>? = null
 
+    /**
+     * Notified when the shell process dies while a session is running.
+     *
+     * The app process outlives the shell process — it stayed alive at
+     * oom_score_adj 0 through every observed death — so without this the UI
+     * keeps showing CONNECTED for a session that no longer exists.
+     */
+    var onSessionLost: (() -> Unit)? = null
+
+    private var deathRecipient: IBinder.DeathRecipient? = null
+
     private val userServiceArgs = Shizuku.UserServiceArgs(
         ComponentName(BuildConfig.APPLICATION_ID, ProbeService::class.java.name),
     )
-        .daemon(false)
+        // The session outlives the binder call that starts it: the test network
+        // is tied to a Binder token held in this process, and a non-daemon
+        // service is reaped once the call returns, taking the network with it.
+        // That showed up as "TestNetworkAgent: NetworkAgent channel lost" about
+        // four seconds after start() returned, with the upstream reverting.
+        .daemon(true)
         .processNameSuffix("probe")
         .debuggable(true)
         .version(ProbeService.CONTRACT_VERSION)
@@ -72,7 +97,34 @@ class ProbeController {
         pendingBind = deferred
         Shizuku.bindUserService(userServiceArgs, connection)
 
-        return withTimeout(BIND_TIMEOUT_MS) { deferred.await() }
+        val bound = withTimeout(BIND_TIMEOUT_MS) { deferred.await() }
+        observeDeath(bound)
+        return bound
+    }
+
+    /**
+     * Reports the session as lost when the shell process dies.
+     *
+     * onServiceDisconnected does not cover this: the shell process is a child
+     * of the Shizuku server, and when that server dies the child exits without
+     * the binding being torn down through the normal path. Linking to the
+     * binder itself catches both.
+     */
+    private fun observeDeath(bound: IProbeService) {
+        deathRecipient = null
+
+        val binder = bound.asBinder()
+        val recipient = IBinder.DeathRecipient {
+            boundService = null
+            onSessionLost?.invoke()
+        }
+
+        runCatching { binder.linkToDeath(recipient, 0) }
+            .onSuccess { deathRecipient = recipient }
+            .onFailure {
+                // Already dead: the caller's next call fails and surfaces it.
+                boundService = null
+            }
     }
 
     suspend fun runProbes(attemptTethering: Boolean): String = withContext(Dispatchers.IO) {
@@ -81,9 +133,18 @@ class ProbeController {
         bound.runProbes(attemptTethering, AVAILABILITY_TIMEOUT_MS)
     }
 
-    suspend fun teardown(): String = withContext(Dispatchers.IO) {
+    suspend fun start(debugLogging: Boolean): String = withContext(Dispatchers.IO) {
         val bound = service()
-        bound.teardown()
+        verifyContract(bound)
+        bound.start(debugLogging)
+    }
+
+    suspend fun stop(): String = withContext(Dispatchers.IO) {
+        service().stop()
+    }
+
+    suspend fun status(): String = withContext(Dispatchers.IO) {
+        service().status
     }
 
     /** T-5: a shell process left over from a previous APK must not be used. */
@@ -95,8 +156,20 @@ class ProbeController {
         }
     }
 
+    /**
+     * Drops the binding without destroying the shell process.
+     *
+     * Passing remove=true would tear down the daemon, and with it the test
+     * network the session depends on. Leaving the UI must not drop tethered
+     * clients; only an explicit stop() ends the session.
+     */
     fun unbind() {
-        runCatching { Shizuku.unbindUserService(userServiceArgs, connection, true) }
+        deathRecipient?.let { recipient ->
+            runCatching { boundService?.asBinder()?.unlinkToDeath(recipient, 0) }
+        }
+        deathRecipient = null
+
+        runCatching { Shizuku.unbindUserService(userServiceArgs, connection, false) }
         boundService = null
     }
 

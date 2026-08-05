@@ -4,10 +4,15 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.core.view.WindowCompat
 import rikka.shizuku.Shizuku
 
 class MainActivity : ComponentActivity() {
@@ -29,14 +34,27 @@ class MainActivity : ComponentActivity() {
         registerShizukuListeners()
 
         setContent {
-            MaterialTheme {
+            val isDark = isSystemInDarkTheme()
+
+            // The activity draws edge-to-edge, so the system bar icons are the
+            // app's responsibility: without this they stay light-on-light in
+            // the light theme and are invisible.
+            SideEffect {
+                WindowCompat.getInsetsController(window, window.decorView)
+                    .isAppearanceLightStatusBars = !isDark
+            }
+
+            MaterialTheme(
+                colorScheme = if (isDark) darkColorScheme() else lightColorScheme(),
+            ) {
                 Surface {
                     val state by viewModel.state.collectAsState()
                     SpikeScreen(
                         state = state,
+                        onToggle = viewModel::toggle,
                         onRequestPermission = viewModel::requestPermission,
+                        onSetDebugLogging = viewModel::setDebugLogging,
                         onRunProbes = viewModel::runProbes,
-                        onTeardown = viewModel::teardown,
                     )
                 }
             }
