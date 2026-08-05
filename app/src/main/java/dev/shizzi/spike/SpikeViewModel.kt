@@ -21,6 +21,28 @@ class SpikeViewModel : ViewModel() {
 
     init {
         refreshShizukuState()
+        controller.onSessionLost = ::reportSessionLost
+    }
+
+    /**
+     * Reports a session that ended without the user stopping it.
+     *
+     * Arrives on a binder thread, so the state update has to be thread-safe;
+     * MutableStateFlow.update is. Showing CONNECTED after the shell process is
+     * gone is worse than showing an error: the user has no way to tell that
+     * tethered clients have silently fallen back to the phone's own upstream.
+     */
+    private fun reportSessionLost() {
+        internalState.update { current ->
+            current.copy(
+                isBusy = false,
+                status = UiStatus.ERROR,
+                detail = "",
+                interfaceName = "",
+                lastError = "Session ended: the Shizuku service stopped. " +
+                    "Check Shizuku is running, then press Start.",
+            )
+        }
     }
 
     fun refreshShizukuState() {

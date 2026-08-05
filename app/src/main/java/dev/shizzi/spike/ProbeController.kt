@@ -37,6 +37,17 @@ class ProbeController {
     private var boundService: IProbeService? = null
     private var pendingBind: CompletableDeferred<IProbeService>? = null
 
+    /**
+     * Notified when the shell process dies while a session is running.
+     *
+     * The app process outlives the shell process — it stayed alive at
+     * oom_score_adj 0 through every observed death — so without this the UI
+     * keeps showing CONNECTED for a session that no longer exists.
+     */
+    var onSessionLost: (() -> Unit)? = null
+
+    private var deathRecipient: IBinder.DeathRecipient? = null
+
     private val userServiceArgs = Shizuku.UserServiceArgs(
         ComponentName(BuildConfig.APPLICATION_ID, ProbeService::class.java.name),
     )
@@ -86,7 +97,34 @@ class ProbeController {
         pendingBind = deferred
         Shizuku.bindUserService(userServiceArgs, connection)
 
-        return withTimeout(BIND_TIMEOUT_MS) { deferred.await() }
+        val bound = withTimeout(BIND_TIMEOUT_MS) { deferred.await() }
+        observeDeath(bound)
+        return bound
+    }
+
+    /**
+     * Reports the session as lost when the shell process dies.
+     *
+     * onServiceDisconnected does not cover this: the shell process is a child
+     * of the Shizuku server, and when that server dies the child exits without
+     * the binding being torn down through the normal path. Linking to the
+     * binder itself catches both.
+     */
+    private fun observeDeath(bound: IProbeService) {
+        deathRecipient = null
+
+        val binder = bound.asBinder()
+        val recipient = IBinder.DeathRecipient {
+            boundService = null
+            onSessionLost?.invoke()
+        }
+
+        runCatching { binder.linkToDeath(recipient, 0) }
+            .onSuccess { deathRecipient = recipient }
+            .onFailure {
+                // Already dead: the caller's next call fails and surfaces it.
+                boundService = null
+            }
     }
 
     suspend fun runProbes(attemptTethering: Boolean): String = withContext(Dispatchers.IO) {
@@ -126,6 +164,11 @@ class ProbeController {
      * clients; only an explicit stop() ends the session.
      */
     fun unbind() {
+        deathRecipient?.let { recipient ->
+            runCatching { boundService?.asBinder()?.unlinkToDeath(recipient, 0) }
+        }
+        deathRecipient = null
+
         runCatching { Shizuku.unbindUserService(userServiceArgs, connection, false) }
         boundService = null
     }
