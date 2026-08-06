@@ -23,35 +23,40 @@ private val ButtonHeight = 56.dp
 private val SpinnerSize = 24.dp
 
 /**
- * The one primary action, in the one primary colour.
+ * The session control: turquoise to start, neutral to stop.
  *
- * Turquoise whether it starts or stops: colour here would be decoration, since
- * the label already says which it does, and a red stop button would imply the
- * destructive-action treatment that tearing down your own tunnel does not
- * warrant. Only the label and the enabled state change.
+ * Only starting is the primary action. Once a session is up the screen's job is
+ * to say so, and a filled button competing with the connected status glyph
+ * gives the eye two things claiming to be the most important. Stop stays
+ * available and legible without asking to be pressed — and it is not red
+ * either, since ending your own session is not destructive.
  *
  * While a session is coming up the button holds a progress indicator and goes
  * neutral — the action is unavailable until the attempt resolves, and a
  * turquoise button that ignores taps invites them. Cancel is the live control
- * during that window. The footprint is unchanged either way, so nothing
+ * during that window. The footprint is unchanged throughout, so nothing
  * reflows.
  */
 @Composable
 fun ConnectButton(
     label: String,
-    isEnabled: Boolean,
-    isLoading: Boolean,
+    state: ConnectButtonState,
     onClick: () -> Unit,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val colors = ShizziTheme.colors
+    val isEnabled = state != ConnectButtonState.DISABLED &&
+        state != ConnectButtonState.LOADING
 
     Box(
         modifier = Modifier
             .width(ButtonWidth)
             .height(ButtonHeight)
             .brutalSurface(
-                fill = if (isEnabled) colors.primary else colors.surface,
+                fill = when (state) {
+                    ConnectButtonState.START -> colors.primary
+                    else -> colors.surface
+                },
                 isPressed = interaction.isPressed(),
             )
             .clickable(
@@ -62,8 +67,8 @@ fun ConnectButton(
             ),
         contentAlignment = Alignment.Center,
     ) {
-        when {
-            isLoading -> CircularProgressIndicator(
+        when (state) {
+            ConnectButtonState.LOADING -> CircularProgressIndicator(
                 color = colors.onSurfaceMuted,
                 strokeWidth = 2.dp,
                 modifier = Modifier.size(SpinnerSize),
@@ -72,11 +77,20 @@ fun ConnectButton(
             else -> Text(
                 text = label.uppercase(),
                 style = ShizziTheme.typography.title,
-                color = if (isEnabled) colors.onPrimary else colors.onSurfaceMuted,
+                // onPrimary only on the filled button; the neutral fill needs a
+                // colour that reads against the surface instead.
+                color = when (state) {
+                    ConnectButtonState.START -> colors.onPrimary
+                    ConnectButtonState.STOP -> colors.onSurface
+                    else -> colors.onSurfaceMuted
+                },
             )
         }
     }
 }
+
+/** What the button is currently offering, which decides its fill and label colour. */
+enum class ConnectButtonState { START, STOP, LOADING, DISABLED }
 
 /**
  * The way out of a start that is taking too long.

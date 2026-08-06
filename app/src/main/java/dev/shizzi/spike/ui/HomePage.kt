@@ -24,9 +24,22 @@ import dev.shizzi.spike.ui.theme.HeaderHeight
 import dev.shizzi.spike.ui.theme.ScreenPadding
 import dev.shizzi.spike.ui.theme.ShizziTheme
 
-/** What the primary button does, given what the session is doing. */
+/** What the button does, given what the session is doing. */
 private fun buttonLabel(status: UiStatus): String =
     if (status == UiStatus.CONNECTED) "Stop" else "Start"
+
+/**
+ * How the button presents itself.
+ *
+ * Derived here rather than inside the button so the rule lives next to the
+ * state it reads: only an available start is the primary action.
+ */
+private fun buttonState(state: SpikeUiState): ConnectButtonState = when {
+    state.status == UiStatus.LOADING -> ConnectButtonState.LOADING
+    state.status == UiStatus.CONNECTED -> ConnectButtonState.STOP
+    state.canStart -> ConnectButtonState.START
+    else -> ConnectButtonState.DISABLED
+}
 
 /**
  * The screen the app opens on.
@@ -127,11 +140,7 @@ private fun HomeBody(state: SpikeUiState, onToggle: () -> Unit, onCancel: () -> 
 
         ConnectButton(
             label = buttonLabel(state.status),
-            // Never during a start: canStart already excludes it, stated here
-            // so the button's disabled loading state does not depend on
-            // reading that.
-            isEnabled = !isStarting && (state.canStart || state.status == UiStatus.CONNECTED),
-            isLoading = isStarting,
+            state = buttonState(state),
             onClick = onToggle,
         )
 

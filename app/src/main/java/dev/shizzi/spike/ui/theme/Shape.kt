@@ -20,7 +20,7 @@ val CornerRadius = 0.dp
 val BorderWidth = 2.dp
 
 /** Shadow displacement, down and to the right. Zero blur. */
-val ShadowOffset = 4.dp
+val ShadowOffset = 6.dp
 
 /**
  * Draws the app's one surface treatment: a hard offset shadow, a thick border,
