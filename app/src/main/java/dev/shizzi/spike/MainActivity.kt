@@ -73,6 +73,7 @@ class MainActivity : ComponentActivity() {
                             onToggle = viewModel::toggle,
                             onCancel = viewModel::cancel,
                             onRequestPermission = viewModel::requestPermission,
+                            onSetTheme = viewModel::setTheme,
                             onSetDebugLogging = viewModel::setDebugLogging,
                             onRunProbes = viewModel::runProbes,
                         ),

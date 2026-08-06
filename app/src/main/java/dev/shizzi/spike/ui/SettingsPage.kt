@@ -1,102 +1,127 @@
 package dev.shizzi.spike.ui
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import dev.shizzi.spike.ShizukuState
 import dev.shizzi.spike.ui.theme.ScreenPadding
 import dev.shizzi.spike.ui.theme.ShizziTheme
+import dev.shizzi.spike.ui.theme.ThemeChoice
+
+private const val SOURCE_URL = "https://github.com/carlelieser/shizzi"
+private const val ISSUE_URL = "https://github.com/carlelieser/shizzi/issues/new"
+private const val AUTHOR_URL = "https://carlelieser.dev"
+
+/** What the settings screen renders, so the page takes state rather than four values. */
+data class SettingsState(
+    val shizuku: ShizukuState,
+    val theme: ThemeChoice,
+    val isDebugLogging: Boolean,
+)
 
 /**
- * The settings screen, still carrying the spike's two rows.
+ * The callbacks the settings screen needs, grouped so it stays within the
+ * parameter limit alongside the state it renders.
+ */
+data class SettingsActions(
+    val onSetTheme: (ThemeChoice) -> Unit,
+    val onSetDebugLogging: (Boolean) -> Unit,
+    val onRunProbes: () -> Unit,
+    val onRequestPermission: () -> Unit,
+)
+
+/**
+ * Everything configurable, plus the Shizuku detail the home badge cannot hold.
  *
- * Rebuilt against the design tokens in a later commit; moved here now so it
- * stops growing the home screen's file.
+ * Scrolls: four sections already exceed a short screen, and a list that
+ * clipped its last row would hide the links entirely.
  */
 @Composable
 fun SettingsPage(
-    isDebugLogging: Boolean,
-    onSetDebugLogging: (Boolean) -> Unit,
-    onRunProbes: () -> Unit,
+    state: SettingsState,
+    actions: SettingsActions,
     onBack: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
         ScreenHeader(title = "Settings", onBack = onBack)
 
-        Column(modifier = Modifier.padding(horizontal = ScreenPadding)) {
-            Spacer(Modifier.height(ShizziTheme.spacing.lg))
+        Column(
+            modifier = Modifier
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = ScreenPadding),
+        ) {
+            SectionLabel("Shizuku")
+            ShizukuCard(state = state.shizuku, onGrant = actions.onRequestPermission)
 
-            SettingsToggle(
-                title = "Debug logging",
-                subtitle = "Records extra detail while a session runs",
-                isChecked = isDebugLogging,
-                onCheckedChange = onSetDebugLogging,
-            )
+            SectionLabel("Appearance")
+            ThemePicker(selected = state.theme, onSelect = actions.onSetTheme)
 
-            SettingsAction(
-                title = "Run diagnostics",
-                subtitle = "Runs the full probe sequence and writes a report",
-                onClick = onRunProbes,
-            )
+            SectionLabel("Diagnostics")
+            DiagnosticsSection(isDebugLogging = state.isDebugLogging, actions = actions)
+
+            SectionLabel("About")
+            AboutSection()
+
+            // The last row would otherwise sit against the navigation bar.
+            Spacer(Modifier.height(ShizziTheme.spacing.xxl))
         }
     }
 }
 
 @Composable
-private fun SettingsToggle(
-    title: String,
-    subtitle: String,
-    isChecked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = ShizziTheme.spacing.md),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        SettingsLabel(title = title, subtitle = subtitle, modifier = Modifier.weight(1f))
-        Switch(checked = isChecked, onCheckedChange = onCheckedChange)
-    }
-}
+private fun DiagnosticsSection(isDebugLogging: Boolean, actions: SettingsActions) {
+    SettingsToggle(
+        label = SettingsText(
+            title = "Debug logging",
+            subtitle = "Records extra detail while a session runs",
+        ),
+        isChecked = isDebugLogging,
+        onCheckedChange = actions.onSetDebugLogging,
+    )
 
-@Composable
-private fun SettingsAction(title: String, subtitle: String, onClick: () -> Unit) {
-    SettingsLabel(
-        title = title,
-        subtitle = subtitle,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = ShizziTheme.spacing.md),
+    SettingsAction(
+        label = SettingsText(
+            title = "Run diagnostics",
+            subtitle = "Runs the full probe sequence and writes a report",
+        ),
+        onClick = actions.onRunProbes,
     )
 }
 
-/** The label pair every settings row carries: name, then what it does. */
+/**
+ * The three outbound links.
+ *
+ * Opened from the context rather than through a callback threaded from the
+ * ViewModel: there is no state to change and nothing to decide, so routing it
+ * upward would add a hop that only forwards an intent.
+ */
 @Composable
-private fun SettingsLabel(title: String, subtitle: String, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(ShizziTheme.spacing.xs),
-    ) {
-        Text(
-            text = title,
-            style = ShizziTheme.typography.subheading,
-            color = ShizziTheme.colors.onSurface,
-        )
-        Text(
-            text = subtitle,
-            style = ShizziTheme.typography.body,
-            color = ShizziTheme.colors.onSurfaceMuted,
-        )
-    }
+private fun AboutSection() {
+    val context = LocalContext.current
+
+    SettingsAction(
+        label = SettingsText(title = "Source", subtitle = "View the code on GitHub"),
+        isExternal = true,
+        onClick = { context.openUrl(SOURCE_URL) },
+    )
+
+    SettingsAction(
+        label = SettingsText(title = "Report a bug", subtitle = "Open an issue"),
+        isExternal = true,
+        onClick = { context.openUrl(ISSUE_URL) },
+    )
+
+    SettingsAction(
+        label = SettingsText(title = "Author", subtitle = "carlelieser.dev"),
+        isExternal = true,
+        onClick = { context.openUrl(AUTHOR_URL) },
+    )
 }

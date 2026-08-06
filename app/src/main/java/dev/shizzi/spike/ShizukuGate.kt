@@ -83,6 +83,39 @@ object ShizukuGate {
         else -> "unexpected uid $uid"
     }
 
+    /**
+     * The same identity, without the spike's annotations.
+     *
+     * [describeUid] explains a uid to someone reading a diagnostic report;
+     * this names it for someone reading a settings row, where "the path under
+     * test" would be commentary on the app rather than information.
+     */
+    fun shortUid(uid: Int): String = when (uid) {
+        SHELL_UID -> "2000 (shell)"
+        ROOT_UID -> "0 (root)"
+        else -> "$uid"
+    }
+
+    /**
+     * The installed Shizuku's version name, or null when it is absent.
+     *
+     * Read from the package manager rather than from Shizuku.getVersion(),
+     * which returns the API level (13) rather than the release (13.6.0). The
+     * release is what matters here: 13.5.4 on Android 16 crashes within
+     * minutes, and this is the surface where that is visible.
+     *
+     * Available whether or not the service is running, since it does not go
+     * through the binder.
+     */
+    fun installedVersion(): String? {
+        val packageManager = SpikeApplication.instance.packageManager
+        return SHIZUKU_PACKAGES.firstNotNullOfOrNull { candidate ->
+            runCatching {
+                packageManager.getPackageInfo(candidate, 0).versionName
+            }.getOrNull()
+        }
+    }
+
     /** Shizuku proper, and Sui's package for root-backed installs. */
     private val SHIZUKU_PACKAGES = listOf("moe.shizuku.privileged.api", "moe.shizuku.redirect")
 }

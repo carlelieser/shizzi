@@ -12,11 +12,14 @@ import dev.shizzi.spike.ui.HomePage
 import dev.shizzi.spike.ui.LogPage
 import dev.shizzi.spike.ui.Screen
 import dev.shizzi.spike.ui.SessionToasts
+import dev.shizzi.spike.ui.SettingsActions
 import dev.shizzi.spike.ui.SettingsPage
+import dev.shizzi.spike.ui.SettingsState
 import dev.shizzi.spike.ui.ToastHost
 import dev.shizzi.spike.ui.rememberLogEntries
 import dev.shizzi.spike.ui.rememberNavigator
 import dev.shizzi.spike.ui.rememberToastState
+import dev.shizzi.spike.ui.theme.ThemeChoice
 
 /**
  * Everything the screens need from the ViewModel, grouped so routing does not
@@ -26,6 +29,7 @@ data class AppActions(
     val onToggle: () -> Unit,
     val onCancel: () -> Unit,
     val onRequestPermission: () -> Unit,
+    val onSetTheme: (ThemeChoice) -> Unit,
     val onSetDebugLogging: (Boolean) -> Unit,
     val onRunProbes: () -> Unit,
 )
@@ -56,9 +60,17 @@ fun SpikeScreen(
     Box(modifier = Modifier.fillMaxSize()) {
         when (current.value) {
             Screen.SETTINGS -> SettingsPage(
-                isDebugLogging = settings.isDebugLogging,
-                onSetDebugLogging = actions.onSetDebugLogging,
-                onRunProbes = actions.onRunProbes,
+                state = SettingsState(
+                    shizuku = state.shizukuState,
+                    theme = settings.theme,
+                    isDebugLogging = settings.isDebugLogging,
+                ),
+                actions = SettingsActions(
+                    onSetTheme = actions.onSetTheme,
+                    onSetDebugLogging = actions.onSetDebugLogging,
+                    onRunProbes = actions.onRunProbes,
+                    onRequestPermission = actions.onRequestPermission,
+                ),
                 onBack = goHome,
             )
 
