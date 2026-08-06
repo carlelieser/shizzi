@@ -1,16 +1,14 @@
 package dev.shizzi
 
 import android.content.pm.PackageManager
-import android.os.Build
 import rikka.shizuku.Shizuku
 
-/** The four states R1.2 requires the UI to distinguish, plus the API floor. */
+/** The four states R1.2 requires the UI to distinguish. */
 sealed interface ShizukuState {
     data object NotInstalled : ShizukuState
     data object NotRunning : ShizukuState
     data object PermissionRequired : ShizukuState
     data class Ready(val uid: Int, val isRoot: Boolean) : ShizukuState
-    data class UnsupportedPlatform(val sdkInt: Int) : ShizukuState
 }
 
 /**
@@ -21,16 +19,12 @@ sealed interface ShizukuState {
  */
 object ShizukuGate {
 
-    const val FEATURE_MIN_API = 33
     const val PERMISSION_REQUEST_CODE = 4001
 
     private const val SHELL_UID = 2000
     private const val ROOT_UID = 0
 
     fun currentState(): ShizukuState {
-        if (Build.VERSION.SDK_INT < FEATURE_MIN_API) {
-            return ShizukuState.UnsupportedPlatform(Build.VERSION.SDK_INT)
-        }
         if (!isBinderLive()) return resolveAbsentBinder()
         if (Shizuku.isPreV11()) return ShizukuState.NotRunning
         if (!hasPermission()) return ShizukuState.PermissionRequired

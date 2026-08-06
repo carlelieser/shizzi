@@ -84,8 +84,5 @@ private fun describe(state: ShizukuState): String = when (state) {
     is ShizukuState.NotInstalled -> "Shizuku is not installed"
     is ShizukuState.NotRunning -> "Shizuku is installed but not running"
     is ShizukuState.PermissionRequired -> "Shizzi needs permission from Shizuku"
-    is ShizukuState.UnsupportedPlatform ->
-        "Needs Android 13 or newer — this device is API ${state.sdkInt}"
-
     is ShizukuState.Ready -> ""
 }

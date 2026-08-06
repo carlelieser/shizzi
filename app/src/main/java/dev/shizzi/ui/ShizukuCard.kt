@@ -98,7 +98,6 @@ private fun statusText(state: ShizukuState): String = when (state) {
     ShizukuState.NotInstalled -> "Not installed"
     ShizukuState.NotRunning -> "Not running"
     ShizukuState.PermissionRequired -> "Permission required"
-    is ShizukuState.UnsupportedPlatform -> "Unsupported (API ${state.sdkInt})"
 }
 
 /**
@@ -110,6 +109,5 @@ private fun statusText(state: ShizukuState): String = when (state) {
  */
 private fun serviceText(state: ShizukuState): String = when (state) {
     is ShizukuState.Ready -> ShizukuGate.shortUid(state.uid)
-    is ShizukuState.UnsupportedPlatform -> "Needs API ${ShizukuGate.FEATURE_MIN_API}"
     else -> "—"
 }
