@@ -2,7 +2,6 @@ package dev.shizzi.spike
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,9 +22,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,8 +38,12 @@ import androidx.compose.ui.unit.sp
 import dev.shizzi.spike.ui.HandleBack
 import dev.shizzi.spike.ui.Screen
 import dev.shizzi.spike.ui.ScreenHeader
+import dev.shizzi.spike.ui.SessionToasts
+import dev.shizzi.spike.ui.SettingsPage
 import dev.shizzi.spike.ui.ShizziIconButton
+import dev.shizzi.spike.ui.ToastHost
 import dev.shizzi.spike.ui.rememberNavigator
+import dev.shizzi.spike.ui.rememberToastState
 
 /** Colour for each status, kept next to the label so they cannot disagree. */
 private fun statusColor(status: UiStatus): Color = when (status) {
@@ -50,15 +51,6 @@ private fun statusColor(status: UiStatus): Color = when (status) {
     UiStatus.LOADING -> Color(0xFFFFA726)
     UiStatus.CONNECTED -> Color(0xFF43A047)
     UiStatus.ERROR -> Color(0xFFE53935)
-}
-
-/** Why the button is unavailable, in the user's terms rather than the API's. */
-private fun describeShizuku(state: ShizukuState): String = when (state) {
-    is ShizukuState.NotInstalled -> "Shizuku is not installed"
-    is ShizukuState.NotRunning -> "Shizuku is installed but not running"
-    is ShizukuState.PermissionRequired -> "Shizuku permission required"
-    is ShizukuState.UnsupportedPlatform -> "Needs Android 13 or newer (this is API ${state.sdkInt})"
-    is ShizukuState.Ready -> ""
 }
 
 private fun statusLabel(status: UiStatus): String = when (status) {
@@ -87,6 +79,9 @@ fun SpikeScreen(
     val goHome = { current.value = Screen.HOME }
     HandleBack(current.value, goHome)
 
+    val toasts = rememberToastState()
+    SessionToasts(state = state, toasts = toasts, onRequestPermission = onRequestPermission)
+
     Box(modifier = Modifier.fillMaxSize()) {
         when (current.value) {
             Screen.SETTINGS -> SettingsPage(
@@ -103,11 +98,18 @@ fun SpikeScreen(
             Screen.HOME -> MainPage(
                 state = state,
                 onToggle = onToggle,
-                onRequestPermission = onRequestPermission,
                 onOpenSettings = { current.value = Screen.SETTINGS },
                 onOpenLog = { current.value = Screen.LOG },
             )
         }
+
+        // Last child, so it draws over whichever screen is showing. Toasts are
+        // app-level rather than per-screen: an error raised on Home is still
+        // worth seeing after navigating to the log to investigate it.
+        ToastHost(
+            state = toasts,
+            modifier = Modifier.align(Alignment.BottomCenter).systemBarsPadding(),
+        )
     }
 }
 
@@ -122,7 +124,6 @@ private fun LogPlaceholder(onBack: () -> Unit) {
 private fun MainPage(
     state: SpikeUiState,
     onToggle: () -> Unit,
-    onRequestPermission: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenLog: () -> Unit,
 ) {
@@ -148,7 +149,7 @@ private fun MainPage(
             Spacer(Modifier.height(48.dp))
             ToggleButton(state, onToggle)
             Spacer(Modifier.height(24.dp))
-            StatusDetail(state, onRequestPermission)
+            StatusDetail(state)
         }
     }
 }
@@ -196,20 +197,23 @@ private fun ToggleButton(state: SpikeUiState, onToggle: () -> Unit) {
 }
 
 /**
- * Detail under the button: the active interface, a Shizuku prompt, or the
- * verbatim error (R7.5).
+ * Detail under the button: the active interface, or whatever the session last
+ * reported.
+ *
+ * Errors and Shizuku prompts used to land here too. They are toasts now — a
+ * message that needs an action needs somewhere to put the button, and
+ * duplicating it in both places would say the same thing twice.
  */
 @Composable
-private fun StatusDetail(state: SpikeUiState, onRequestPermission: () -> Unit) {
-    if (state.shizukuState is ShizukuState.PermissionRequired) {
-        TextButton(onClick = onRequestPermission) { Text("Grant Shizuku permission") }
-        return
-    }
-
+private fun StatusDetail(state: SpikeUiState) {
     val message = when {
-        state.lastError.isNotEmpty() -> state.lastError
-        state.shizukuState !is ShizukuState.Ready -> describeShizuku(state.shizukuState)
         state.interfaceName.isNotEmpty() -> "via ${state.interfaceName}"
+
+        // On a failed session the state carries the same string in both
+        // fields, so rendering detail here would print the error twice: once
+        // under the button and once in its toast.
+        state.lastError.isNotEmpty() -> ""
+
         else -> state.detail
     }
 
@@ -232,77 +236,4 @@ private fun SettingsButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
         onClick = onClick,
         modifier = modifier,
     )
-}
-
-@Composable
-private fun SettingsPage(
-    isDebugLogging: Boolean,
-    onSetDebugLogging: (Boolean) -> Unit,
-    onRunProbes: () -> Unit,
-    onBack: () -> Unit,
-) {
-    Column(modifier = Modifier.fillMaxSize().systemBarsPadding().padding(16.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            TextButton(onClick = onBack) { Text("Back") }
-            Spacer(Modifier.width(8.dp))
-            Text("Settings", fontSize = 20.sp)
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-        SettingsToggle(
-            title = "Debug logging",
-            subtitle = "Write session reports to /data/local/tmp for off-device inspection",
-            isChecked = isDebugLogging,
-            onCheckedChange = onSetDebugLogging,
-        )
-
-        Spacer(Modifier.height(8.dp))
-
-        SettingsAction(
-            title = "Run diagnostics",
-            subtitle = "Runs the full probe sequence and writes a report",
-            onClick = onRunProbes,
-        )
-    }
-}
-
-@Composable
-private fun SettingsToggle(
-    title: String,
-    subtitle: String,
-    isChecked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(title, fontSize = 16.sp)
-            Text(
-                subtitle,
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Switch(checked = isChecked, onCheckedChange = onCheckedChange)
-    }
-}
-
-@Composable
-private fun SettingsAction(title: String, subtitle: String, onClick: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 12.dp),
-    ) {
-        Text(title, fontSize = 16.sp)
-        Text(
-            subtitle,
-            fontSize = 12.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
 }
