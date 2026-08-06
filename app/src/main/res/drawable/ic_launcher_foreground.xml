@@ -11,10 +11,12 @@
   first — 46.9x40.5dp puts every corner exactly 31dp from centre, inside the
   33dp safe radius with room to spare.
 
-  Extents are measured from the rendered path (ink occupies 800x690 of the
-  960 grid, offset 80,120) rather than assumed from the viewBox, which is
-  square and would have centred the mark too high: the arcs and the dot are
-  not symmetric about the middle.
+  The vertical offset is set by eye against the rendered icon, not by
+  centring the path's bounding box. The mark's lowest fifth is only the two
+  thin arc tips descending past the dot, so a box-centred mark measures
+  balanced while reading as sitting low — the visible weight is all in the
+  arcs above. 25.2 is where the black above the outer arc and the black below
+  the tips look equal at launcher size.
 
   Path data is the official Material Symbols export at weight 400, whose
   viewBox is 960 units with the Y axis pointing up; the translate flips it
@@ -27,7 +29,7 @@
     android:viewportHeight="108">
     <group
         android:translateX="25.83"
-        android:translateY="26.71"
+        android:translateY="25.2"
         android:scaleX="0.05869"
         android:scaleY="0.05869">
         <group android:translateY="960">
