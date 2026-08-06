@@ -135,6 +135,7 @@ class SessionService : Service() {
     private fun handleSessionLost() {
         // Not a user-initiated stop; the ERROR title applies, not "Stopping…".
         isStopping = false
+        SessionLog.error("shell process died; recovering any downstream it left up")
 
         internalState.update {
             it.copy(
@@ -149,6 +150,11 @@ class SessionService : Service() {
         scope.launch {
             val problem = runCatching { controller.releaseOrphanedDownstream() }
                 .getOrElse { failure -> "teardown failed: ${failure.message}" }
+
+            when (problem) {
+                null -> SessionLog.info("orphan recovery: hotspot dropped")
+                else -> SessionLog.error("orphan recovery failed: $problem")
+            }
 
             internalState.update { current -> current.copy(lastError = describeLoss(problem)) }
             publishState()

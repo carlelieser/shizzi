@@ -23,6 +23,11 @@ class SpikeApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         instance = this
+
+        // Before anything that might log: the app process cannot write to the
+        // shell's directory, so its entries would go nowhere until this runs.
+        SessionLog.useAppStorage(filesDir)
+
         liftHiddenApiRestrictions()
     }
 

@@ -46,9 +46,14 @@ class TetherSession(private val context: Context) {
         if (isActive) return status()
 
         state = SessionState.STARTING
+        SessionLog.info("session start requested")
+
         return runCatching { bringUp() }
             .getOrElse { failure ->
                 Log.e(TAG, "start failed", failure)
+                SessionLog.error(
+                    "start failed: ${failure.javaClass.simpleName}: ${failure.message}",
+                )
                 stop()
                 state = SessionState.ERROR
                 detail = "${failure.javaClass.simpleName}: ${failure.message}"
@@ -70,9 +75,12 @@ class TetherSession(private val context: Context) {
 
         val name = group.acquire(tunAddress(), AVAILABILITY_TIMEOUT_MS)
         interfaceName = name
+        SessionLog.info("tun up: $name")
+
         group.startDatapath(TUN_MTU)
 
         verifyUpstream(name)
+        SessionLog.info("upstream verified: $name is sole upstream")
 
         state = SessionState.ACTIVE
         detail = "tethered clients routing through $name"
@@ -121,6 +129,7 @@ class TetherSession(private val context: Context) {
      * the one the plain drift message would hide.
      */
     private fun tearDownAfterDrift(problem: String) {
+        SessionLog.warn("upstream drift: $problem")
         stop()
 
         val teardownProblem = detail.takeIf { state == SessionState.ERROR }
@@ -180,6 +189,11 @@ class TetherSession(private val context: Context) {
         interfaceName = null
         state = if (downstreamProblem == null) SessionState.IDLE else SessionState.ERROR
         detail = downstreamProblem ?: "stopped"
+
+        when (downstreamProblem) {
+            null -> SessionLog.info("session stopped; downstream confirmed down")
+            else -> SessionLog.error("teardown: $downstreamProblem")
+        }
         return status()
     }
 

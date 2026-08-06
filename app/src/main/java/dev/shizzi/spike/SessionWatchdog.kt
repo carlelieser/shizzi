@@ -96,6 +96,10 @@ class SessionWatchdog(
         consecutiveFailures++
         if (consecutiveFailures < FAILURES_BEFORE_TEARDOWN) {
             Log.i(TAG, "upstream reads $names (strike $consecutiveFailures)")
+            SessionLog.warn(
+                "watchdog strike $consecutiveFailures/$FAILURES_BEFORE_TEARDOWN: " +
+                    "upstream reads $names, expected $expectedInterface",
+            )
             return null
         }
 
