@@ -1,6 +1,7 @@
 package dev.shizzi.spike.ui
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -83,10 +84,13 @@ private fun SettingsAction(title: String, subtitle: String, onClick: () -> Unit)
 /** The label pair every settings row carries: name, then what it does. */
 @Composable
 private fun SettingsLabel(title: String, subtitle: String, modifier: Modifier = Modifier) {
-    Column(modifier = modifier) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(ShizziTheme.spacing.xs),
+    ) {
         Text(
             text = title,
-            style = ShizziTheme.typography.label,
+            style = ShizziTheme.typography.subheading,
             color = ShizziTheme.colors.onSurface,
         )
         Text(
