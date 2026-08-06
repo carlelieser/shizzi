@@ -76,7 +76,11 @@ android {
 
     defaultConfig {
         applicationId = "dev.shizzi"
-        minSdk = 29
+        // TetheringManager.setPreferTestNetworks, the one call the whole
+        // approach rests on, was added in API 33. Below it the app installs,
+        // launches, and can do nothing but report UNSUPPORTED. Rejecting those
+        // devices at install time is the honest failure.
+        minSdk = 33
         targetSdk = 35
         versionCode = 1
         versionName = "0.1.0"
