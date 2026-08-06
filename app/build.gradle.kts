@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -95,9 +97,46 @@ android {
         }
     }
 
+    // Loaded from a gitignored file locally and written by CI from secrets.
+    // Absent on a fresh clone, which is why every read below is guarded: an
+    // unsigned debug build must still work for someone who has never seen the
+    // key.
+    val keystoreProperties = Properties().apply {
+        val file = rootProject.file("keystore.properties")
+        if (file.exists()) file.inputStream().use { load(it) }
+    }
+
+    signingConfigs {
+        create("release") {
+            val path = keystoreProperties.getProperty("storeFile")
+            if (path != null) {
+                storeFile = rootProject.file(path)
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         debug {
             isMinifyEnabled = false
+        }
+
+        release {
+            isMinifyEnabled = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+
+            // Only when the key is actually present. Configuring it
+            // unconditionally makes every release build fail on a machine
+            // without the keystore, including CI runs that only need to check
+            // that the project compiles.
+            if (keystoreProperties.getProperty("storeFile") != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 
