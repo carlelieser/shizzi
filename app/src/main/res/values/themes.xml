@@ -6,7 +6,7 @@
       the DeviceDefault DayNight parent to avoid pulling in the Material
       Components view library for a single attribute.
     -->
-    <style name="Theme.TetherSpike" parent="@android:style/Theme.DeviceDefault.DayNight">
+    <style name="Theme.Shizzi" parent="@android:style/Theme.DeviceDefault.DayNight">
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowActionBar">false</item>
     </style>

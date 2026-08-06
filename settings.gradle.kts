@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "ShizukuTetherSpike"
+rootProject.name = "Shizzi"
 include(":app")

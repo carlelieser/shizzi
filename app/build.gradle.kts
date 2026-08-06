@@ -69,15 +69,15 @@ val gomobileBind by tasks.registering(Exec::class) {
 }
 
 android {
-    namespace = "dev.shizzi.spike"
+    namespace = "dev.shizzi"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "dev.shizzi.spike"
+        applicationId = "dev.shizzi"
         minSdk = 29
         targetSdk = 35
         versionCode = 1
-        versionName = "0.1-spike"
+        versionName = "0.1.0"
 
         // Identifies the build to the shell-side daemon, which survives APK
         // replacement and will not reload an already-loaded class. Without a
@@ -143,7 +143,7 @@ dependencies {
     implementation("androidx.compose.material3:material3")
 
     // The app draws seven-plus glyphs across three screens. Hand-drawing them
-    // on Canvas, as the spike did for its single gear, produces icons that
+    // on Canvas, as the first build did for its single gear, produces icons that
     // drift in stroke weight and optical size against each other. R8 shrinks
     // the unused catalogue out of the release build.
     implementation("androidx.compose.material:material-icons-extended")
