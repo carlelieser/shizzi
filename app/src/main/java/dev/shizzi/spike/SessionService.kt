@@ -10,8 +10,10 @@ import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -49,6 +51,17 @@ class SessionService : Service() {
      * happening, which is what a device test showed on the Stop action.
      */
     private var isStopping = false
+
+    /**
+     * The in-flight start, so a stop can interrupt it.
+     *
+     * Without this a cancel runs the teardown concurrently with the start it
+     * means to abandon, and the two interleave: a device test showed the
+     * downstream confirmed down at 22:34:06 and the start bringing a *new* TUN
+     * up at 22:34:07, one second later. Teardown has to be the last thing that
+     * happens, so the start is cancelled and awaited before it runs.
+     */
+    private var startJob: Job? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -91,9 +104,11 @@ class SessionService : Service() {
 
     private fun startSession() {
         if (internalState.value.isBusy) return
-        internalState.update { it.copy(isBusy = true, status = UiStatus.LOADING, lastError = "") }
+        internalState.update {
+            it.copy(isBusy = true, status = UiStatus.LOADING, lastError = "", detail = "")
+        }
 
-        scope.launch {
+        startJob = scope.launch {
             // Read from the store rather than from UI state: the service can
             // be started from the notification with no screen alive to have
             // populated it.
@@ -119,6 +134,12 @@ class SessionService : Service() {
         internalState.update { it.copy(isBusy = true, status = UiStatus.LOADING) }
 
         scope.launch {
+            // Abandon an in-flight start first, and wait for it to actually
+            // leave. Tearing down alongside a running start lets the start
+            // create a TUN after the teardown has already swept for one.
+            startJob?.cancelAndJoin()
+            startJob = null
+
             val outcome = runCatching { controller.stop() }
             internalState.update { current -> current.applyOutcome(outcome) }
             stopSelf()
