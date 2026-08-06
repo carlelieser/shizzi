@@ -12,21 +12,26 @@ import androidx.compose.ui.unit.sp
 import dev.shizzi.spike.R
 
 /**
- * All three faces are variable fonts, so one file covers every weight.
+ * Declares one weight of a variable font.
  *
- * Three static JetBrains Mono weights measured 808 KB against 296 KB for the
- * variable file, and the variable file also leaves every intermediate weight
- * available if a later screen needs one.
+ * All three faces ship as single variable files: three static JetBrains Mono
+ * weights measured 808 KB against 296 KB for the variable file.
  *
- * FontVariation is experimental in Compose but the underlying platform support
- * has shipped since API 26, well below this app's minSdk of 29.
+ * The catch is that the variation axis never reaches the typeface. Compose's
+ * resource [Font] loads through `ResourcesCompat.getFont(context, resId)`,
+ * which takes an ID and nothing else, and caches on it — so every entry
+ * pointing at one file resolves to the same typeface at that file's *default*
+ * weight, whatever weight was requested. The settings below are kept because
+ * they cost nothing and record intent, but a family renders at one weight and
+ * it is the file's, not this one's. That is why the bundled Space Grotesk is
+ * rebased to default to Medium (see [Display]).
+ *
+ * The declared [FontWeight] still matters: it is how a family matches a
+ * requested weight to an entry.
  */
 @OptIn(ExperimentalTextApi::class)
 private fun variableWeight(resource: Int, weight: Int) = Font(
     resource,
-    // Also passed as the declared FontWeight so the family can resolve a style
-    // to the right file. Setting only the variation axis leaves every entry
-    // claiming W400, and the family then answers every request with the first.
     weight = FontWeight(weight),
     variationSettings = FontVariation.Settings(FontVariation.weight(weight)),
 )
@@ -38,9 +43,13 @@ private val Mono = FontFamily(
 )
 
 /**
- * Space Grotesk's weight axis spans 300-700 and *defaults to 300*, so every
- * style below names its weight rather than relying on the file's default, which
- * would otherwise render headings Light.
+ * Space Grotesk, rebased to default to Medium.
+ *
+ * Upstream the weight axis is 300-700 defaulting to 300, and since a family
+ * renders at its file's default (see [variableWeight]) every heading came out
+ * Light. The bundled file is a partial instance limited to `wght=500:500:700`,
+ * which moves the default onto Medium and keeps the axis, so the family renders
+ * Medium without shipping a second file.
  */
 private val Display = FontFamily(
     variableWeight(R.font.space_grotesk, 500),
@@ -74,6 +83,7 @@ private val Sans = FontFamily(
 data class ShizziTypography(
     val display: TextStyle,
     val heading: TextStyle,
+    val subheading: TextStyle,
     val title: TextStyle,
     val label: TextStyle,
     val caption: TextStyle,
@@ -97,6 +107,19 @@ val Typography = ShizziTypography(
         fontSize = 20.sp,
         fontWeight = FontWeight.W700,
         letterSpacing = (-0.01).em,
+    ),
+
+    /**
+     * Names a row within a screen: a settings item, a section.
+     *
+     * Sits above [body] so a row's name outranks its own description. Borrowing
+     * `label` here put the name at 13sp over a 14sp subtitle, which inverted the
+     * hierarchy and read as small rather than as a heading.
+     */
+    subheading = TextStyle(
+        fontFamily = Display,
+        fontSize = 17.sp,
+        fontWeight = FontWeight.W500,
     ),
 
     /** Button text, which is uppercase wherever it is used. */
