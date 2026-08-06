@@ -68,8 +68,12 @@ class TetherSession(private val context: Context) {
      */
     private fun bringUp(): String {
         TetheringPreferenceApi(context).setPreferTestNetworks(true)
-        restartDownstream()
 
+        // The TUN is built before the downstream, so a live test network exists
+        // at the moment tethering goes looking for an upstream. Starting the
+        // hotspot first makes it select from whatever test networks it already
+        // knows about — on a device carrying a stale entry from a previous boot
+        // that is the dead interface, and it holds the slot the real TUN needs.
         val group = SessionResources(testNetworkApi, context.connectivityManager())
         resources = group
 
@@ -78,6 +82,8 @@ class TetherSession(private val context: Context) {
         SessionLog.info("tun up: $name")
 
         group.startDatapath(TUN_MTU)
+
+        restartDownstream()
 
         verifyUpstream(name)
         SessionLog.info("upstream verified: $name is sole upstream")
@@ -140,11 +146,53 @@ class TetherSession(private val context: Context) {
         }
     }
 
+    /**
+     * Brings the hotspot up, cycling it first if one is already running.
+     *
+     * The user does not have to have enabled tethering beforehand: a session is
+     * a request to share this connection, and requiring them to turn the
+     * hotspot on first — then failing with an upstream error if they did not —
+     * makes the app's internal sequencing their problem.
+     */
     private fun restartDownstream() {
         val control = DownstreamControl(context)
         control.stopWifiTethering()
+
         val (didStart, startDetail) = control.startWifiTethering()
         check(didStart) { "restartDownstream: hotspot did not start ($startDetail)" }
+
+        awaitDownstreamTethered()
+    }
+
+    /**
+     * Waits for the hotspot to actually be tethered, not merely requested.
+     *
+     * startWifiTethering returns once the request is accepted, which is well
+     * before the downstream is up. Proceeding on the acceptance alone builds
+     * the TUN while tethering has no downstream to serve — it never starts
+     * looking for an upstream, so `Upstream wanted` stays false and
+     * verifyUpstream times out against an empty list. That was every "tethering
+     * reports []" failure on the device.
+     *
+     * Bounded, and a timeout is not fatal here: verifyUpstream is the real
+     * gate, and it reports the upstream truthfully whether or not this settled
+     * in time.
+     */
+    private fun awaitDownstreamTethered() {
+        val deadline = System.currentTimeMillis() + DOWNSTREAM_SETTLE_MS
+        val downstream = DownstreamInspector()
+
+        while (System.currentTimeMillis() < deadline) {
+            // Non-null means something *is* tethered, which is what this waits
+            // for -- the same reading means "still up" during teardown.
+            if (downstream.findTetheredDownstream() != null) {
+                SessionLog.info("downstream tethered")
+                return
+            }
+            Thread.sleep(DOWNSTREAM_POLL_MS)
+        }
+
+        SessionLog.warn("downstream not tethered after ${DOWNSTREAM_SETTLE_MS}ms; continuing")
     }
 
     /**
@@ -297,5 +345,14 @@ class TetherSession(private val context: Context) {
          * interface destroyed regardless — leaking the TUN would be worse.
          */
         const val UPSTREAM_RELEASE_MS = 4_000L
+
+        /**
+         * How long to wait for the hotspot to come up before building the TUN.
+         *
+         * Generous because this covers a cold start of the Wi-Fi AP, which on
+         * a real device takes seconds rather than milliseconds.
+         */
+        const val DOWNSTREAM_SETTLE_MS = 10_000L
+        const val DOWNSTREAM_POLL_MS = 500L
     }
 }
