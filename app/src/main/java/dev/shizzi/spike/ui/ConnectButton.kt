@@ -30,8 +30,11 @@ private val SpinnerSize = 24.dp
  * destructive-action treatment that tearing down your own tunnel does not
  * warrant. Only the label and the enabled state change.
  *
- * While a session is coming up the button becomes a progress indicator, keeping
- * its footprint so the layout does not reflow around a spinner.
+ * While a session is coming up the button holds a progress indicator and goes
+ * neutral — the action is unavailable until the attempt resolves, and a
+ * turquoise button that ignores taps invites them. Cancel is the live control
+ * during that window. The footprint is unchanged either way, so nothing
+ * reflows.
  */
 @Composable
 fun ConnectButton(
@@ -48,7 +51,7 @@ fun ConnectButton(
             .width(ButtonWidth)
             .height(ButtonHeight)
             .brutalSurface(
-                fill = if (isEnabled || isLoading) colors.primary else colors.surface,
+                fill = if (isEnabled) colors.primary else colors.surface,
                 isPressed = interaction.isPressed(),
             )
             .clickable(
@@ -61,7 +64,7 @@ fun ConnectButton(
     ) {
         when {
             isLoading -> CircularProgressIndicator(
-                color = colors.onPrimary,
+                color = colors.onSurfaceMuted,
                 strokeWidth = 2.dp,
                 modifier = Modifier.size(SpinnerSize),
             )

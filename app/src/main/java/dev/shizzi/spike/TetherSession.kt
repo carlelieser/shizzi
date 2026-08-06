@@ -155,15 +155,18 @@ class TetherSession(private val context: Context) {
      */
     private fun verifyUpstream(name: String) {
         val deadline = System.currentTimeMillis() + UPSTREAM_SETTLE_MS
-        var observed = inspector.observe().interfaceNames
+        var observed = liveUpstreams(name)
 
         while (System.currentTimeMillis() < deadline) {
             if (observed.isNotEmpty() && observed.all { it == name }) return
             Thread.sleep(UPSTREAM_POLL_MS)
-            observed = inspector.observe().interfaceNames
+            observed = liveUpstreams(name)
         }
         error("verifyUpstream: expected only $name, tethering reports $observed")
     }
+
+    private fun liveUpstreams(owned: String): List<String> =
+        inspector.observe().liveInterfaceNames(owned)
 
     /**
      * Releases everything in fail-closed order: downstream first (R6.1).
@@ -180,11 +183,10 @@ class TetherSession(private val context: Context) {
 
         val downstreamProblem = releaseDownstream()
 
+        releaseUpstreamSelection()
+
         resources?.release()?.forEach { Log.w(TAG, "stop: $it") }
         resources = null
-
-        runCatching { TetheringPreferenceApi(context).setPreferTestNetworks(false) }
-            .onFailure { Log.w(TAG, "stop: preference ${it.message}") }
 
         interfaceName = null
         state = if (downstreamProblem == null) SessionState.IDLE else SessionState.ERROR
@@ -195,6 +197,48 @@ class TetherSession(private val context: Context) {
             else -> SessionLog.error("teardown: $downstreamProblem")
         }
         return status()
+    }
+
+    /**
+     * Hands the upstream back to the framework *before* the TUN is destroyed.
+     *
+     * This ordering is load-bearing. Destroying the interface first leaves
+     * tethering holding a reference it can no longer act on: its own teardown
+     * needs the interface to exist, so it logs
+     *
+     *     [BpfCoordinator] Could not detach program: Fail to get interface
+     *     params for interface testtunNN
+     *
+     * and keeps naming that dead interface as the current upstream. Every
+     * subsequent start then fails verifyUpstream against a ghost, permanently,
+     * with nothing the app can do about it afterward and no way for a user to
+     * clear it short of a reboot. A device test wedged a phone exactly this way
+     * for eleven consecutive sessions.
+     *
+     * So the preference is cleared while the TUN is still up, and this waits
+     * for tethering to actually move off it. The wait is bounded and best
+     * effort: if the framework has not let go by the deadline, destroying the
+     * interface is still better than leaking it, and the next start reselects
+     * from whatever remains.
+     */
+    private fun releaseUpstreamSelection() {
+        val cleared = runCatching { TetheringPreferenceApi(context).setPreferTestNetworks(false) }
+            .onFailure { Log.w(TAG, "stop: preference ${it.message}") }
+        if (cleared.isFailure) return
+
+        val name = interfaceName ?: return
+        val deadline = System.currentTimeMillis() + UPSTREAM_RELEASE_MS
+
+        while (System.currentTimeMillis() < deadline) {
+            val observed = runCatching { inspector.observe().interfaceNames }.getOrDefault(emptyList())
+            if (observed.none { it == name }) {
+                SessionLog.info("upstream released: tethering moved off $name")
+                return
+            }
+            Thread.sleep(UPSTREAM_POLL_MS)
+        }
+
+        SessionLog.warn("upstream still reads $name after ${UPSTREAM_RELEASE_MS}ms; releasing anyway")
     }
 
     /** @return null once no downstream is tethered, else what is still up. */
@@ -243,5 +287,15 @@ class TetherSession(private val context: Context) {
         const val AVAILABILITY_TIMEOUT_MS = 10_000
         const val UPSTREAM_SETTLE_MS = 8_000L
         const val UPSTREAM_POLL_MS = 500L
+
+        /**
+         * How long teardown waits for tethering to release the owned TUN.
+         *
+         * Shorter than the settle deadline: this is the framework letting go of
+         * an interface rather than selecting and validating a new one, and the
+         * session is already on its way out. Exceeding it is logged and the
+         * interface destroyed regardless — leaking the TUN would be worse.
+         */
+        const val UPSTREAM_RELEASE_MS = 4_000L
     }
 }

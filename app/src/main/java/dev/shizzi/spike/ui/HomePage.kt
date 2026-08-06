@@ -127,7 +127,10 @@ private fun HomeBody(state: SpikeUiState, onToggle: () -> Unit, onCancel: () -> 
 
         ConnectButton(
             label = buttonLabel(state.status),
-            isEnabled = state.canStart || state.status == UiStatus.CONNECTED,
+            // Never during a start: canStart already excludes it, stated here
+            // so the button's disabled loading state does not depend on
+            // reading that.
+            isEnabled = !isStarting && (state.canStart || state.status == UiStatus.CONNECTED),
             isLoading = isStarting,
             onClick = onToggle,
         )

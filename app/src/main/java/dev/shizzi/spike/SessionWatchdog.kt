@@ -82,7 +82,12 @@ class SessionWatchdog(
      */
     private fun checkUpstream(): String? {
         val observation = inspector.observe()
-        val names = observation.interfaceNames
+
+        // Filtered for the same reason the start path filters: a destroyed
+        // interface that tethering still names is not traffic leaving over a
+        // physical upstream, and tearing down a healthy session over a ghost
+        // would be the drift response firing at nothing.
+        val names = observation.liveInterfaceNames(expectedInterface)
 
         val isHealthy = !observation.didTimeout &&
             names.isNotEmpty() &&

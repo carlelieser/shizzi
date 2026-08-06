@@ -14,6 +14,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -63,6 +65,28 @@ class SessionService : Service() {
      */
     private var startJob: Job? = null
 
+    /**
+     * Counts intents, so a superseded one cannot publish state.
+     *
+     * A cancelled start is still inside a blocking binder call and will return
+     * a result after the user has already been shown an idle screen. Folding
+     * that late result in would flip the screen back to an error the user
+     * cancelled their way out of, so each attempt captures the generation it
+     * belongs to and drops its result if it is no longer the current one.
+     */
+    private var generation = 0
+
+    /**
+     * Serialises privileged work, so a start and a teardown never overlap.
+     *
+     * Cancelling returns the screen to idle immediately and drains the teardown
+     * behind it, which means the user can press Start again while the previous
+     * teardown is still running. Without this the new session's setup and the
+     * old session's teardown interleave and the teardown sweeps away a TUN that
+     * belongs to the session the user is currently waiting on.
+     */
+    private val sessionLock = Mutex()
+
     override fun onCreate() {
         super.onCreate()
         controller.onSessionLost = ::handleSessionLost
@@ -104,6 +128,7 @@ class SessionService : Service() {
 
     private fun startSession() {
         if (internalState.value.isBusy) return
+        val attempt = ++generation
         internalState.update {
             it.copy(isBusy = true, status = UiStatus.LOADING, lastError = "", detail = "")
         }
@@ -114,7 +139,14 @@ class SessionService : Service() {
             // populated it.
             val isDebugLogging = settingsStore().settings.first().isDebugLogging
 
-            val outcome = runCatching { controller.start(isDebugLogging) }
+            // Waits out a teardown still draining from a previous cancel, so
+            // that teardown cannot sweep away what this start is about to build.
+            val outcome = sessionLock.withLock {
+                if (attempt != generation) return@launch
+                runCatching { controller.start(isDebugLogging) }
+            }
+            if (attempt != generation) return@launch
+
             internalState.update { current -> current.applyOutcome(outcome) }
             publishState()
         }
@@ -126,23 +158,52 @@ class SessionService : Service() {
     /**
      * Stops the session and then itself.
      *
+     * The screen goes idle immediately rather than when the teardown returns.
+     * Stopping is not a request that can be refused — the session is going away
+     * whatever the privileged side reports — so making the user watch a spinner
+     * until a binder call completes shows them a decision that has already been
+     * made. The teardown drains behind the idle screen.
+     *
+     * Bumping the generation first is what makes that safe: an in-flight start
+     * is still inside a blocking call and will return afterward, and without it
+     * that late result would repaint the screen the user just cleared.
+     *
      * stopSelf only after the teardown returns: dropping the foreground state
      * first would let the process be reclaimed mid-teardown, which is the leak
      * this service exists to prevent.
      */
     private fun stopSession() {
-        internalState.update { it.copy(isBusy = true, status = UiStatus.LOADING) }
+        val stopped = ++generation
+
+        // Captured here, not inside the coroutine. Reading the field later
+        // reads whatever start is current *then*: a Start/Cancel/Start burst
+        // had the cancel's teardown join the second start and tear down the
+        // session the user had just asked for.
+        val abandoned = startJob
+        startJob = null
+
+        internalState.update {
+            it.copy(isBusy = false, status = UiStatus.READY, lastError = "", detail = "Stopped")
+        }
 
         scope.launch {
             // Abandon an in-flight start first, and wait for it to actually
             // leave. Tearing down alongside a running start lets the start
             // create a TUN after the teardown has already swept for one.
-            startJob?.cancelAndJoin()
-            startJob = null
+            abandoned?.cancelAndJoin()
 
-            val outcome = runCatching { controller.stop() }
-            internalState.update { current -> current.applyOutcome(outcome) }
-            stopSelf()
+            // The outcome is logged rather than rendered: the screen is already
+            // idle, and a teardown that reports trouble needs the log, not a
+            // toast contradicting a state the user asked for.
+            sessionLock.withLock {
+                runCatching { controller.stop() }
+                    .onFailure { SessionLog.error("teardown failed: ${it.message}") }
+            }
+
+            // Only if nothing has been asked of the service since. A start that
+            // arrived while this teardown was draining is the current
+            // generation, and stopping the service would kill it.
+            if (stopped == generation) stopSelf()
         }
     }
 

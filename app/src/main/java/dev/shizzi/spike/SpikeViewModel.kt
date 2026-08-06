@@ -109,8 +109,16 @@ class SpikeViewModel(application: Application) : AndroidViewModel(application) {
      * its start branch and ask for a second session. Teardown is the same path
      * a finished session takes, so a half-built one is dismantled by the code
      * that knows how to dismantle a whole one.
+     *
+     * The screen resets here rather than waiting for the service to publish it.
+     * Cancelling is not a request that can fail, so the only thing waiting
+     * would communicate is that the app is still thinking about it. The
+     * teardown drains behind the reset.
      */
     fun cancel() {
+        localState.update {
+            it.copy(isBusy = false, status = UiStatus.READY, lastError = "", detail = "Stopped")
+        }
         SessionService.stop(getApplication())
     }
 
