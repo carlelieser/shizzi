@@ -9,9 +9,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CloudQueue
-import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.WifiTethering
+import androidx.compose.material.icons.filled.WifiTetheringError
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -121,11 +120,19 @@ private fun Modifier.shimmer(isActive: Boolean): Modifier = composed {
         }
 }
 
+/**
+ * One family across every state, so the glyph reads as the same object
+ * changing rather than four unrelated pictures.
+ *
+ * Ready and loading share the plain mark: what distinguishes them is the
+ * shimmer and the button, not a different icon, and swapping the glyph mid-
+ * animation would make the shimmer look like a transition to something else.
+ */
 private fun glyphFor(status: UiStatus): ImageVector = when (status) {
-    UiStatus.READY -> Icons.Filled.CloudQueue
-    UiStatus.LOADING -> Icons.Filled.CloudQueue
+    UiStatus.READY -> Icons.Filled.WifiTethering
+    UiStatus.LOADING -> Icons.Filled.WifiTethering
     UiStatus.CONNECTED -> Icons.Filled.WifiTethering
-    UiStatus.ERROR -> Icons.Filled.ErrorOutline
+    UiStatus.ERROR -> Icons.Filled.WifiTetheringError
 }
 
 /** The label the icon does not draw, for anyone using a screen reader. */
