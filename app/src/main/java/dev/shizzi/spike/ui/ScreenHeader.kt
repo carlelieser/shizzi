@@ -39,7 +39,7 @@ fun ScreenHeader(
 
         Text(
             text = title,
-            style = ShizziTheme.typography.title,
+            style = ShizziTheme.typography.heading,
             color = ShizziTheme.colors.onSurface,
             modifier = Modifier.weight(1f),
         )
