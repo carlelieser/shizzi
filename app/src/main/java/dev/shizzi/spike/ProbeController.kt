@@ -27,6 +27,21 @@ data class SpikeUiState(
 }
 
 /**
+ * The state a stopped session renders as.
+ *
+ * Defined once because both the service and the ViewModel apply it optimistically
+ * the moment the user asks to stop, and a copy that forgot to clear
+ * [SpikeUiState.interfaceName] left "via testtunNN" under an idle screen.
+ */
+fun SpikeUiState.asStopped(): SpikeUiState = copy(
+    isBusy = false,
+    status = UiStatus.READY,
+    lastError = "",
+    detail = "Stopped",
+    interfaceName = "",
+)
+
+/**
  * Folds a privileged call's result into the rendered state.
  *
  * A thrown exception and a status reporting ERROR are different failures — a
@@ -43,6 +58,9 @@ fun SpikeUiState.applyOutcome(outcome: Result<String>): SpikeUiState {
             isBusy = false,
             status = UiStatus.ERROR,
             lastError = "${failure.javaClass.simpleName}: ${failure.message}",
+            // A failed start tears its TUN down on the way out, so keeping the
+            // name would caption an idle screen with an interface that is gone.
+            interfaceName = "",
         )
     }
 
@@ -97,6 +115,13 @@ class ProbeController {
         // That showed up as "TestNetworkAgent: NetworkAgent channel lost" about
         // four seconds after start() returned, with the upstream reverting.
         .daemon(true)
+        // Without an explicit tag Shizuku keys each service record by a fresh
+        // UUID, so every bind creates a *new* daemon and unbind cannot reach the
+        // one already running. That leaked a shell process per session, each
+        // holding its TUN's file descriptor and so keeping the interface alive
+        // in the kernel. A stable tag makes bind and unbind name the same
+        // record, which is what lets the daemon actually be terminated.
+        .tag(SERVICE_TAG)
         .processNameSuffix("probe")
         .debuggable(true)
         .version(ProbeService.CONTRACT_VERSION)
@@ -179,6 +204,14 @@ class ProbeController {
         bound.start(debugLogging)
     }
 
+    /**
+     * Tears the session down.
+     *
+     * Binds if nothing is bound: with a stable service tag that reaches the
+     * daemon already running rather than starting a fresh one, so a stop issued
+     * from a process that never bound — the notification action, a restarted
+     * service — still finds the session it needs to end.
+     */
     suspend fun stop(): String = withContext(Dispatchers.IO) {
         service().stop()
     }
@@ -236,17 +269,40 @@ class ProbeController {
      * network the session depends on. Leaving the UI must not drop tethered
      * clients; only an explicit stop() ends the session.
      */
-    fun unbind() {
+    fun unbind() = releaseBinding(shouldTerminate = false)
+
+    /**
+     * Drops the binding *and* terminates the shell process behind it.
+     *
+     * Called once a session has been torn down, which is the only point where
+     * killing the daemon is safe — and necessary. The daemon holds the TUN's
+     * file descriptor, so a process that outlives its session keeps the
+     * interface alive in the kernel no matter what teardown closes on this
+     * side. A device test found fourteen orphaned daemons and eight surviving
+     * testtun interfaces after a single evening of starts and stops, and
+     * tethering selecting one of those leftovers is what failed the next
+     * session's upstream check.
+     */
+    fun unbindAndStopDaemon() = releaseBinding(shouldTerminate = true)
+
+    private fun releaseBinding(shouldTerminate: Boolean) {
         deathRecipient?.let { recipient ->
             runCatching { boundService?.asBinder()?.unlinkToDeath(recipient, 0) }
         }
         deathRecipient = null
 
-        runCatching { Shizuku.unbindUserService(userServiceArgs, connection, false) }
+        runCatching { Shizuku.unbindUserService(userServiceArgs, connection, shouldTerminate) }
         boundService = null
     }
 
     private companion object {
+        /**
+         * The daemon's stable identity across binds, and across the two
+         * controllers that reach it — the service's and the ViewModel's — so
+         * both address one shell process rather than one each.
+         */
+        private const val SERVICE_TAG = "shizzi-session"
+
         /**
          * Binding is fast; the probe run itself is not. Q5 waits up to 45s for
          * upstream selection to settle, so this bound covers only the bind.

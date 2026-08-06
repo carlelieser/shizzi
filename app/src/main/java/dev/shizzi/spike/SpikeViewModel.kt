@@ -117,7 +117,7 @@ class SpikeViewModel(application: Application) : AndroidViewModel(application) {
      */
     fun cancel() {
         localState.update {
-            it.copy(isBusy = false, status = UiStatus.READY, lastError = "", detail = "Stopped")
+            it.asStopped()
         }
         SessionService.stop(getApplication())
     }

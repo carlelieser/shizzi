@@ -183,7 +183,7 @@ class SessionService : Service() {
         startJob = null
 
         internalState.update {
-            it.copy(isBusy = false, status = UiStatus.READY, lastError = "", detail = "Stopped")
+            it.asStopped()
         }
 
         scope.launch {
@@ -198,6 +198,18 @@ class SessionService : Service() {
             sessionLock.withLock {
                 runCatching { controller.stop() }
                     .onFailure { SessionLog.error("teardown failed: ${it.message}") }
+
+                // The daemon holds the TUN's file descriptor, so the interface
+                // survives in the kernel until the process holding it exits.
+                // Terminating it is what actually destroys the TUN.
+                //
+                // Unconditional, and safe because a start binds inside this
+                // same lock: anything newer is still waiting here and will bind
+                // a fresh daemon once this releases. Skipping termination when a
+                // newer request had arrived is what left an orphan behind per
+                // stop-then-start, each one holding a TUN that tethering could
+                // later select and fail the next session against.
+                controller.unbindAndStopDaemon()
             }
 
             // Only if nothing has been asked of the service since. A start that

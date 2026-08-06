@@ -67,8 +67,6 @@ class TetherSession(private val context: Context) {
      * @throws IllegalStateException naming the step that failed.
      */
     private fun bringUp(): String {
-        TetheringPreferenceApi(context).setPreferTestNetworks(true)
-
         // The TUN is built before the downstream, so a live test network exists
         // at the moment tethering goes looking for an upstream. Starting the
         // hotspot first makes it select from whatever test networks it already
@@ -83,6 +81,7 @@ class TetherSession(private val context: Context) {
 
         group.startDatapath(TUN_MTU)
 
+        preferTestNetworks()
         restartDownstream()
 
         verifyUpstream(name)
@@ -144,6 +143,28 @@ class TetherSession(private val context: Context) {
             null -> problem
             else -> "$problem; teardown incomplete: $teardownProblem"
         }
+    }
+
+    /**
+     * Asks tethering to prefer test networks, forcing a real state transition.
+     *
+     * Set after the TUN exists, and driven false-then-true rather than straight
+     * to true. The framework acts on the *change*: if the preference is already
+     * true — which it is on the first start after a stop, since teardown clears
+     * it but a start that never ran teardown does not — setting it to true again
+     * is a no-op and no reselection happens. The new TUN then appears with
+     * nothing prompting tethering to look at it, and it keeps whatever it had
+     * cached.
+     *
+     * That was the intermittent failure: stop, start, and the upstream never
+     * moves off the previous selection for the full verify window, while the
+     * next start works because its teardown had just cleared the preference.
+     */
+    private fun preferTestNetworks() {
+        val api = TetheringPreferenceApi(context)
+        runCatching { api.setPreferTestNetworks(false) }
+            .onFailure { Log.w(TAG, "preferTestNetworks: clear ${it.message}") }
+        api.setPreferTestNetworks(true)
     }
 
     /**
