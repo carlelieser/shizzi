@@ -1,7 +1,6 @@
 package dev.shizzi.spike
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.Composable
@@ -10,11 +9,12 @@ import androidx.compose.ui.Modifier
 import dev.shizzi.spike.ui.HandleBack
 import dev.shizzi.spike.ui.HomeActions
 import dev.shizzi.spike.ui.HomePage
+import dev.shizzi.spike.ui.LogPage
 import dev.shizzi.spike.ui.Screen
-import dev.shizzi.spike.ui.ScreenHeader
 import dev.shizzi.spike.ui.SessionToasts
 import dev.shizzi.spike.ui.SettingsPage
 import dev.shizzi.spike.ui.ToastHost
+import dev.shizzi.spike.ui.rememberLogEntries
 import dev.shizzi.spike.ui.rememberNavigator
 import dev.shizzi.spike.ui.rememberToastState
 
@@ -62,9 +62,7 @@ fun SpikeScreen(
                 onBack = goHome,
             )
 
-            // Placeholder until the log screen lands; navigation is wired now
-            // so the route exists before the destination does.
-            Screen.LOG -> LogPlaceholder(onBack = goHome)
+            Screen.LOG -> LogPage(entries = rememberLogEntries(), onBack = goHome)
 
             Screen.HOME -> HomePage(
                 state = state,
@@ -84,12 +82,5 @@ fun SpikeScreen(
             state = toasts,
             modifier = Modifier.align(Alignment.BottomCenter).systemBarsPadding(),
         )
-    }
-}
-
-@Composable
-private fun LogPlaceholder(onBack: () -> Unit) {
-    Column(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
-        ScreenHeader(title = "Log", onBack = onBack)
     }
 }
