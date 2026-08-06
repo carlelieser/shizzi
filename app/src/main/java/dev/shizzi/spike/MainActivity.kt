@@ -69,10 +69,13 @@ class MainActivity : ComponentActivity() {
                     SpikeScreen(
                         state = state,
                         settings = loaded,
-                        onToggle = viewModel::toggle,
-                        onRequestPermission = viewModel::requestPermission,
-                        onSetDebugLogging = viewModel::setDebugLogging,
-                        onRunProbes = viewModel::runProbes,
+                        actions = AppActions(
+                            onToggle = viewModel::toggle,
+                            onCancel = viewModel::cancel,
+                            onRequestPermission = viewModel::requestPermission,
+                            onSetDebugLogging = viewModel::setDebugLogging,
+                            onRunProbes = viewModel::runProbes,
+                        ),
                     )
                 }
             }

@@ -21,7 +21,6 @@ data class ShizziColors(
     val onSurface: Color,
     val onSurfaceMuted: Color,
     val border: Color,
-    val borderPrimary: Color,
     val shadow: Color,
     val isDark: Boolean,
 )
@@ -42,7 +41,6 @@ val LightColors = ShizziColors(
     onSurface = Color(0xFF0C0A09),
     onSurfaceMuted = Color(0xFF57534E),
     border = Color(0xFF000000),
-    borderPrimary = Color(0xFF000000),
     shadow = Color(0xFF000000),
     isDark = false,
 )
@@ -52,8 +50,11 @@ val LightColors = ShizziColors(
  *
  * The flat offset shadow is the load-bearing element of the whole design, and
  * a black shadow on a near-black background is invisible. So borders and
- * shadows go white for neutral elements and turquoise for primary ones, which
- * is a different look from the light theme rather than a tinted copy of it.
+ * shadows go white, which is a different look from the light theme rather than
+ * a tinted copy of it.
+ *
+ * Both stay structural rather than taking the accent: a turquoise border drawn
+ * around a turquoise button is a border nobody can see.
  */
 val DarkColors = ShizziColors(
     primary = Color(0xFF2DD4BF),
@@ -63,7 +64,6 @@ val DarkColors = ShizziColors(
     onSurface = Color(0xFFFAFAF9),
     onSurfaceMuted = Color(0xFFA8A29E),
     border = Color(0xFFFFFFFF),
-    borderPrimary = Color(0xFF2DD4BF),
     shadow = Color(0xFFFFFFFF),
     isDark = true,
 )

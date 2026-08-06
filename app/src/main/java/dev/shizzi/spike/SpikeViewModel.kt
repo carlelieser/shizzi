@@ -102,6 +102,19 @@ class SpikeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
+     * Abandons a start that is still in progress.
+     *
+     * Routed to stop rather than to toggle: toggle reads the status, and a
+     * cancel arrives while that status is LOADING, which would fall through to
+     * its start branch and ask for a second session. Teardown is the same path
+     * a finished session takes, so a half-built one is dismantled by the code
+     * that knows how to dismantle a whole one.
+     */
+    fun cancel() {
+        SessionService.stop(getApplication())
+    }
+
+    /**
      * Runs the probe sequence directly rather than through the service.
      *
      * Diagnostics tear down everything they create and hold no session, so

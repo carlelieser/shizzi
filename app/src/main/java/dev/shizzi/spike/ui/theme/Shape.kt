@@ -32,20 +32,22 @@ val ShadowOffset = 4.dp
  * a single modifier is what keeps the treatment identical everywhere instead
  * of drifting per component.
  *
- * @param isPrimary selects the turquoise border in dark mode. Neutral elements
- *   take a white border there and a black one in light mode; primary elements
- *   keep turquoise so the accent survives the inversion.
+ * The border is always the theme's structural colour — black in light, white in
+ * dark — because its job is to separate the surface from the page. Tinting it
+ * to match a turquoise fill draws it in the colour it sits on and it disappears,
+ * which is what happened when the accent border was applied to the filled
+ * button.
+ *
  * @param isPressed shifts the element into its shadow. The shadow is
  *   suppressed and the content translated by the same offset, so the surface
  *   appears to depress to meet the page.
  */
 fun Modifier.brutalSurface(
     fill: Color,
-    isPrimary: Boolean = false,
     isPressed: Boolean = false,
 ): Modifier = composed {
     val colors = ShizziTheme.colors
-    val border = if (isPrimary) colors.borderPrimary else colors.border
+    val border = colors.border
     val shift = if (isPressed) ShadowOffset else 0.dp
 
     this
