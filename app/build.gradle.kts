@@ -141,6 +141,12 @@ dependencies {
     implementation(composeBom)
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material3:material3")
+
+    // The app draws seven-plus glyphs across three screens. Hand-drawing them
+    // on Canvas, as the spike did for its single gear, produces icons that
+    // drift in stroke weight and optical size against each other. R8 shrinks
+    // the unused catalogue out of the release build.
+    implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.ui:ui-tooling-preview")
     debugImplementation("androidx.compose.ui:ui-tooling")
 

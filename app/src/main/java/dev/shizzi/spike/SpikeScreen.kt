@@ -1,7 +1,6 @@
 package dev.shizzi.spike
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -18,9 +17,11 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -33,19 +34,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlin.math.PI
-import kotlin.math.cos
-import kotlin.math.sin
-
-/** Teeth on the settings gear. */
-private const val GEAR_TEETH = 8
+import dev.shizzi.spike.ui.HandleBack
+import dev.shizzi.spike.ui.Screen
+import dev.shizzi.spike.ui.ScreenHeader
+import dev.shizzi.spike.ui.ShizziIconButton
+import dev.shizzi.spike.ui.rememberNavigator
 
 /** Colour for each status, kept next to the label so they cannot disagree. */
 private fun statusColor(status: UiStatus): Color = when (status) {
@@ -71,6 +68,12 @@ private fun statusLabel(status: UiStatus): String = when (status) {
     UiStatus.ERROR -> "Error"
 }
 
+/**
+ * Routes between the three screens.
+ *
+ * Log and Settings are screens rather than overlays, so the system back
+ * gesture returns to Home rather than leaving the app.
+ */
 @Composable
 fun SpikeScreen(
     state: SpikeUiState,
@@ -80,24 +83,38 @@ fun SpikeScreen(
     onSetDebugLogging: (Boolean) -> Unit,
     onRunProbes: () -> Unit,
 ) {
-    var isShowingSettings by remember { mutableStateOf(false) }
+    val current = rememberNavigator()
+    val goHome = { current.value = Screen.HOME }
+    HandleBack(current.value, goHome)
 
     Box(modifier = Modifier.fillMaxSize()) {
-        when {
-            isShowingSettings -> SettingsPage(
+        when (current.value) {
+            Screen.SETTINGS -> SettingsPage(
                 isDebugLogging = settings.isDebugLogging,
                 onSetDebugLogging = onSetDebugLogging,
                 onRunProbes = onRunProbes,
-                onBack = { isShowingSettings = false },
+                onBack = goHome,
             )
 
-            else -> MainPage(
+            // Placeholder until the log screen lands; navigation is wired now
+            // so the route exists before the destination does.
+            Screen.LOG -> LogPlaceholder(onBack = goHome)
+
+            Screen.HOME -> MainPage(
                 state = state,
                 onToggle = onToggle,
                 onRequestPermission = onRequestPermission,
-                onOpenSettings = { isShowingSettings = true },
+                onOpenSettings = { current.value = Screen.SETTINGS },
+                onOpenLog = { current.value = Screen.LOG },
             )
         }
+    }
+}
+
+@Composable
+private fun LogPlaceholder(onBack: () -> Unit) {
+    Column(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
+        ScreenHeader(title = "Log", onBack = onBack)
     }
 }
 
@@ -107,12 +124,20 @@ private fun MainPage(
     onToggle: () -> Unit,
     onRequestPermission: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenLog: () -> Unit,
 ) {
     Box(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
-        SettingsButton(
-            onClick = onOpenSettings,
+        Row(
             modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
-        )
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            ShizziIconButton(
+                icon = Icons.AutoMirrored.Filled.List,
+                contentDescription = "Log",
+                onClick = onOpenLog,
+            )
+            SettingsButton(onClick = onOpenSettings)
+        }
 
         Column(
             modifier = Modifier.fillMaxSize().padding(32.dp),
@@ -199,42 +224,14 @@ private fun StatusDetail(state: SpikeUiState, onRequestPermission: () -> Unit) {
     }
 }
 
-/**
- * Gear icon drawn directly rather than pulling in material-icons-extended,
- * which is a large artifact to add for a single glyph.
- */
 @Composable
 private fun SettingsButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val tint = MaterialTheme.colorScheme.onSurfaceVariant
-
-    IconButton(onClick = onClick, modifier = modifier) {
-        Canvas(modifier = Modifier.size(24.dp)) {
-            val center = Offset(size.width / 2f, size.height / 2f)
-            val toothLength = size.minDimension * 0.20f
-            val ringRadius = size.minDimension * 0.28f
-            val strokeWidth = size.minDimension * 0.13f
-
-            repeat(GEAR_TEETH) { index ->
-                val angle = (PI * 2 / GEAR_TEETH * index).toFloat()
-                val inner = ringRadius + strokeWidth * 0.1f
-                val outer = inner + toothLength
-                drawLine(
-                    color = tint,
-                    start = center + Offset(cos(angle) * inner, sin(angle) * inner),
-                    end = center + Offset(cos(angle) * outer, sin(angle) * outer),
-                    strokeWidth = strokeWidth * 0.75f,
-                    cap = StrokeCap.Round,
-                )
-            }
-
-            drawCircle(
-                color = tint,
-                radius = ringRadius,
-                center = center,
-                style = Stroke(width = strokeWidth),
-            )
-        }
-    }
+    ShizziIconButton(
+        icon = Icons.Filled.Settings,
+        contentDescription = "Settings",
+        onClick = onClick,
+        modifier = modifier,
+    )
 }
 
 @Composable
