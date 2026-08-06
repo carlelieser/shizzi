@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -69,15 +71,15 @@ val gomobileBind by tasks.registering(Exec::class) {
 }
 
 android {
-    namespace = "dev.shizzi.spike"
+    namespace = "dev.shizzi"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "dev.shizzi.spike"
+        applicationId = "dev.shizzi"
         minSdk = 29
         targetSdk = 35
         versionCode = 1
-        versionName = "0.1-spike"
+        versionName = "0.1.0"
 
         // Identifies the build to the shell-side daemon, which survives APK
         // replacement and will not reload an already-loaded class. Without a
@@ -95,9 +97,46 @@ android {
         }
     }
 
+    // Loaded from a gitignored file locally and written by CI from secrets.
+    // Absent on a fresh clone, which is why every read below is guarded: an
+    // unsigned debug build must still work for someone who has never seen the
+    // key.
+    val keystoreProperties = Properties().apply {
+        val file = rootProject.file("keystore.properties")
+        if (file.exists()) file.inputStream().use { load(it) }
+    }
+
+    signingConfigs {
+        create("release") {
+            val path = keystoreProperties.getProperty("storeFile")
+            if (path != null) {
+                storeFile = rootProject.file(path)
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         debug {
             isMinifyEnabled = false
+        }
+
+        release {
+            isMinifyEnabled = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+
+            // Only when the key is actually present. Configuring it
+            // unconditionally makes every release build fail on a machine
+            // without the keystore, including CI runs that only need to check
+            // that the project compiles.
+            if (keystoreProperties.getProperty("storeFile") != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 
@@ -132,10 +171,21 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("androidx.activity:activity-compose:1.9.3")
 
+    // Settings that survive a restart. The theme choice has to be readable
+    // before the first frame, so this is read synchronously once at startup
+    // and observed as a flow thereafter.
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+
     val composeBom = platform("androidx.compose:compose-bom:2024.10.01")
     implementation(composeBom)
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material3:material3")
+
+    // The app draws seven-plus glyphs across three screens. Hand-drawing them
+    // on Canvas, as the first build did for its single gear, produces icons that
+    // drift in stroke weight and optical size against each other. R8 shrinks
+    // the unused catalogue out of the release build.
+    implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.ui:ui-tooling-preview")
     debugImplementation("androidx.compose.ui:ui-tooling")
 

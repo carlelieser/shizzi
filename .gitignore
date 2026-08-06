@@ -12,3 +12,12 @@ local.properties
 
 # gomobile output: the AAR is a build product of /datapath, rebuilt by Gradle.
 /app/libs/*.aar
+
+# Release signing. The key and its passwords never enter the repository: the
+# signing identity is what proves an update came from us, and a key in git is
+# a key everyone has. CI supplies these from secrets; keep your own backup
+# somewhere durable, because losing it means no existing install can ever be
+# updated again.
+*.jks
+*.keystore
+/keystore.properties

@@ -31,11 +31,13 @@
         tools:ignore="ProtectedPermissions" />
 
     <application
-        android:name=".SpikeApplication"
+        android:name=".App"
         android:allowBackup="false"
-        android:label="Tether Spike"
+        android:icon="@mipmap/ic_launcher"
+        android:label="Shizzi"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.TetherSpike">
+        android:theme="@style/Theme.Shizzi">
 
         <activity
             android:name=".MainActivity"
