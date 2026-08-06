@@ -3,9 +3,12 @@ package dev.shizzi.spike
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import dev.shizzi.spike.ui.theme.ThemeChoice
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -22,6 +25,21 @@ class SpikeViewModel(application: Application) : AndroidViewModel(application) {
 
     /** Owned here because diagnostics are a UI action, not part of a session. */
     private val diagnostics = ProbeController()
+
+    private val settingsStore = getApplication<SpikeApplication>().settingsStore
+
+    /**
+     * Persisted settings, null until the first read completes.
+     *
+     * Null rather than a default: the theme has to be known before the first
+     * frame, and rendering under SYSTEM while the stored choice loads flashes
+     * the wrong theme. The activity holds the frame until this is non-null.
+     */
+    val settings: StateFlow<Settings?> = settingsStore.settings.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Eagerly,
+        initialValue = null,
+    )
 
     private val localState = MutableStateFlow(SpikeUiState())
     val state: StateFlow<SpikeUiState> = localState.asStateFlow()
@@ -52,12 +70,7 @@ class SpikeViewModel(application: Application) : AndroidViewModel(application) {
 
         sessionCollector = viewModelScope.launch {
             SessionService.liveState.collect { session ->
-                localState.update { local ->
-                    session.copy(
-                        shizukuState = local.shizukuState,
-                        isDebugLogging = local.isDebugLogging,
-                    )
-                }
+                localState.update { local -> session.copy(shizukuState = local.shizukuState) }
             }
         }
     }
@@ -71,7 +84,11 @@ class SpikeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun setDebugLogging(enabled: Boolean) {
-        localState.update { it.copy(isDebugLogging = enabled) }
+        viewModelScope.launch { settingsStore.setDebugLogging(enabled) }
+    }
+
+    fun setTheme(choice: ThemeChoice) {
+        viewModelScope.launch { settingsStore.setTheme(choice) }
     }
 
     /** One button: starts when idle, stops when connected. */

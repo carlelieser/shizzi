@@ -74,6 +74,7 @@ private fun statusLabel(status: UiStatus): String = when (status) {
 @Composable
 fun SpikeScreen(
     state: SpikeUiState,
+    settings: Settings,
     onToggle: () -> Unit,
     onRequestPermission: () -> Unit,
     onSetDebugLogging: (Boolean) -> Unit,
@@ -84,7 +85,7 @@ fun SpikeScreen(
     Box(modifier = Modifier.fillMaxSize()) {
         when {
             isShowingSettings -> SettingsPage(
-                isDebugLogging = state.isDebugLogging,
+                isDebugLogging = settings.isDebugLogging,
                 onSetDebugLogging = onSetDebugLogging,
                 onRunProbes = onRunProbes,
                 onBack = { isShowingSettings = false },

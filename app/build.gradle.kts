@@ -132,6 +132,11 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("androidx.activity:activity-compose:1.9.3")
 
+    // Settings that survive a restart. The theme choice has to be readable
+    // before the first frame, so this is read synchronously once at startup
+    // and observed as a flow thereafter.
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+
     val composeBom = platform("androidx.compose:compose-bom:2024.10.01")
     implementation(composeBom)
     implementation("androidx.compose.ui:ui")

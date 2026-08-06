@@ -15,6 +15,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -93,11 +94,19 @@ class SessionService : Service() {
         internalState.update { it.copy(isBusy = true, status = UiStatus.LOADING, lastError = "") }
 
         scope.launch {
-            val outcome = runCatching { controller.start(internalState.value.isDebugLogging) }
+            // Read from the store rather than from UI state: the service can
+            // be started from the notification with no screen alive to have
+            // populated it.
+            val isDebugLogging = settingsStore().settings.first().isDebugLogging
+
+            val outcome = runCatching { controller.start(isDebugLogging) }
             internalState.update { current -> current.applyOutcome(outcome) }
             publishState()
         }
     }
+
+    private fun settingsStore(): SettingsStore =
+        (application as SpikeApplication).settingsStore
 
     /**
      * Stops the session and then itself.

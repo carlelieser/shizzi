@@ -14,6 +14,12 @@ import org.lsposed.hiddenapibypass.HiddenApiBypass
  */
 class SpikeApplication : Application() {
 
+    /**
+     * Owned here rather than by a ViewModel: the session service reads debug
+     * logging too, and it has no ViewModel to read it from.
+     */
+    val settingsStore: SettingsStore by lazy { SettingsStore(this) }
+
     override fun onCreate() {
         super.onCreate()
         instance = this

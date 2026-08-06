@@ -21,7 +21,6 @@ data class SpikeUiState(
     val detail: String = "",
     val interfaceName: String = "",
     val lastError: String = "",
-    val isDebugLogging: Boolean = false,
 ) {
     /** Shizuku must be ready before the button can do anything. */
     val canStart: Boolean get() = shizukuState is ShizukuState.Ready && !isBusy
