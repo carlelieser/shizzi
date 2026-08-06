@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.automirrored.filled.TextSnippet
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -107,7 +107,7 @@ private fun HomeHeader(
         Spacer(Modifier.weight(1f))
 
         ShizziIconButton(
-            icon = Icons.AutoMirrored.Filled.List,
+            icon = Icons.AutoMirrored.Filled.TextSnippet,
             contentDescription = "Log",
             onClick = onOpenLog,
         )
