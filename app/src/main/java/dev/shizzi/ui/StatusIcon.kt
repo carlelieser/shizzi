@@ -172,5 +172,4 @@ private fun badgeText(state: ShizukuState): String? = when (state) {
     is ShizukuState.NotInstalled -> "NO SHIZUKU"
     is ShizukuState.NotRunning -> "SHIZUKU OFF"
     is ShizukuState.PermissionRequired -> "PERMISSION NEEDED"
-    is ShizukuState.UnsupportedPlatform -> "UNSUPPORTED"
 }

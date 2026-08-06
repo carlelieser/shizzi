@@ -61,7 +61,7 @@ class ProbeRunner(private val context: Context) {
         report.recordReleaseProblems(problems)
     }
 
-    /** Q0/Q1: are we actually shell, on a build new enough, with the service present? */
+    /** Q0/Q1: are we actually shell, with the service present? */
     private fun probeIdentityAndPlatform(report: ProbeReportBuilder): Boolean {
         val uid = Process.myUid()
         val isPrivilegedUid = uid == SHELL_UID || uid == ROOT_UID
@@ -70,14 +70,6 @@ class ProbeRunner(private val context: Context) {
             question = "Does the privileged service run as shell (2000) or root (0)?",
             outcome = if (isPrivilegedUid) ProbeOutcome.PASS else ProbeOutcome.FAIL,
             detail = "uid=$uid (${if (uid == SHELL_UID) "shell" else if (uid == ROOT_UID) "root" else "unexpected"})",
-        )
-
-        val isSupportedApi = Build.VERSION.SDK_INT >= FEATURE_MIN_API
-        report.record(
-            id = "Q0b",
-            question = "Is the device at or above the API 33 feature floor?",
-            outcome = if (isSupportedApi) ProbeOutcome.PASS else ProbeOutcome.FAIL,
-            detail = "SDK_INT=${Build.VERSION.SDK_INT}, floor=$FEATURE_MIN_API",
         )
 
         report.record(
@@ -90,7 +82,7 @@ class ProbeRunner(private val context: Context) {
             },
         )
 
-        return isPrivilegedUid && isSupportedApi && testNetworkApi.isAvailable
+        return isPrivilegedUid && testNetworkApi.isAvailable
     }
 
     private fun probeNetworkPath(
@@ -527,7 +519,6 @@ class ProbeRunner(private val context: Context) {
     private companion object {
         const val SHELL_UID = 2000
         const val ROOT_UID = 0
-        const val FEATURE_MIN_API = 33
 
         /** TEST-NET-1 per spec R3.2. */
         const val TUN_ADDRESS = "192.0.2.2"
