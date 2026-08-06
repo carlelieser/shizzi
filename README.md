@@ -13,7 +13,7 @@ forwards hotspot traffic through a Go datapath.
 
 ## Requirements
 
-- Android 10 (API 29+), arm64
+- Android 13 (API 33+), arm64
 - [Shizuku](https://shizuku.rikka.app/) 13.6.0+
 
 ## Install
