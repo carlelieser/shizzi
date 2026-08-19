@@ -1,0 +1,137 @@
+# Signed release build, published to a GitHub release.
+#
+# Triggered by pushing a v* tag, which is how v0.1.0 and v0.2.0 were cut by
+# hand. Bump versionName/versionCode and update CHANGELOG.md first, then tag:
+#
+#     git tag -a v0.3.0 -m "v0.3.0 — ..." && git push origin v0.3.0
+#
+# Requires four secrets. Without them the signing step fails loudly rather
+# than publishing an unsigned APK, because an APK signed with the wrong key —
+# or no key — cannot update an existing install:
+#
+#   KEYSTORE_BASE64    base64 of shizzi-release.jks
+#   KEYSTORE_PASSWORD  storePassword
+#   KEY_ALIAS          keyAlias
+#   KEY_PASSWORD       keyPassword
+#
+# Produce KEYSTORE_BASE64 with:  base64 -i shizzi-release.jks | pbcopy
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to build and publish (e.g. v0.3.0)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+          # The release notes link a compare against the previous tag, which
+          # needs more than the default shallow clone.
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: temurin
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.26.3'
+          cache-dependency-path: datapath/go.sum
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Install NDK
+        # Same pin as build.yml: this is the NDK v0.2.0 shipped with.
+        run: sdkmanager --install "ndk;27.0.12077973"
+
+      - name: Install gomobile
+        run: |
+          go install golang.org/x/mobile/cmd/gomobile@latest
+          gomobile init
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Restore signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::KEYSTORE_BASE64 is not set. A release APK must be signed with the same key as previous releases, or it cannot update an existing install."
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > shizzi-release.jks
+          cat > keystore.properties <<EOF
+          storeFile=shizzi-release.jks
+          storePassword=$KEYSTORE_PASSWORD
+          keyAlias=$KEY_ALIAS
+          keyPassword=$KEY_PASSWORD
+          EOF
+
+      - name: Build release and debug APKs
+        run: ./gradlew assembleRelease assembleDebug --no-daemon
+
+      - name: Verify APKs
+        # The version in the tag and the version compiled into the APK are set
+        # in two different places, and a tag that disagrees with the manifest
+        # ships a build that reports the wrong version forever.
+        run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          # Highest stable build-tools. Plain `sort -V | tail -1` would
+          # prefer an -rc over the stable release next to it.
+          BUILD_TOOLS=$(ls -d "$ANDROID_SDK_ROOT"/build-tools/* | grep -v -- "-rc" | sort -V | tail -1)
+          RELEASE_APK=app/build/outputs/apk/release/app-release.apk
+
+          VERSION_NAME=$("$BUILD_TOOLS/aapt2" dump badging "$RELEASE_APK" \
+            | sed -n "s/.*versionName='\([^']*\)'.*/\1/p")
+
+          if [ "v$VERSION_NAME" != "$TAG" ]; then
+            echo "::error::Tag $TAG does not match versionName $VERSION_NAME in app/build.gradle.kts."
+            exit 1
+          fi
+
+          # Signed, and signed with the key that previous releases used.
+          "$BUILD_TOOLS/apksigner" verify --print-certs "$RELEASE_APK"
+
+          echo "Verified $TAG (versionName=$VERSION_NAME)"
+
+      - name: Checksums
+        run: |
+          cd app/build/outputs/apk
+          mv release/app-release.apk debug/app-debug.apk .
+          sha256sum app-release.apk app-debug.apk | tee SHA256SUMS.txt
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          cd app/build/outputs/apk
+          gh release create "$TAG" \
+            app-release.apk app-debug.apk SHA256SUMS.txt \
+            --repo "${{ github.repository }}" \
+            --title "$TAG" \
+            --generate-notes \
+            --draft
+
+      - name: Clean up signing material
+        if: always()
+        run: rm -f shizzi-release.jks keystore.properties
