@@ -32,6 +32,17 @@ data class HiddenApiPath(
 /**
  * The reflection paths, as data. Resolution failures are reported per-path so a
  * single missing method identifies itself instead of collapsing the whole run.
+ *
+ * `since` values are verified against AOSP sources, not assumed. Two
+ * subsystems appear here, and they have different floors:
+ *
+ * - Test-network creation (TestNetworkManager, TestNetworkInterface,
+ *   LinkAddress, TRANSPORT_TEST) ships from API 29. The app can build a
+ *   TUN and register it as a test network on Android 10.
+ * - Tethering-side upstream selection (setPreferTestNetworks) ships from
+ *   API 33. That is why the floor is 33, and why creating a working test
+ *   network on Android 10 achieves nothing: the tethering stack has no
+ *   code that would look at it. See docs/android-10-support.md.
  */
 object HiddenApiCatalog {
     val paths: List<HiddenApiPath> = listOf(
@@ -39,7 +50,7 @@ object HiddenApiCatalog {
             id = "TestNetworkManager.class",
             className = "android.net.TestNetworkManager",
             memberName = "<class>",
-            since = 30,
+            since = 29,
             notes = "Obtained via Context.getSystemService(\"test_network\"); " +
                 "@TestApi, not in the SDK. Absent on trimmed OEM builds.",
         ),
@@ -47,8 +58,8 @@ object HiddenApiCatalog {
             id = "TestNetworkManager.createTunInterface",
             className = "android.net.TestNetworkManager",
             memberName = "createTunInterface",
-            since = 30,
-            notes = "Signature changed across releases: API 30 takes " +
+            since = 29,
+            notes = "Signature changed across releases: API 29-30 take " +
                 "LinkAddress[], later releases take Collection<LinkAddress>. " +
                 "Both overloads are probed.",
         ),
@@ -56,7 +67,7 @@ object HiddenApiCatalog {
             id = "TestNetworkManager.setupTestNetwork",
             className = "android.net.TestNetworkManager",
             memberName = "setupTestNetwork",
-            since = 30,
+            since = 29,
             notes = "Overload used takes (String iface, IBinder binder). " +
                 "Requires MANAGE_TEST_NETWORKS, held by shell UID 2000.",
         ),
@@ -64,14 +75,14 @@ object HiddenApiCatalog {
             id = "TestNetworkManager.teardownTestNetwork",
             className = "android.net.TestNetworkManager",
             memberName = "teardownTestNetwork",
-            since = 30,
+            since = 29,
             notes = "Takes the Network returned by the availability callback.",
         ),
         HiddenApiPath(
             id = "TestNetworkInterface.getFileDescriptor",
             className = "android.net.TestNetworkInterface",
             memberName = "getFileDescriptor",
-            since = 30,
+            since = 29,
             notes = "Returns ParcelFileDescriptor owning the TUN. This fd is " +
                 "the datapath handoff point.",
         ),
@@ -79,7 +90,7 @@ object HiddenApiCatalog {
             id = "TestNetworkInterface.getInterfaceName",
             className = "android.net.TestNetworkInterface",
             memberName = "getInterfaceName",
-            since = 30,
+            since = 29,
             notes = "Yields the testtunN name matched against dumpsys output.",
         ),
         HiddenApiPath(
@@ -120,7 +131,7 @@ object HiddenApiCatalog {
             id = "LinkAddress.<init>",
             className = "android.net.LinkAddress",
             memberName = "<init>",
-            since = 30,
+            since = 29,
             notes = "The (InetAddress, int) constructor is package-private, so " +
                 "the TUN address must be built reflectively.",
         ),
@@ -128,7 +139,7 @@ object HiddenApiCatalog {
             id = "NetworkCapabilities.TRANSPORT_TEST",
             className = "android.net.NetworkCapabilities",
             memberName = "TRANSPORT_TEST",
-            since = 30,
+            since = 29,
             notes = "@hide constant (value 7 on AOSP). Read reflectively rather " +
                 "than hardcoded so a renumbering surfaces as a probe failure.",
         ),
@@ -229,7 +240,7 @@ class TestNetworkApi(private val context: Context) {
      * Creates a TUN carrying [address].
      *
      * Tries the Collection overload first (API 31+) then the array overload
-     * (API 30), because the parameter type changed between releases.
+     * (API 29-30), because the parameter type changed between releases.
      */
     fun createTunInterface(address: LinkAddress): TunHandle {
         val instance = manager ?: error("createTunInterface: test_network service unavailable")
