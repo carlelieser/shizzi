@@ -42,13 +42,17 @@ class SessionResources(
      *   engineering guideline on error messages. Callers must call [release] on
      *   failure; partial state is never left implicitly owned.
      */
-    fun acquire(addresses: List<android.net.LinkAddress>, availabilityTimeoutMs: Int): String {
+    fun acquire(
+        addresses: List<android.net.LinkAddress>,
+        dnsServers: List<java.net.InetAddress>,
+        availabilityTimeoutMs: Int,
+    ): String {
         val created = testNetworkApi.createTunInterface(addresses)
         tun = created
         fileDescriptor = created.fileDescriptor
 
         val name = created.interfaceName
-        testNetworkApi.setupTestNetwork(name, lifetimeToken)
+        testNetworkApi.setupTestNetwork(name, dnsServers, lifetimeToken)
 
         network = awaitAvailability(name, availabilityTimeoutMs)
         requestKeepAlive()

@@ -75,7 +75,7 @@ class TetherSession(private val context: Context) {
         val group = SessionResources(testNetworkApi, context.connectivityManager())
         resources = group
 
-        val name = group.acquire(tunAddresses(), AVAILABILITY_TIMEOUT_MS)
+        val name = group.acquire(tunAddresses(), TEST_NETWORK_DNS_SERVERS, AVAILABILITY_TIMEOUT_MS)
         interfaceName = name
         SessionLog.info("tun up: $name")
 
@@ -358,6 +358,7 @@ class TetherSession(private val context: Context) {
         /** The IPv6 counterpart, from the documentation range so it cannot collide. */
         const val TUN_ADDRESS_V6 = "2001:db8::2"
         const val TUN_PREFIX_LENGTH_V6 = 64
+
         const val TUN_MTU = 1500
         const val AVAILABILITY_TIMEOUT_MS = 10_000
         const val UPSTREAM_SETTLE_MS = 8_000L

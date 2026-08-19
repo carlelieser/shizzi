@@ -97,7 +97,7 @@ class ProbeRunner(private val context: Context) {
         if (attemptTethering) restartDownstreamBeforeTun(report)
 
         val acquired = runCatching {
-            group.acquire(tunAddresses(), availabilityTimeoutMs)
+            group.acquire(tunAddresses(), TEST_NETWORK_DNS_SERVERS, availabilityTimeoutMs)
         }
 
         acquired.fold(
@@ -529,6 +529,7 @@ class ProbeRunner(private val context: Context) {
         /** The IPv6 counterpart, from the documentation range so it cannot collide. */
         const val TUN_ADDRESS_V6 = "2001:db8::2"
         const val TUN_PREFIX_LENGTH_V6 = 64
+
 
         /**
          * Link MTU for the TUN (R5.5 default). Egress is direct rather than

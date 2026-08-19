@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.LinkAddress
+import android.net.LinkProperties
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.os.Build
@@ -69,8 +70,11 @@ object HiddenApiCatalog {
             className = "android.net.TestNetworkManager",
             memberName = "setupTestNetwork",
             since = 29,
-            notes = "Overload used takes (String iface, IBinder binder). " +
-                "Requires MANAGE_TEST_NETWORKS, held by shell UID 2000.",
+            notes = "The (LinkProperties, boolean, IBinder) overload is used so " +
+                "the network carries IPv6 DNS servers, without which tethering " +
+                "will not provision IPv6 downstream; falls back to " +
+                "(String iface, IBinder binder). Requires MANAGE_TEST_NETWORKS, " +
+                "held by shell UID 2000.",
         ),
         HiddenApiPath(
             id = "TestNetworkManager.teardownTestNetwork",
@@ -146,6 +150,15 @@ object HiddenApiCatalog {
         ),
     )
 }
+
+/**
+ * DNS servers the test network advertises.
+ *
+ * Not cosmetic: tethering's getIPv6Interface returns null unless the upstream
+ * has an IPv6 DNS server, and IPv6 is then never provisioned downstream.
+ */
+val TEST_NETWORK_DNS_SERVERS: List<InetAddress>
+    get() = listOf("2001:4860:4860::8888", "8.8.8.8").map(InetAddress::getByName)
 
 /**
  * Builds a [LinkAddress] without the package-private constructor.
@@ -277,13 +290,47 @@ class TestNetworkApi(private val context: Context) {
         method.invoke(instance, argument)
     }.getOrNull()
 
-    /** Registers [interfaceName] as a test network bound to the lifetime of [binder]. */
-    fun setupTestNetwork(interfaceName: String, binder: IBinder) {
+    /**
+     * Registers [interfaceName] as a test network bound to the lifetime of [binder].
+     *
+     * Registered with LinkProperties carrying [dnsServers], because tethering
+     * refuses to provision IPv6 downstream without them: getIPv6Interface
+     * requires hasIpv6DnsServer(), and the plain overload leaves the list
+     * empty. The interface name and link addresses in the LinkProperties are
+     * overwritten by the framework; only the DNS servers survive.
+     *
+     * Falls back to the plain overload when the LinkProperties one is absent,
+     * so a build without it still gets a working IPv4 session.
+     */
+    fun setupTestNetwork(interfaceName: String, dnsServers: List<InetAddress>, binder: IBinder) {
         val instance = manager ?: error("setupTestNetwork: test_network service unavailable")
         val owner = managerClass ?: error("setupTestNetwork: TestNetworkManager class absent")
+
+        val properties = LinkProperties().apply {
+            setInterfaceName(interfaceName)
+            val addDnsServer = LinkProperties::class.java
+                .getMethod("addDnsServer", InetAddress::class.java)
+            dnsServers.forEach { addDnsServer.invoke(this, it) }
+        }
+        if (setupWithLinkProperties(owner, instance, properties to binder)) return
+
         val method = owner.getMethod("setupTestNetwork", String::class.java, IBinder::class.java)
         method.invoke(instance, interfaceName, binder)
     }
+
+    private fun setupWithLinkProperties(
+        owner: Class<*>,
+        instance: Any,
+        request: Pair<LinkProperties, IBinder>,
+    ): Boolean = runCatching {
+        val method = owner.getMethod(
+            "setupTestNetwork",
+            LinkProperties::class.java,
+            Boolean::class.javaPrimitiveType,
+            IBinder::class.java,
+        )
+        method.invoke(instance, request.first, true, request.second)
+    }.isSuccess
 
     /** Tears down the framework-side test network for [network]. */
     fun teardownTestNetwork(network: Network) {
