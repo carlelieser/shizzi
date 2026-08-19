@@ -22,6 +22,10 @@ data class SessionUiState(
     val interfaceName: String = "",
     val lastError: String = "",
     val isVpnBound: Boolean = false,
+    /** How many devices are on the hotspot; 0 unless a session is up. */
+    val clientCount: Int = 0,
+    /** Bytes carried this session, for the notification to report. */
+    val traffic: Traffic = Traffic(),
 ) {
     /** Shizuku must be ready before the button can do anything. */
     val canStart: Boolean get() = shizukuState is ShizukuState.Ready && !isBusy
@@ -41,6 +45,11 @@ fun SessionUiState.asStopped(): SessionUiState = copy(
     detail = "Stopped",
     interfaceName = "",
     isVpnBound = false,
+    // Same reasoning: a stopped session has no clients and carries nothing,
+    // so holding the last reading would caption an idle screen with live
+    // numbers that stopped moving.
+    clientCount = 0,
+    traffic = Traffic(),
 )
 
 /**
@@ -66,6 +75,8 @@ fun SessionUiState.applyOutcome(outcome: Result<String>): SessionUiState {
             // Same reasoning, and worse: a stale badge would claim the traffic
             // of a session that no longer exists is going through a VPN.
             isVpnBound = false,
+            clientCount = 0,
+            traffic = Traffic(),
         )
     }
 
@@ -81,6 +92,11 @@ fun SessionUiState.applyOutcome(outcome: Result<String>): SessionUiState {
         lastError = if (sessionState == "ERROR") sessionDetail else "",
         // Absent on an older shell process, which reads correctly as unbound.
         isVpnBound = parsed?.optBoolean("isVpnBound") == true,
+        clientCount = parsed?.optInt("clientCount") ?: 0,
+        traffic = Traffic(
+            up = parsed?.optLong("bytesUp") ?: 0,
+            down = parsed?.optLong("bytesDown") ?: 0,
+        ),
     )
 }
 

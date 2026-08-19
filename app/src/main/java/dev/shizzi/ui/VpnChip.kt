@@ -1,42 +1,49 @@
 package dev.shizzi.ui
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.VpnKey
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import dev.shizzi.ui.theme.ShizziTheme
-import dev.shizzi.ui.theme.brutalSurface
 
 /**
- * Says the tunnel is carrying traffic out through a VPN.
+ * Says the tethered clients are going out through a VPN.
  *
- * Neutral rather than turquoise: the palette reserves the accent for a state
- * worth acting on, and a VPN being up is merely true. The connected status
- * glyph above is already the one saturated thing on screen, and a second would
- * give the eye two things claiming to be the most important.
+ * No surface behind it. Every bordered element in this app is something to
+ * press, so wearing that treatment made a label look like a control; without
+ * it, nothing about this invites a tap.
  *
- * "VIA VPN" rather than "PROTECTED", which overclaims — the app cannot vouch
- * for what the VPN does — and rather than "VPN ACTIVE", which reads equally as
- * "your VPN is on", a thing the system status bar already says. What this adds
- * is that the *tethered clients* are going out through it.
+ * The key glyph is the one Android itself puts in the status bar for an active
+ * VPN, so it is already the thing a user reads as "VPN" without being taught.
+ *
+ * Drawn in the accent. The palette otherwise reserves it for a state worth
+ * acting on, and a VPN being up is merely true — but this is the one thing on
+ * the screen a user opens the app to confirm, and with no surface to frame it
+ * the colour is what keeps it from reading as a caption.
  */
 @Composable
 fun VpnChip() {
     Row(
-        modifier = Modifier
-            .brutalSurface(fill = ShizziTheme.colors.surface)
-            .padding(
-                horizontal = ShizziTheme.spacing.md,
-                vertical = ShizziTheme.spacing.sm,
-            ),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(ShizziTheme.spacing.sm),
     ) {
+        Icon(
+            imageVector = Icons.Filled.VpnKey,
+            contentDescription = null,
+            tint = ShizziTheme.colors.primary,
+            modifier = Modifier.size(ShizziTheme.spacing.lg),
+        )
+
         Text(
-            text = "VIA VPN",
+            text = "VPN CONNECTED",
             style = ShizziTheme.typography.caption,
-            color = ShizziTheme.colors.onSurfaceMuted,
+            color = ShizziTheme.colors.primary,
         )
     }
 }

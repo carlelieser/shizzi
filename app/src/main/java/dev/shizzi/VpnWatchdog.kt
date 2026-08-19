@@ -180,7 +180,6 @@ class VpnWatchdog(
 
         /** Reaches the user verbatim, through the session's detail string. */
         const val VPN_LOST_DETAIL =
-            "The VPN disconnected, so the session was stopped to keep connected " +
-                "devices from going out unprotected."
+            "VPN disconnected. Session stopped to keep devices protected."
     }
 }

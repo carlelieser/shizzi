@@ -54,7 +54,16 @@ class SessionStatusPoller(
     }
 
     private companion object {
-        /** Matches the shell-side watchdogs, so the UI lags them by at most one tick. */
-        const val POLL_INTERVAL_MS = 5_000L
+        /**
+         * Fast enough that the byte counters read as live rather than as
+         * steps.
+         *
+         * Affordable only because a status read no longer spawns a process:
+         * the counters come from /proc in process, and the device count behind
+         * it refreshes on its own slower schedule. At the previous design's
+         * ~127ms per read this rate would have burned ~13% of a core for the
+         * life of every session.
+         */
+        const val POLL_INTERVAL_MS = 1_000L
     }
 }

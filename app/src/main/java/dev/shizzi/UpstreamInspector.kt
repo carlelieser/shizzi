@@ -61,8 +61,17 @@ private fun interfaceExists(name: String): Boolean =
  */
 class UpstreamInspector(private val deadlineMs: Long = DEFAULT_DEADLINE_MS) {
 
-    fun observe(): UpstreamObservation {
-        val process = ProcessBuilder("dumpsys", "tethering").start()
+    fun observe(): UpstreamObservation = run("tethering")
+
+    /**
+     * The Wi-Fi dump, for facts tethering's own dump reports only historically.
+     *
+     * Same capture and timeout handling; only the service differs.
+     */
+    fun observeWifi(): UpstreamObservation = run("wifi")
+
+    private fun run(service: String): UpstreamObservation {
+        val process = ProcessBuilder("dumpsys", service).start()
         val drainPool = Executors.newFixedThreadPool(2)
 
         val stdout = drainPool.submit<String> { process.inputStream.drain() }

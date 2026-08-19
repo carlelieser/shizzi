@@ -26,7 +26,7 @@ class SessionNotification(private val context: Context) {
         val text = bodyFor(state, isStopping)
 
         return Notification.Builder(context, CHANNEL_ID)
-            .setContentTitle(titleFor(state.status, isStopping))
+            .setContentTitle(titleFor(state, isStopping))
             .setContentText(text)
             .setStyle(Notification.BigTextStyle().bigText(text))
             .setSmallIcon(android.R.drawable.ic_dialog_info)
@@ -42,48 +42,91 @@ class SessionNotification(private val context: Context) {
      * Deliberately no longer says "protected". That claimed a security property
      * the app does not deliver: with no VPN up, traffic leaves over the physical
      * network exactly as ordinary tethering would, and the only thing the word
-     * ever referred to was an implementation detail. Whether traffic is actually
-     * tunnelled is now stated in the body, and only when it is true.
+     * ever referred to was an implementation detail.
      *
      * ERROR and READY share a title because the fact is the same in both — the
      * session is over. Which of the two it was is what the body carries.
      */
-    private fun titleFor(status: UiStatus, isStopping: Boolean): String = when (status) {
-        UiStatus.CONNECTED -> "Sharing this connection"
-        UiStatus.LOADING -> if (isStopping) "Ending the session…" else "Starting the session…"
-        UiStatus.ERROR -> "Session ended"
-        UiStatus.READY -> "Session ended"
+    private fun titleFor(state: SessionUiState, isStopping: Boolean): String =
+        when (state.status) {
+            UiStatus.CONNECTED -> connectedTitle(state.isVpnBound)
+            UiStatus.LOADING -> if (isStopping) "Cleaning up…" else "Getting ready…"
+            UiStatus.ERROR -> "Session ended"
+            UiStatus.READY -> "Session ended"
+        }
+
+    /**
+     * The VPN fact rides in the title, where a collapsed notification shows it.
+     *
+     * Its absence is not stated. "Connected" alone is the honest reading of
+     * ordinary tethering, and a notification that announces what is *not*
+     * happening spends the one line it has on a non-event.
+     */
+    private fun connectedTitle(isVpnBound: Boolean): String = when {
+        isVpnBound -> "Connected · VPN"
+        else -> "Connected"
     }
 
     /**
      * What the notification says under its title.
      *
      * An error outranks everything: it is the only text here a user may need to
-     * act on. Otherwise a live session describes the path its clients' traffic
-     * takes, which is the one thing the notification can say that the screen
-     * cannot, since this is what stays visible with the app closed.
+     * act on.
+     *
+     * Nothing reaches this that was not written for a user to read. The former
+     * fallthrough handed [SessionUiState.detail] over verbatim, which put
+     * "tethered clients routing through testtun47" — and, on a failed start, a
+     * raw exception class name — on a notification. Both are diagnostics; they
+     * stay in the log and the in-app toast, which is where someone filing a bug
+     * looks for them.
      */
     private fun bodyFor(state: SessionUiState, isStopping: Boolean): String = when {
-        state.lastError.isNotEmpty() -> state.lastError
+        state.lastError.isNotEmpty() -> userFacingError(state.lastError)
         state.status == UiStatus.LOADING -> loadingBody(isStopping)
-        state.status == UiStatus.CONNECTED -> connectedBody(state.isVpnBound)
-        else -> state.detail
+        state.status == UiStatus.CONNECTED -> connectedBody(state)
+        else -> "Not sharing"
+    }
+
+    /**
+     * @return [raw] when it was written for a user, else a plain stand-in.
+     *
+     * A stack-trace fragment tells the user nothing they can act on and reads
+     * as a crash. The detail survives in the log either way, so the notification
+     * loses nothing by declining to show it.
+     */
+    private fun userFacingError(raw: String): String = when {
+        raw.contains(EXCEPTION_MARKER) -> "Something went wrong. Check the app for details."
+        else -> raw
     }
 
     private fun loadingBody(isStopping: Boolean): String =
         if (isStopping) "Turning the hotspot off…" else "Turning the hotspot on…"
 
     /**
-     * The absence of a VPN is stated, not merely left unsaid.
+     * What is actually happening: how many devices, and how much has moved.
      *
-     * Saying nothing is what lets someone who normally runs a VPN assume it is
-     * carrying their clients' traffic when it is not — the same silent fallback
-     * the watchdogs exist to prevent, in wording rather than in routing. Naming
-     * it costs one clause.
+     * The body carries information rather than a longer restatement of the
+     * title. It is also the half a user keeps looking at, since the counts are
+     * the only thing on the notification that changes while a session runs.
+     *
+     * Before any device connects there is nothing to count, and "0 devices ·
+     * ↓ 0 B" reads as a fault rather than as an empty hotspot, so that case is
+     * stated plainly instead.
+     *
+     * No terminal period on any of these: they are fragments, and a stop after
+     * a phrase that is not a sentence reads as a typo. The full sentences below
+     * — the ones telling a user what to do — keep theirs.
      */
-    private fun connectedBody(isVpnBound: Boolean): String = when {
-        isVpnBound -> "Connected devices are going out through your VPN."
-        else -> "Connected devices are going out through this phone's network, not a VPN."
+    private fun connectedBody(state: SessionUiState): String = when (state.clientCount) {
+        0 -> "No devices connected"
+        else -> "${deviceCount(state.clientCount)} · " +
+            "$DOWN_ARROW ${Traffic.format(state.traffic.down)} · " +
+            "$UP_ARROW ${Traffic.format(state.traffic.up)}"
+    }
+
+    private fun deviceCount(clients: Int): String = when (clients) {
+        1 -> "1 device"
+        else -> "$clients devices"
     }
 
     /** Phrased as what happened and what to do, not as a return value. */
@@ -130,5 +173,19 @@ class SessionNotification(private val context: Context) {
 
     private companion object {
         const val CHANNEL_ID = "tethering-session"
+
+        /** How a Kotlin exception name reads once it reaches a UI string. */
+        const val EXCEPTION_MARKER = "Exception"
+
+        /**
+         * Plain arrows, not the emoji ones.
+         *
+         * U+2193/U+2191 render in the notification's own text font at the
+         * weight of the digits beside them. The emoji variants would be
+         * substituted from the colour font and sit as coloured blobs against
+         * monochrome text.
+         */
+        const val DOWN_ARROW = "\u2193"
+        const val UP_ARROW = "\u2191"
     }
 }

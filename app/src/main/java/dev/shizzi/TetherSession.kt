@@ -34,6 +34,7 @@ class TetherSession(private val context: Context) {
     private var interfaceName: String? = null
     private var watchdog: SessionWatchdog? = null
     private val teardown = SessionTeardown(context)
+    private val downstream = DownstreamInspector()
     private val vpn = VpnUpstream(context) { problem -> tearDownAfter(problem) }
 
     val isActive: Boolean get() = state == SessionState.ACTIVE
@@ -259,6 +260,15 @@ class TetherSession(private val context: Context) {
         // A boolean rather than the handle: the handle is an opaque framework
         // token, and nothing on the far side of the binder should render it.
         put("isVpnBound", vpn.isBound)
+
+        // Both only while active, and from deliberately different sources: the
+        // byte counters are read from /proc in process on every call, while the
+        // device count comes from dumpsys behind its own rate limit. That split
+        // is what keeps a fast poll affordable.
+        val traffic = interfaceName?.let(InterfaceCounters::read) ?: Traffic()
+        put("bytesUp", traffic.up)
+        put("bytesDown", traffic.down)
+        put("clientCount", if (isActive) downstream.countDevices() else 0)
     }.toString()
 
     private fun tunAddresses() = listOf(
