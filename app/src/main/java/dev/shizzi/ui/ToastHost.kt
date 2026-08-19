@@ -118,8 +118,14 @@ private fun ToastSurface(toast: Toast, onDismiss: () -> Unit) {
 /**
  * The message, and under it the detail if there is one.
  *
- * The detail takes the muted colour and the caption size, so the pair reads as
- * one statement with its particulars rather than as two messages.
+ * Mono throughout. A toast reports machine facts — an exception, a path, a
+ * refusal from the framework — and those are the strings this app sets in mono
+ * everywhere else it shows them. `body` is Inter, which put the same text in
+ * prose type here and in mono on the log screen.
+ *
+ * The detail takes `log` rather than `caption`: both are mono, but caption is
+ * tracked and uppercase wherever it is used, which is the wrong treatment for a
+ * path. `log` is what the log screen already renders these in.
  */
 @Composable
 private fun ToastText(toast: Toast, modifier: Modifier = Modifier) {
@@ -129,7 +135,7 @@ private fun ToastText(toast: Toast, modifier: Modifier = Modifier) {
     ) {
         Text(
             text = toast.message,
-            style = ShizziTheme.typography.body,
+            style = ShizziTheme.typography.log,
             color = ShizziTheme.colors.onSurface,
         )
 
@@ -137,7 +143,7 @@ private fun ToastText(toast: Toast, modifier: Modifier = Modifier) {
 
         Text(
             text = toast.detail,
-            style = ShizziTheme.typography.caption,
+            style = ShizziTheme.typography.log,
             color = ShizziTheme.colors.onSurfaceMuted,
         )
     }
