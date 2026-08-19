@@ -33,7 +33,8 @@ class TetherSession(private val context: Context) {
     private var detail = "not started"
     private var interfaceName: String? = null
     private var watchdog: SessionWatchdog? = null
-    private var shutdownHook: Thread? = null
+    private val teardown = SessionTeardown(context)
+    private val vpn = VpnUpstream(context) { problem -> tearDownAfter(problem) }
 
     val isActive: Boolean get() = state == SessionState.ACTIVE
 
@@ -80,6 +81,7 @@ class TetherSession(private val context: Context) {
         SessionLog.info("tun up: $name")
 
         group.startDatapath(TUN_MTU)
+        vpn.follow(group)
 
         preferTestNetworks()
         restartDownstream()
@@ -90,51 +92,32 @@ class TetherSession(private val context: Context) {
         state = SessionState.ACTIVE
         detail = "tethered clients routing through $name"
 
-        installShutdownHook()
+        teardown.installShutdownHook()
         startWatchdog(name)
         return status()
     }
 
-    /**
-     * Drops the downstream if this process exits through System.exit.
-     *
-     * Covers exactly one path: ShizukuServiceStarter calling System.exit when
-     * the server it depends on goes away. That is a real path — it is how the
-     * 13.5.4 crash took this process down — but it is the only one.
-     *
-     * ART does not unwind shutdown hooks on signal death, so SIGTERM and
-     * SIGKILL both bypass this entirely; a device test confirmed SIGTERM
-     * leaves the hotspot tethered with no hook output. Recovery for those
-     * cases lives in the app process, which outlives this one (see
-     * SessionViewModel's session-lost handling).
-     */
-    private fun installShutdownHook() {
-        val hook = Thread {
-            Log.w(TAG, "process exiting with session active; dropping downstream")
-            runCatching { DownstreamControl(context).stopWifiTethering() }
-        }
-
-        runCatching { Runtime.getRuntime().addShutdownHook(hook) }
-            .onSuccess { shutdownHook = hook }
-            .onFailure { Log.w(TAG, "installShutdownHook: ${it.message}") }
-    }
-
     /** Stops the session if the tunnel stops being the sole upstream (R6.1). */
     private fun startWatchdog(name: String) {
-        val guard = SessionWatchdog(name) { problem -> tearDownAfterDrift(problem) }
+        val guard = SessionWatchdog(name) { problem ->
+            SessionLog.warn("upstream drift: $problem")
+            tearDownAfter(problem)
+        }
         watchdog = guard
         guard.start()
     }
 
     /**
-     * Stops the session because the upstream drifted, reporting why.
+     * Stops the session because something it depends on went away.
      *
-     * A teardown failure is kept alongside the drift rather than overwritten by
+     * A teardown failure is kept alongside [problem] rather than overwritten by
      * it: "the hotspot is still up" is the more dangerous of the two, and it is
-     * the one the plain drift message would hide.
+     * the one the plain message would hide.
+     *
+     * The caller logs its own cause — upstream drift and VPN loss are different
+     * failures and each names itself before handing over.
      */
-    private fun tearDownAfterDrift(problem: String) {
-        SessionLog.warn("upstream drift: $problem")
+    private fun tearDownAfter(problem: String) {
         stop()
 
         val teardownProblem = detail.takeIf { state == SessionState.ERROR }
@@ -248,11 +231,12 @@ class TetherSession(private val context: Context) {
     fun stop(): String {
         watchdog?.stop()
         watchdog = null
-        removeShutdownHook()
+        vpn.stop()
+        teardown.removeShutdownHook()
 
-        val downstreamProblem = releaseDownstream()
+        val downstreamProblem = teardown.releaseDownstream()
 
-        releaseUpstreamSelection()
+        teardown.releaseUpstreamSelection(interfaceName)
 
         resources?.release()?.forEach { Log.w(TAG, "stop: $it") }
         resources = null
@@ -268,81 +252,13 @@ class TetherSession(private val context: Context) {
         return status()
     }
 
-    /**
-     * Hands the upstream back to the framework *before* the TUN is destroyed.
-     *
-     * This ordering is load-bearing. Destroying the interface first leaves
-     * tethering holding a reference it can no longer act on: its own teardown
-     * needs the interface to exist, so it logs
-     *
-     *     [BpfCoordinator] Could not detach program: Fail to get interface
-     *     params for interface testtunNN
-     *
-     * and keeps naming that dead interface as the current upstream. Every
-     * subsequent start then fails verifyUpstream against a ghost, permanently,
-     * with nothing the app can do about it afterward and no way for a user to
-     * clear it short of a reboot. A device test wedged a phone exactly this way
-     * for eleven consecutive sessions.
-     *
-     * So the preference is cleared while the TUN is still up, and this waits
-     * for tethering to actually move off it. The wait is bounded and best
-     * effort: if the framework has not let go by the deadline, destroying the
-     * interface is still better than leaking it, and the next start reselects
-     * from whatever remains.
-     */
-    private fun releaseUpstreamSelection() {
-        val cleared = runCatching { TetheringPreferenceApi(context).setPreferTestNetworks(false) }
-            .onFailure { Log.w(TAG, "stop: preference ${it.message}") }
-        if (cleared.isFailure) return
-
-        val name = interfaceName ?: return
-        val deadline = System.currentTimeMillis() + UPSTREAM_RELEASE_MS
-
-        while (System.currentTimeMillis() < deadline) {
-            val observed = runCatching { inspector.observe().interfaceNames }.getOrDefault(emptyList())
-            if (observed.none { it == name }) {
-                SessionLog.info("upstream released: tethering moved off $name")
-                return
-            }
-            Thread.sleep(UPSTREAM_POLL_MS)
-        }
-
-        SessionLog.warn("upstream still reads $name after ${UPSTREAM_RELEASE_MS}ms; releasing anyway")
-    }
-
-    /** @return null once no downstream is tethered, else what is still up. */
-    private fun releaseDownstream(): String? {
-        val control = DownstreamControl(context)
-
-        val didAccept = runCatching { control.stopWifiTethering() }
-            .getOrElse { failure ->
-                Log.w(TAG, "stop: downstream ${failure.message}")
-                false
-            }
-
-        val stillTethered = runCatching { DownstreamInspector().findTetheredDownstream() }
-            .getOrElse { failure -> "could not verify downstream: ${failure.message}" }
-
-        return when {
-            stillTethered != null -> stillTethered
-            didAccept -> null
-            else -> "stopTethering was rejected, but no downstream remains tethered"
-        }
-    }
-
-    private fun removeShutdownHook() {
-        shutdownHook?.let { hook ->
-            // Throws if the JVM is already shutting down, which is exactly when
-            // the hook should stay installed.
-            runCatching { Runtime.getRuntime().removeShutdownHook(hook) }
-        }
-        shutdownHook = null
-    }
-
     fun status(): String = JSONObject().apply {
         put("state", state.name)
         put("detail", detail)
         put("interface", interfaceName ?: JSONObject.NULL)
+        // A boolean rather than the handle: the handle is an opaque framework
+        // token, and nothing on the far side of the binder should render it.
+        put("isVpnBound", vpn.isBound)
     }.toString()
 
     private fun tunAddresses() = listOf(
@@ -363,16 +279,6 @@ class TetherSession(private val context: Context) {
         const val AVAILABILITY_TIMEOUT_MS = 10_000
         const val UPSTREAM_SETTLE_MS = 8_000L
         const val UPSTREAM_POLL_MS = 500L
-
-        /**
-         * How long teardown waits for tethering to release the owned TUN.
-         *
-         * Shorter than the settle deadline: this is the framework letting go of
-         * an interface rather than selecting and validating a new one, and the
-         * session is already on its way out. Exceeding it is logged and the
-         * interface destroyed regardless — leaking the TUN would be worse.
-         */
-        const val UPSTREAM_RELEASE_MS = 4_000L
 
         /**
          * How long to wait for the hotspot to come up before building the TUN.

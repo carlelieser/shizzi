@@ -131,6 +131,11 @@ private fun HomeHeader(
 private fun HomeBody(state: SessionUiState, actions: HomeActions) {
     val isStarting = state.status == UiStatus.LOADING
 
+    // Guarded on the status too: a session torn down for VPN loss holds ERROR
+    // alongside the last VPN reading until the next publish, and the badge must
+    // not outlive the session it describes.
+    val isShowingVpn = state.isVpnBound && state.status == UiStatus.CONNECTED
+
     Column(
         modifier = Modifier.fillMaxSize().padding(ScreenPadding),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -138,7 +143,18 @@ private fun HomeBody(state: SessionUiState, actions: HomeActions) {
     ) {
         StatusIcon(status = state.status)
 
-        Spacer(Modifier.height(ShizziTheme.spacing.xxxl))
+        Spacer(Modifier.height(ShizziTheme.spacing.xl))
+
+        // Reserved whether or not it is showing, for the same reason the cancel
+        // affordance below is: a VPN can be adopted mid-session with the screen
+        // open, and the button must not jump when it is. Sized to clear the
+        // brutalist shadow, which is drawn outside the chip's own bounds.
+        Box(
+            modifier = Modifier.height(ShizziTheme.spacing.xxxl),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (isShowingVpn) VpnChip()
+        }
 
         ConnectButton(
             label = buttonLabel(state.status),

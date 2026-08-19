@@ -21,6 +21,7 @@ data class SessionUiState(
     val detail: String = "",
     val interfaceName: String = "",
     val lastError: String = "",
+    val isVpnBound: Boolean = false,
 ) {
     /** Shizuku must be ready before the button can do anything. */
     val canStart: Boolean get() = shizukuState is ShizukuState.Ready && !isBusy
@@ -39,6 +40,7 @@ fun SessionUiState.asStopped(): SessionUiState = copy(
     lastError = "",
     detail = "Stopped",
     interfaceName = "",
+    isVpnBound = false,
 )
 
 /**
@@ -61,6 +63,9 @@ fun SessionUiState.applyOutcome(outcome: Result<String>): SessionUiState {
             // A failed start tears its TUN down on the way out, so keeping the
             // name would caption an idle screen with an interface that is gone.
             interfaceName = "",
+            // Same reasoning, and worse: a stale badge would claim the traffic
+            // of a session that no longer exists is going through a VPN.
+            isVpnBound = false,
         )
     }
 
@@ -74,6 +79,8 @@ fun SessionUiState.applyOutcome(outcome: Result<String>): SessionUiState {
         detail = sessionDetail,
         interfaceName = parsed?.optString("interface").orEmpty().takeIf { it != "null" }.orEmpty(),
         lastError = if (sessionState == "ERROR") sessionDetail else "",
+        // Absent on an older shell process, which reads correctly as unbound.
+        isVpnBound = parsed?.optBoolean("isVpnBound") == true,
     )
 }
 
