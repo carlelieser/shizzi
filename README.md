@@ -32,4 +32,5 @@ go install golang.org/x/mobile/cmd/gomobile@latest && gomobile init
 
 ## Known limitations
 
-- IPv6 is not suppressed on the downstream; v6 traffic may bypass the tunnel.
+- IPv6 reaches clients only when the tethering stack provisions it on the
+  downstream; the datapath forwards v6, but it does not advertise a prefix.

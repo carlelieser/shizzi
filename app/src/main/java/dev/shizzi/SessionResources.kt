@@ -42,8 +42,8 @@ class SessionResources(
      *   engineering guideline on error messages. Callers must call [release] on
      *   failure; partial state is never left implicitly owned.
      */
-    fun acquire(address: android.net.LinkAddress, availabilityTimeoutMs: Int): String {
-        val created = testNetworkApi.createTunInterface(address)
+    fun acquire(addresses: List<android.net.LinkAddress>, availabilityTimeoutMs: Int): String {
+        val created = testNetworkApi.createTunInterface(addresses)
         tun = created
         fileDescriptor = created.fileDescriptor
 

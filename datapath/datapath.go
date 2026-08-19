@@ -11,9 +11,12 @@ import (
 	"net"
 
 	"gvisor.dev/gvisor/pkg/tcpip"
+	"gvisor.dev/gvisor/pkg/tcpip/header"
 	"gvisor.dev/gvisor/pkg/tcpip/link/fdbased"
 	"gvisor.dev/gvisor/pkg/tcpip/network/ipv4"
+	"gvisor.dev/gvisor/pkg/tcpip/network/ipv6"
 	"gvisor.dev/gvisor/pkg/tcpip/stack"
+	"gvisor.dev/gvisor/pkg/tcpip/transport/icmp"
 	"gvisor.dev/gvisor/pkg/tcpip/transport/tcp"
 	"gvisor.dev/gvisor/pkg/tcpip/transport/udp"
 )
@@ -38,9 +41,20 @@ type Session struct {
 //
 // mtu is the link MTU of the TUN interface.
 func Start(tunFD int, mtu int) (*Session, error) {
+	// ICMP is registered for both families so the stack can answer and relay
+	// errors. IPv6 in particular cannot fragment in flight, so a client only
+	// learns a path MTU from the ICMPv6 Packet Too Big it gets back.
 	netStack := stack.New(stack.Options{
-		NetworkProtocols:   []stack.NetworkProtocolFactory{ipv4.NewProtocol},
-		TransportProtocols: []stack.TransportProtocolFactory{tcp.NewProtocol, udp.NewProtocol},
+		NetworkProtocols: []stack.NetworkProtocolFactory{
+			ipv4.NewProtocol,
+			ipv6.NewProtocol,
+		},
+		TransportProtocols: []stack.TransportProtocolFactory{
+			tcp.NewProtocol,
+			udp.NewProtocol,
+			icmp.NewProtocol4,
+			icmp.NewProtocol6,
+		},
 	})
 
 	endpoint, err := fdbased.New(&fdbased.Options{
@@ -62,7 +76,10 @@ func Start(tunFD int, mtu int) (*Session, error) {
 	netStack.SetPromiscuousMode(nicID, true)
 	netStack.SetSpoofing(nicID, true)
 
-	netStack.SetRouteTable([]tcpip.Route{{Destination: header4Subnet(), NIC: nicID}})
+	netStack.SetRouteTable([]tcpip.Route{
+		{Destination: header.IPv4EmptySubnet, NIC: nicID},
+		{Destination: header.IPv6EmptySubnet, NIC: nicID},
+	})
 
 	installForwarders(netStack, &net.Dialer{Timeout: dialTimeout})
 
@@ -76,16 +93,4 @@ func (s *Session) Stop() {
 	}
 	s.stack.Close()
 	s.stack = nil
-}
-
-// header4Subnet returns the 0.0.0.0/0 subnet used as the default route.
-func header4Subnet() tcpip.Subnet {
-	subnet, err := tcpip.NewSubnet(
-		tcpip.AddrFrom4([4]byte{0, 0, 0, 0}),
-		tcpip.MaskFromBytes([]byte{0, 0, 0, 0}),
-	)
-	if err != nil {
-		panic(fmt.Sprintf("datapath: default IPv4 subnet is invalid: %v", err))
-	}
-	return subnet
 }

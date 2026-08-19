@@ -61,7 +61,8 @@ object HiddenApiCatalog {
             since = 29,
             notes = "Signature changed across releases: API 29-30 take " +
                 "LinkAddress[], later releases take Collection<LinkAddress>. " +
-                "Both overloads are probed.",
+                "Both overloads are probed, and both are passed the IPv4 and " +
+                "IPv6 TUN addresses together.",
         ),
         HiddenApiPath(
             id = "TestNetworkManager.setupTestNetwork",
@@ -237,18 +238,18 @@ class TestNetworkApi(private val context: Context) {
     }
 
     /**
-     * Creates a TUN carrying [address].
+     * Creates a TUN carrying [addresses].
      *
      * Tries the Collection overload first (API 31+) then the array overload
      * (API 29-30), because the parameter type changed between releases.
      */
-    fun createTunInterface(address: LinkAddress): TunHandle {
+    fun createTunInterface(addresses: List<LinkAddress>): TunHandle {
         val instance = manager ?: error("createTunInterface: test_network service unavailable")
         val owner = managerClass ?: error("createTunInterface: TestNetworkManager class absent")
 
-        val created = invokeCollectionOverload(owner, instance, address)
-            ?: invokeArrayOverload(owner, instance, address)
-            ?: error("createTunInterface: no known overload accepted LinkAddress $address")
+        val created = invokeCollectionOverload(owner, instance, addresses)
+            ?: invokeArrayOverload(owner, instance, addresses)
+            ?: error("createTunInterface: no known overload accepted LinkAddresses $addresses")
 
         return TunHandle(created)
     }
@@ -256,21 +257,23 @@ class TestNetworkApi(private val context: Context) {
     private fun invokeCollectionOverload(
         owner: Class<*>,
         instance: Any,
-        address: LinkAddress,
+        addresses: List<LinkAddress>,
     ): Any? = runCatching {
         val method = owner.getMethod("createTunInterface", Collection::class.java)
-        method.invoke(instance, listOf(address))
+        method.invoke(instance, addresses)
     }.getOrNull()
 
     private fun invokeArrayOverload(
         owner: Class<*>,
         instance: Any,
-        address: LinkAddress,
+        addresses: List<LinkAddress>,
     ): Any? = runCatching {
         val arrayType = Class.forName("[Landroid.net.LinkAddress;")
         val method = owner.getMethod("createTunInterface", arrayType)
-        val argument = java.lang.reflect.Array.newInstance(LinkAddress::class.java, 1)
-        java.lang.reflect.Array.set(argument, 0, address)
+        val argument = java.lang.reflect.Array.newInstance(LinkAddress::class.java, addresses.size)
+        addresses.forEachIndexed { index, address ->
+            java.lang.reflect.Array.set(argument, index, address)
+        }
         method.invoke(instance, argument)
     }.getOrNull()
 
