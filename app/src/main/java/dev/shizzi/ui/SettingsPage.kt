@@ -32,14 +32,6 @@ private const val AUTHOR_URL = "https://carlelieser.dev"
  */
 private const val BusyAlpha = 0.4f
 
-/**
- * A wider sweep than the status icon's.
- *
- * The icon is 96dp square; this is a full scrolling page, and a band scaled to
- * the same fraction of that width crosses too slowly to read as one gesture.
- */
-private const val PageShimmerBand = 0.35f
-
 /** What the settings screen renders, so the page takes state rather than four values. */
 data class SettingsState(
     val shizuku: ShizukuState,
@@ -83,12 +75,7 @@ fun SettingsPage(
         Column(
             modifier = Modifier
                 .verticalScroll(rememberScrollState(), enabled = !isBusy)
-                // Dim, shimmer, then block input, in that order: the alpha and
-                // the sweep both apply to what is drawn below them, and a
-                // pointer filter placed first would sit outside the layer they
-                // affect.
                 .alpha(if (isBusy) BusyAlpha else 1f)
-                .shimmer(isActive = isBusy, band = PageShimmerBand)
                 .inert(isBusy)
                 .padding(horizontal = ScreenPadding),
         ) {
@@ -98,8 +85,8 @@ fun SettingsPage(
             SectionLabel("Appearance")
             ThemePicker(selected = state.theme, onSelect = actions.onSetTheme)
 
-            SectionLabel("Diagnostics")
-            DiagnosticsSection(isLogging = state.isLogging, actions = actions)
+            SectionLabel("Developer")
+            DeveloperSection(isLogging = state.isLogging, actions = actions)
 
             SectionLabel("About")
             AboutSection()
@@ -135,7 +122,7 @@ private fun Modifier.inert(isBusy: Boolean): Modifier = when {
 }
 
 @Composable
-private fun DiagnosticsSection(isLogging: Boolean, actions: SettingsActions) {
+private fun DeveloperSection(isLogging: Boolean, actions: SettingsActions) {
     SettingsToggle(
         label = SettingsText(
             title = "Logging",
