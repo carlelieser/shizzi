@@ -74,7 +74,7 @@ class MainActivity : ComponentActivity() {
                             onCancel = viewModel::cancel,
                             onRequestPermission = viewModel::requestPermission,
                             onSetTheme = viewModel::setTheme,
-                            onSetDebugLogging = viewModel::setDebugLogging,
+                            onSetLogging = viewModel::setLogging,
                             onRunProbes = viewModel::runProbes,
                         ),
                     )

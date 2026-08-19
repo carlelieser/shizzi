@@ -19,8 +19,21 @@ interface ITetherService {
      *
      * On any failure the session is torn down before returning, so a failed
      * start never leaves clients on a physical upstream (R6.1).
+     *
+     * [logging] carries the setting across, so the session's own entries are
+     * governed from the first line rather than from the first toggle.
      */
-    String start(boolean debugLogging);
+    String start(boolean logging);
+
+    /**
+     * Turns session logging on or off in this process.
+     *
+     * Separate from [start] because the setting can change while a session is
+     * running, and the shell process cannot read the app's DataStore: without
+     * a push, a toggle would not reach the process writing most of the entries
+     * until the next start.
+     */
+    void setLogging(boolean enabled);
 
     /**
      * Tears the session down in fail-closed order: downstream first, then the

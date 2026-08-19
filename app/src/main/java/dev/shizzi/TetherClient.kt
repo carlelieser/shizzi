@@ -221,10 +221,21 @@ class TetherClient {
         bound.runProbes(attemptTethering, AVAILABILITY_TIMEOUT_MS)
     }
 
-    suspend fun start(debugLogging: Boolean): String = withContext(Dispatchers.IO) {
+    suspend fun start(logging: Boolean): String = withContext(Dispatchers.IO) {
         val bound = service()
         verifyContract(bound)
-        bound.start(debugLogging)
+        bound.start(logging)
+    }
+
+    /**
+     * Pushes the logging setting into the shell process.
+     *
+     * Does nothing when nothing is bound, rather than binding to deliver it: an
+     * unbound shell process holds no session to log, and start() carries the
+     * setting across when one begins.
+     */
+    fun setLogging(enabled: Boolean) {
+        runCatching { boundService?.setLogging(enabled) }
     }
 
     /**

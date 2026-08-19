@@ -83,8 +83,18 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
         ShizukuGate.requestPermission()
     }
 
-    fun setDebugLogging(enabled: Boolean) {
-        viewModelScope.launch { settingsStore.setDebugLogging(enabled) }
+    /**
+     * Applies the logging setting to both processes that write entries.
+     *
+     * The app process is set directly and the shell process through the
+     * binder: a running session writes most of its entries from the shell, so
+     * persisting alone would leave the toggle without effect until the next
+     * start.
+     */
+    fun setLogging(enabled: Boolean) {
+        SessionLog.setEnabled(enabled)
+        diagnostics.setLogging(enabled)
+        viewModelScope.launch { settingsStore.setLogging(enabled) }
     }
 
     fun setTheme(choice: ThemeChoice) {

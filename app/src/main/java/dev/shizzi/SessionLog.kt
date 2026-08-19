@@ -70,6 +70,22 @@ object SessionLog {
     private var readPaths: List<String> = listOf(SHELL_PATH)
 
     /**
+     * Whether [append] writes anything (settings: logging).
+     *
+     * Held per process, and the shell process is set through the binder rather
+     * than from the store: it cannot read the app's DataStore. Reading stays
+     * unconditional — turning logging off should stop new entries, not hide the
+     * ones already written.
+     */
+    @Volatile
+    private var isEnabled: Boolean = true
+
+    /** Points this process's writes at the current setting. */
+    fun setEnabled(enabled: Boolean) {
+        isEnabled = enabled
+    }
+
+    /**
      * Points this process's writes at [directory], for the app process.
      *
      * Called once from Application.onCreate. Without it the app would try to
@@ -88,12 +104,17 @@ object SessionLog {
     /**
      * Appends one entry, and mirrors it to logcat.
      *
+     * The logcat mirror happens before the enabled check: logcat is the
+     * developer's channel and costs the user nothing, while the setting is
+     * about what this writes to their device.
+     *
      * Never throws: a failed log write must not take down a session teardown,
      * which is the most important thing this records.
      */
     @Synchronized
     fun append(level: LogLevel, message: String) {
         Log.println(priorityOf(level), TAG, message)
+        if (!isEnabled) return
 
         runCatching {
             val stamp = TIMESTAMP.format(Date())

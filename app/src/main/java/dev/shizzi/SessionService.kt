@@ -138,13 +138,13 @@ class SessionService : Service() {
             // Read from the store rather than from UI state: the service can
             // be started from the notification with no screen alive to have
             // populated it.
-            val isDebugLogging = settingsStore().settings.first().isDebugLogging
+            val isLogging = settingsStore().settings.first().isLogging
 
             // Waits out a teardown still draining from a previous cancel, so
             // that teardown cannot sweep away what this start is about to build.
             val outcome = sessionLock.withLock {
                 if (attempt != generation) return@launch
-                runCatching { controller.start(isDebugLogging) }
+                runCatching { controller.start(isLogging) }
             }
             if (attempt != generation) return@launch
 

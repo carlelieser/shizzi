@@ -16,9 +16,6 @@ class TetherService : ITetherService.Stub {
     private val runner: ProbeRunner
     private val session: TetherSession
 
-    /** When false, nothing is written outside the log (settings: debug logging). */
-    private var isDebugLogging = false
-
     @Suppress("unused")
     constructor() : this(acquireSystemContext())
 
@@ -36,12 +33,10 @@ class TetherService : ITetherService.Stub {
 
     override fun getContractVersion(): Int = CONTRACT_VERSION
 
-    override fun start(debugLogging: Boolean): String {
-        isDebugLogging = debugLogging
-        return publish(
-            runCatching { session.start() }
-                .getOrElse { failure -> errorReport("start", failure) },
-        )
+    override fun start(logging: Boolean): String {
+        SessionLog.setEnabled(logging)
+        return runCatching { session.start() }
+            .getOrElse { failure -> errorReport("start", failure) }
     }
 
     /**
@@ -53,46 +48,54 @@ class TetherService : ITetherService.Stub {
         runCatching { runner.teardown() }
             .onFailure { failure -> Log.w(TAG, "stop: probe teardown ${failure.message}") }
 
-        return publish(
-            runCatching { session.stop() }
-                .getOrElse { failure -> errorReport("stop", failure) },
-        )
+        return runCatching { session.stop() }
+            .getOrElse { failure -> errorReport("stop", failure) }
     }
 
-    /** Not published: the UI polls this, and writing the file each time is noise. */
     override fun getStatus(): String =
         runCatching { session.status() }
             .getOrElse { failure -> errorReport("getStatus", failure) }
 
     /**
+     * Applies the logging setting to this process.
+     *
+     * The app pushes it here on every change: most entries are written from
+     * this process, and it has no way to read the setting for itself.
+     */
+    override fun setLogging(enabled: Boolean) {
+        SessionLog.setEnabled(enabled)
+    }
+
+    /**
      * Never throws across the binder: a RemoteException in the app process loses
      * the diagnostic detail, which is the entire point of a probe run (R7.5).
      *
-     * Always publishes: the probe report exists to be read off-device, and a
+     * Publishes: the probe report exists to be read off-device, and a
      * diagnostic that cannot be retrieved is not a diagnostic.
      */
-    override fun runProbes(attemptTethering: Boolean, availabilityTimeoutMs: Int): String {
-        isDebugLogging = true
-        return publish(
+    override fun runProbes(attemptTethering: Boolean, availabilityTimeoutMs: Int): String =
+        publish(
             runCatching { runner.run(attemptTethering, availabilityTimeoutMs) }
                 .getOrElse { failure -> errorReport("runProbes", failure) },
         )
-    }
-
 
     /**
-     * Writes [report] where it can be read off-device, and returns it unchanged.
+     * Writes the probe [report] where it can be read off-device.
      *
-     * The report is otherwise only rendered in the app UI, which makes every
-     * device run depend on someone transcribing it. Persisting it from the shell
-     * process rather than the app process matters: uid 2000 can write outside
-     * app-private storage, so the file is readable without run-as.
+     * Only [runProbes] publishes. Start and stop return a session status, every
+     * transition of which SessionLog already records with a timestamp and keeps
+     * — so writing it here added nothing except overwriting the report this
+     * file is named for.
+     *
+     * Persisting from the shell process rather than the app process matters:
+     * uid 2000 can write outside app-private storage, so the file is readable
+     * without run-as. Ungated, because logcat truncates the long lines a probe
+     * report consists of, leaving this the only intact copy.
      */
     private fun publish(report: String): String {
-        if (isDebugLogging) {
-            runCatching { java.io.File(REPORT_PATH).writeText(report) }
-                .onFailure { failure -> Log.w(TAG, "publish: ${failure.message}") }
-        }
+        runCatching { java.io.File(REPORT_PATH).writeText(report) }
+            .onFailure { failure -> Log.w(TAG, "publish: ${failure.message}") }
+
         Log.i(TAG, "report: $report")
         return report
     }

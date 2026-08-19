@@ -24,7 +24,7 @@ private const val AUTHOR_URL = "https://carlelieser.dev"
 data class SettingsState(
     val shizuku: ShizukuState,
     val theme: ThemeChoice,
-    val isDebugLogging: Boolean,
+    val isLogging: Boolean,
 )
 
 /**
@@ -33,7 +33,7 @@ data class SettingsState(
  */
 data class SettingsActions(
     val onSetTheme: (ThemeChoice) -> Unit,
-    val onSetDebugLogging: (Boolean) -> Unit,
+    val onSetLogging: (Boolean) -> Unit,
     val onRunProbes: () -> Unit,
     val onRequestPermission: () -> Unit,
 )
@@ -65,7 +65,7 @@ fun SettingsPage(
             ThemePicker(selected = state.theme, onSelect = actions.onSetTheme)
 
             SectionLabel("Diagnostics")
-            DiagnosticsSection(isDebugLogging = state.isDebugLogging, actions = actions)
+            DiagnosticsSection(isLogging = state.isLogging, actions = actions)
 
             SectionLabel("About")
             AboutSection()
@@ -77,14 +77,14 @@ fun SettingsPage(
 }
 
 @Composable
-private fun DiagnosticsSection(isDebugLogging: Boolean, actions: SettingsActions) {
+private fun DiagnosticsSection(isLogging: Boolean, actions: SettingsActions) {
     SettingsToggle(
         label = SettingsText(
-            title = "Debug logging",
-            subtitle = "Records extra detail while a session runs",
+            title = "Logging",
+            subtitle = "Records session activity to the log",
         ),
-        isChecked = isDebugLogging,
-        onCheckedChange = actions.onSetDebugLogging,
+        isChecked = isLogging,
+        onCheckedChange = actions.onSetLogging,
     )
 
     SettingsAction(

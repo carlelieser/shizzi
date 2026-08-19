@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.map
 /** Everything the user can configure, in one readable shape. */
 data class Settings(
     val theme: ThemeChoice = ThemeChoice.SYSTEM,
-    val isDebugLogging: Boolean = false,
+    val isLogging: Boolean = true,
 )
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore("settings")
@@ -22,9 +22,9 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore("s
 /**
  * Persists the two settings the app has.
  *
- * Debug logging previously lived in ViewModel memory and reset on every
- * launch, which made it a setting the user could not rely on. Both values now
- * outlive the process.
+ * Logging previously lived in ViewModel memory and reset on every launch,
+ * which made it a setting the user could not rely on. Both values now outlive
+ * the process.
  */
 class SettingsStore(private val context: Context) {
 
@@ -34,8 +34,8 @@ class SettingsStore(private val context: Context) {
         context.dataStore.edit { it[THEME] = choice.name }
     }
 
-    suspend fun setDebugLogging(enabled: Boolean) {
-        context.dataStore.edit { it[DEBUG_LOGGING] = enabled }
+    suspend fun setLogging(enabled: Boolean) {
+        context.dataStore.edit { it[LOGGING] = enabled }
     }
 
     /**
@@ -47,11 +47,11 @@ class SettingsStore(private val context: Context) {
     private fun toSettings(preferences: Preferences) = Settings(
         theme = runCatching { ThemeChoice.valueOf(preferences[THEME].orEmpty()) }
             .getOrDefault(ThemeChoice.SYSTEM),
-        isDebugLogging = preferences[DEBUG_LOGGING] ?: false,
+        isLogging = preferences[LOGGING] ?: true,
     )
 
     private companion object {
         val THEME = stringPreferencesKey("theme")
-        val DEBUG_LOGGING = booleanPreferencesKey("debug_logging")
+        val LOGGING = booleanPreferencesKey("logging")
     }
 }

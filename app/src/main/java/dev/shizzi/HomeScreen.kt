@@ -30,7 +30,7 @@ data class AppActions(
     val onCancel: () -> Unit,
     val onRequestPermission: () -> Unit,
     val onSetTheme: (ThemeChoice) -> Unit,
-    val onSetDebugLogging: (Boolean) -> Unit,
+    val onSetLogging: (Boolean) -> Unit,
     val onRunProbes: () -> Unit,
 )
 
@@ -63,11 +63,11 @@ fun HomeScreen(
                 state = SettingsState(
                     shizuku = state.shizukuState,
                     theme = settings.theme,
-                    isDebugLogging = settings.isDebugLogging,
+                    isLogging = settings.isLogging,
                 ),
                 actions = SettingsActions(
                     onSetTheme = actions.onSetTheme,
-                    onSetDebugLogging = actions.onSetDebugLogging,
+                    onSetLogging = actions.onSetLogging,
                     onRunProbes = actions.onRunProbes,
                     onRequestPermission = actions.onRequestPermission,
                 ),
