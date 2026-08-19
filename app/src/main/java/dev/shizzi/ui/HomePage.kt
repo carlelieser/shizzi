@@ -65,10 +65,29 @@ fun HomePage(
 
         HomeBody(state = state, actions = actions)
 
-        StatusRow(
-            state = state,
+        // The VPN line rides with the status row rather than with the button,
+        // so both readings of "what is this session doing" sit together at the
+        // bottom edge instead of one floating mid-screen.
+        Column(
             modifier = Modifier.align(Alignment.BottomCenter),
-        )
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            // Reserved whether or not it is showing: a VPN can be adopted
+            // mid-session with the screen open, and the status row must not
+            // shift down when it is.
+            //
+            // Bottom-aligned inside the band so the line sits close to the
+            // status row it belongs with, rather than floating in the middle
+            // of its own reserved space.
+            Box(
+                modifier = Modifier.height(ShizziTheme.spacing.xxxl),
+                contentAlignment = Alignment.BottomCenter,
+            ) {
+                if (isShowingVpn(state)) VpnChip()
+            }
+
+            StatusRow(state = state)
+        }
     }
 }
 
@@ -122,6 +141,16 @@ private fun HomeHeader(
 }
 
 /**
+ * Whether the VPN line should show.
+ *
+ * Guarded on the status as well as the flag: a session torn down for VPN loss
+ * holds ERROR alongside the last VPN reading until the next publish, and the
+ * line must not outlive the session it describes.
+ */
+private fun isShowingVpn(state: SessionUiState): Boolean =
+    state.isVpnBound && state.status == UiStatus.CONNECTED
+
+/**
  * The centred stack: glyph, button, and the cancel affordance.
  *
  * Cancel appears only while starting. Stopping is already the fast path and
@@ -138,7 +167,10 @@ private fun HomeBody(state: SessionUiState, actions: HomeActions) {
     ) {
         StatusIcon(status = state.status)
 
-        Spacer(Modifier.height(ShizziTheme.spacing.xxxl))
+        // Two of the largest step rather than one arbitrary value, so the
+        // gap stays on the spacing scale. It preserves the distance from when
+        // a reserved VPN band sat between the glyph and the button.
+        Spacer(Modifier.height(ShizziTheme.spacing.xxxl * 2))
 
         ConnectButton(
             label = buttonLabel(state.status),

@@ -41,6 +41,8 @@ class SessionService : Service() {
 
     private val scope = CoroutineScope(SupervisorJob())
     private val controller = TetherClient()
+    private val notification by lazy { SessionNotification(this) }
+    private val statusPoller = SessionStatusPoller(scope, controller)
 
     /** The companion's flow, so the UI sees updates from before onCreate ran. */
     private val internalState get() = sessionState
@@ -109,10 +111,9 @@ class SessionService : Service() {
         isStopping = intent?.action == ACTION_STOP
         startForeground(
             NOTIFICATION_ID,
-            buildNotification(
-                status = UiStatus.LOADING,
-                text = if (isStopping) "Dropping the hotspot…" else "Bringing the tunnel up…",
-                isStopping = isStopping,
+            notification.build(
+                SessionUiState(status = UiStatus.LOADING),
+                isStopping,
             ),
         )
 
@@ -149,8 +150,17 @@ class SessionService : Service() {
 
             internalState.update { current -> current.applyOutcome(outcome) }
             publishState()
+            followStatus()
         }
     }
+
+    private fun followStatus() = statusPoller.follow(
+        isConnected = { internalState.value.status == UiStatus.CONNECTED },
+        onStatus = { outcome ->
+            internalState.update { current -> current.applyOutcome(outcome) }
+            publishState()
+        },
+    )
 
     private fun settingsStore(): SettingsStore =
         (application as App).settingsStore
@@ -182,9 +192,15 @@ class SessionService : Service() {
         val abandoned = startJob
         startJob = null
 
+        statusPoller.stop()
+
         internalState.update {
             it.asStopped()
         }
+        // Without this the notification sits on the text onStartCommand posted
+        // for the whole teardown, which outlasts a cancelAndJoin plus a full
+        // privileged release.
+        publishState()
 
         scope.launch {
             // Abandon an in-flight start first, and wait for it to actually
@@ -227,6 +243,8 @@ class SessionService : Service() {
      * clients still attached.
      */
     private fun handleSessionLost() {
+        statusPoller.stop()
+
         // Not a user-initiated stop; the ERROR title applies, not "Stopping…".
         isStopping = false
         SessionLog.error("shell process died; recovering any downstream it left up")
@@ -250,89 +268,18 @@ class SessionService : Service() {
                 else -> SessionLog.error("orphan recovery failed: $problem")
             }
 
-            internalState.update { current -> current.copy(lastError = describeLoss(problem)) }
+            internalState.update { current -> current.copy(lastError = notification.describeLoss(problem)) }
             publishState()
             stopSelf()
         }
     }
 
-    private fun describeLoss(problem: String?): String = when (problem) {
-        null -> "Session ended: the Shizuku service stopped. " +
-            "The hotspot was turned off. Press Start to reconnect."
-
-        else -> "Session ended and the hotspot may still be on: $problem — " +
-            "turn it off in Settings."
-    }
-
     /** Mirrors the current state into the notification. */
     private fun publishState() {
-        val state = internalState.value
-        val text = when {
-            state.lastError.isNotEmpty() -> state.lastError
-            state.interfaceName.isNotEmpty() -> "Clients routing through ${state.interfaceName}"
-            else -> state.detail
-        }
-
         notificationManager().notify(
             NOTIFICATION_ID,
-            buildNotification(state.status, text, isStopping),
+            notification.build(internalState.value, isStopping),
         )
-    }
-
-    private fun buildNotification(
-        status: UiStatus,
-        text: String,
-        isStopping: Boolean = false,
-    ): Notification {
-        createChannel()
-
-        return Notification.Builder(this, CHANNEL_ID)
-            .setContentTitle(titleFor(status, isStopping))
-            .setContentText(text)
-            .setStyle(Notification.BigTextStyle().bigText(text))
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentIntent(openAppIntent())
-            .setOngoing(status != UiStatus.ERROR)
-            .addAction(stopAction())
-            .build()
-    }
-
-    /** [isStopping] disambiguates LOADING, which covers both directions. */
-    private fun titleFor(status: UiStatus, isStopping: Boolean): String = when (status) {
-        UiStatus.CONNECTED -> "Tethering protected"
-        UiStatus.LOADING -> if (isStopping) "Stopping…" else "Starting…"
-        UiStatus.ERROR -> "Tethering stopped"
-        UiStatus.READY -> "Ready"
-    }
-
-    private fun openAppIntent(): PendingIntent = PendingIntent.getActivity(
-        this,
-        0,
-        Intent(this, MainActivity::class.java),
-        PendingIntent.FLAG_IMMUTABLE,
-    )
-
-    private fun stopAction(): Notification.Action = Notification.Action.Builder(
-        null,
-        "Stop",
-        PendingIntent.getService(
-            this,
-            1,
-            Intent(this, SessionService::class.java).setAction(ACTION_STOP),
-            PendingIntent.FLAG_IMMUTABLE,
-        ),
-    ).build()
-
-    private fun createChannel() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            "Tethering session",
-            NotificationManager.IMPORTANCE_LOW,
-        ).apply { description = "Shown while a protected tethering session is active" }
-
-        notificationManager().createNotificationChannel(channel)
     }
 
     private fun notificationManager(): NotificationManager =
@@ -347,9 +294,8 @@ class SessionService : Service() {
     }
 
     companion object {
-        private const val CHANNEL_ID = "tethering-session"
         private const val NOTIFICATION_ID = 1
-        private const val ACTION_STOP = "dev.shizzi.STOP_SESSION"
+        const val ACTION_STOP = "dev.shizzi.STOP_SESSION"
 
         /**
          * Session state, for the UI to observe.

@@ -117,6 +117,22 @@ class SessionResources(
     }
 
     /**
+     * Pins the datapath's upstream sockets to [handle], or unbinds at 0.
+     *
+     * Lives here because the datapath session is one of the four things this
+     * class owns and nothing outside it holds a reference.
+     *
+     * @throws IllegalStateException if there is no datapath to bind, which
+     *   means acquire and startDatapath have not both succeeded.
+     */
+    fun bindDatapathTo(handle: Long) {
+        val session = datapathSession
+            ?: error("bindDatapathTo($handle): no datapath session; startDatapath must succeed first")
+
+        session.setNetwork(handle)
+    }
+
+    /**
      * Waits for the test network matching [interfaceName] to become available.
      *
      * R3.3 makes the timeout a hard failure: returning without a Network would

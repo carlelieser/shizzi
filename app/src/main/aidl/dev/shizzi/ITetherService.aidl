@@ -31,8 +31,10 @@ interface ITetherService {
     /**
      * Current session state as JSON, without changing anything.
      *
-     * Cheap enough to poll: it reports what this process holds and does not
-     * shell out to dumpsys.
+     * Cheap enough to poll every second. Most of what it reports is held by
+     * this process or read from /proc, and the one field that needs a dumpsys
+     * — the count of associated devices — is rate-limited behind its own
+     * refresh interval rather than read per call.
      */
     String getStatus();
 
