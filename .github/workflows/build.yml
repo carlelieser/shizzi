@@ -1,0 +1,91 @@
+# Debug build and checks on every push and pull request.
+#
+# Does not sign anything and needs no secrets, so it runs unchanged on forks.
+# app/build.gradle.kts already guards every keystore read, so the absence of
+# keystore.properties here is the supported path rather than a special case.
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: temurin
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          # Matches the toolchain line in datapath/go.mod. Pinned rather than
+          # left to auto-download so a CI build uses the same compiler the
+          # release does.
+          go-version: '1.26.3'
+          cache-dependency-path: datapath/go.sum
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install NDK
+        # Pinned to AGP 8.7.3's default. android.ndkDirectory otherwise
+        # resolves to whatever the runner happens to ship, which changes the
+        # toolchain the datapath is compiled with between runs.
+        run: sdkmanager --install "ndk;27.0.12077973"
+
+      - name: Install gomobile
+        # The gomobileBind task looks for the binary at ~/go/bin specifically,
+        # so installing it anywhere else on PATH is not enough.
+        run: |
+          go install golang.org/x/mobile/cmd/gomobile@latest
+          gomobile init
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Vet datapath
+        # The datapath is cgo against <android/multinetwork.h>, so it only
+        # compiles for Android. Vetting it under the NDK toolchain catches
+        # breakage here rather than inside the gomobile bind further down.
+        env:
+          ANDROID_NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/27.0.12077973
+        run: |
+          CC="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang"
+          cd datapath
+          CGO_ENABLED=1 GOOS=android GOARCH=arm64 CC="$CC" go vet ./...
+
+      - name: Build debug APK
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Lint
+        run: ./gradlew lintDebug --no-daemon
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      - name: Upload lint report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-report
+          path: app/build/reports/lint-results-debug.html
+          if-no-files-found: ignore
