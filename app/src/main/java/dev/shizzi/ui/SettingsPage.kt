@@ -10,6 +10,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import dev.shizzi.ShizukuState
 import dev.shizzi.ui.theme.ScreenPadding
@@ -20,11 +23,29 @@ private const val SOURCE_URL = "https://github.com/carlelieser/shizzi"
 private const val ISSUE_URL = "https://github.com/carlelieser/shizzi/issues/new"
 private const val AUTHOR_URL = "https://carlelieser.dev"
 
+/**
+ * How far the screen dims while diagnostics run.
+ *
+ * Enough to read as unavailable, not so far that the user cannot see what they
+ * were looking at — the toast reporting the run sits over this, and a screen
+ * faded to nothing would make it look like a dialog on an empty page.
+ */
+private const val BusyAlpha = 0.4f
+
+/**
+ * A wider sweep than the status icon's.
+ *
+ * The icon is 96dp square; this is a full scrolling page, and a band scaled to
+ * the same fraction of that width crosses too slowly to read as one gesture.
+ */
+private const val PageShimmerBand = 0.35f
+
 /** What the settings screen renders, so the page takes state rather than four values. */
 data class SettingsState(
     val shizuku: ShizukuState,
     val theme: ThemeChoice,
     val isLogging: Boolean,
+    val isRunningDiagnostics: Boolean,
 )
 
 /**
@@ -50,12 +71,25 @@ fun SettingsPage(
     actions: SettingsActions,
     onBack: () -> Unit,
 ) {
+    val isBusy = state.isRunningDiagnostics
+
     Column(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
+        // Outside the dimmed region: a run takes as long as upstream selection
+        // takes to settle, and stranding the user on this screen for that long
+        // would be a worse bargain than letting them leave it. The run belongs
+        // to the ViewModel, so navigating away does not abandon it.
         ScreenHeader(title = "Settings", onBack = onBack)
 
         Column(
             modifier = Modifier
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(rememberScrollState(), enabled = !isBusy)
+                // Dim, shimmer, then block input, in that order: the alpha and
+                // the sweep both apply to what is drawn below them, and a
+                // pointer filter placed first would sit outside the layer they
+                // affect.
+                .alpha(if (isBusy) BusyAlpha else 1f)
+                .shimmer(isActive = isBusy, band = PageShimmerBand)
+                .inert(isBusy)
                 .padding(horizontal = ScreenPadding),
         ) {
             SectionLabel("Shizuku")
@@ -72,6 +106,30 @@ fun SettingsPage(
 
             // The last row would otherwise sit against the navigation bar.
             Spacer(Modifier.height(ShizziTheme.spacing.xxl))
+        }
+    }
+}
+
+/**
+ * Swallows every pointer event over this subtree while [isBusy].
+ *
+ * Done here rather than by threading an `isEnabled` through each row: there are
+ * three kinds of control on this screen — a switch, tappable rows, and a radio
+ * group — and disabling them individually means every future row has to
+ * remember to opt in. Consuming at the boundary cannot be forgotten.
+ *
+ * Consumes in the initial pass, so the events never reach the children rather
+ * than being handled and then undone.
+ */
+private fun Modifier.inert(isBusy: Boolean): Modifier = when {
+    !isBusy -> this
+    else -> this.pointerInput(Unit) {
+        awaitPointerEventScope {
+            while (true) {
+                awaitPointerEvent(PointerEventPass.Initial)
+                    .changes
+                    .forEach { it.consume() }
+            }
         }
     }
 }

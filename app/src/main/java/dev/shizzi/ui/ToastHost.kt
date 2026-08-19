@@ -11,16 +11,25 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import dev.shizzi.ui.theme.ScreenPadding
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.brutalSurface
 import kotlinx.coroutines.delay
 import androidx.compose.material3.Text
+
+/** Matches the cap height of the message beside it, so the row reads as one line. */
+private val SpinnerSize = 18.dp
+
+/** Thin enough not to read as a second bordered element inside the toast. */
+private val SpinnerStroke = 2.dp
 
 /**
  * Renders the toast stack above whatever screen is showing.
@@ -42,7 +51,13 @@ fun ToastHost(state: ToastState, modifier: Modifier = Modifier) {
     ) {
         // Reversed so the newest is drawn last, at the bottom of the column.
         state.toasts.asReversed().forEach { toast ->
-            ToastRow(toast = toast, onExpire = { state.dismiss(toast.key) })
+            ToastRow(
+                toast = toast,
+                onExpire = {
+                    state.dismiss(toast.key)
+                    toast.onDismiss?.invoke()
+                },
+            )
         }
     }
 }
@@ -81,22 +96,67 @@ private fun ToastSurface(toast: Toast, onDismiss: () -> Unit) {
             .brutalSurface(fill = ShizziTheme.colors.surface)
             // Tapping the body dismisses. An indefinite toast has no other way
             // out, and a timed one is often read before it expires.
-            .clickable(onClick = onDismiss)
+            //
+            // Not while busy: the toast is reporting work that is still
+            // running, and dismissing it would hide the only indication that
+            // anything is happening while leaving the work in flight.
+            .clickable(enabled = !toast.isBusy, onClick = onDismiss)
             .padding(ShizziTheme.spacing.lg),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(ShizziTheme.spacing.md),
     ) {
-        Text(
-            text = toast.message,
-            style = ShizziTheme.typography.body,
-            color = ShizziTheme.colors.onSurface,
-            modifier = Modifier.weight(1f),
-        )
+        if (toast.isBusy) ToastSpinner()
+
+        ToastText(toast = toast, modifier = Modifier.weight(1f))
 
         toast.action?.let { action ->
             ToastActionButton(action = action, onDismiss = onDismiss)
         }
     }
+}
+
+/**
+ * The message, and under it the detail if there is one.
+ *
+ * The detail takes the muted colour and the caption size, so the pair reads as
+ * one statement with its particulars rather than as two messages.
+ */
+@Composable
+private fun ToastText(toast: Toast, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(ShizziTheme.spacing.xs),
+    ) {
+        Text(
+            text = toast.message,
+            style = ShizziTheme.typography.body,
+            color = ShizziTheme.colors.onSurface,
+        )
+
+        if (toast.detail.isEmpty()) return@Column
+
+        Text(
+            text = toast.detail,
+            style = ShizziTheme.typography.caption,
+            color = ShizziTheme.colors.onSurfaceMuted,
+        )
+    }
+}
+
+/**
+ * Turquoise, like every other element that means something is being worked on.
+ *
+ * A determinate bar would be the better shape if the work reported progress,
+ * but a probe sequence has no measurable fraction complete — it waits on
+ * upstream selection, which either settles or times out.
+ */
+@Composable
+private fun ToastSpinner() {
+    CircularProgressIndicator(
+        color = ShizziTheme.colors.primary,
+        strokeWidth = SpinnerStroke,
+        modifier = Modifier.size(SpinnerSize),
+    )
 }
 
 /**

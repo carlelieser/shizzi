@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import dev.shizzi.ui.DiagnosticsToast
 import dev.shizzi.ui.HandleBack
 import dev.shizzi.ui.HomeActions
 import dev.shizzi.ui.HomePage
@@ -32,6 +33,7 @@ data class AppActions(
     val onSetTheme: (ThemeChoice) -> Unit,
     val onSetLogging: (Boolean) -> Unit,
     val onRunProbes: () -> Unit,
+    val onDismissDiagnostics: () -> Unit,
 )
 
 /**
@@ -44,6 +46,7 @@ data class AppActions(
 fun HomeScreen(
     state: SessionUiState,
     settings: Settings,
+    diagnostics: DiagnosticsState,
     actions: AppActions,
 ) {
     val current = rememberNavigator()
@@ -57,6 +60,15 @@ fun HomeScreen(
         onRequestPermission = actions.onRequestPermission,
     )
 
+    // Posted here rather than from the settings screen: a run outlives a visit
+    // to it, and a toast owned by that screen would vanish the moment the user
+    // navigated home to wait — taking the export button with it.
+    DiagnosticsToast(
+        state = diagnostics,
+        toasts = toasts,
+        onDismiss = actions.onDismissDiagnostics,
+    )
+
     Box(modifier = Modifier.fillMaxSize()) {
         when (current.value) {
             Screen.SETTINGS -> SettingsPage(
@@ -64,6 +76,7 @@ fun HomeScreen(
                     shizuku = state.shizukuState,
                     theme = settings.theme,
                     isLogging = settings.isLogging,
+                    isRunningDiagnostics = diagnostics is DiagnosticsState.Running,
                 ),
                 actions = SettingsActions(
                     onSetTheme = actions.onSetTheme,

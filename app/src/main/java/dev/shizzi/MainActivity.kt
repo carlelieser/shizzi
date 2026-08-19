@@ -66,9 +66,12 @@ class MainActivity : ComponentActivity() {
 
                 Surface(color = colors.background) {
                     val state by viewModel.state.collectAsState()
+                    val diagnostics by viewModel.diagnosticsState.collectAsState()
+
                     HomeScreen(
                         state = state,
                         settings = loaded,
+                        diagnostics = diagnostics,
                         actions = AppActions(
                             onToggle = viewModel::toggle,
                             onCancel = viewModel::cancel,
@@ -76,6 +79,7 @@ class MainActivity : ComponentActivity() {
                             onSetTheme = viewModel::setTheme,
                             onSetLogging = viewModel::setLogging,
                             onRunProbes = viewModel::runProbes,
+                            onDismissDiagnostics = viewModel::dismissDiagnostics,
                         ),
                     )
                 }

@@ -136,8 +136,15 @@ class TetherService : ITetherService.Stub {
         private const val TAG = "TetherService"
         private const val STACK_TRACE_CHARS = 4000
 
-        /** World-readable scratch path; /data/local/tmp is writable by uid 2000. */
-        private const val REPORT_PATH = "/data/local/tmp/shizzi-probe-report.json"
+        /**
+         * World-readable scratch path; /data/local/tmp is writable by uid 2000.
+         *
+         * Public because the settings screen names it when a run completes: the
+         * user is told where the report landed, and a path stated in the UI that
+         * did not come from the code writing it would drift the first time
+         * either moved.
+         */
+        const val REPORT_PATH = "/data/local/tmp/shizzi-probe-report.json"
 
         /** The shell package, whose UID (2000) this process actually runs as. */
         private const val SHELL_PACKAGE = "com.android.shell"

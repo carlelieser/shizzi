@@ -44,6 +44,9 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
     private val localState = MutableStateFlow(SessionUiState())
     val state: StateFlow<SessionUiState> = localState.asStateFlow()
 
+    private val localDiagnostics = MutableStateFlow<DiagnosticsState>(DiagnosticsState.Idle)
+    val diagnosticsState: StateFlow<DiagnosticsState> = localDiagnostics.asStateFlow()
+
     /**
      * The collector mirroring the service's state, if one is running.
      *
@@ -137,16 +140,37 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
      *
      * Diagnostics tear down everything they create and hold no session, so
      * there is nothing for the service to outlive.
+     *
+     * The result lands in [diagnosticsState] rather than in the session state.
+     * It used to be folded through applyOutcome, which reads a *session status*
+     * — so a probe report, whose JSON carries no "state" field, was read as a
+     * session that had gone READY, and a run silently reset the home screen's
+     * status, interface, and byte counters while discarding the report itself.
      */
     fun runProbes() {
-        if (localState.value.isBusy) return
-        localState.update { it.copy(isBusy = true, status = UiStatus.LOADING, lastError = "") }
+        if (localDiagnostics.value is DiagnosticsState.Running) return
+        localDiagnostics.value = DiagnosticsState.Running
 
         viewModelScope.launch {
-            val outcome = runCatching { diagnostics.runProbes(true) }
-            localState.update { current -> current.applyOutcome(outcome) }
+            localDiagnostics.value = runCatching { diagnostics.runProbes(true) }
+                .fold(
+                    onSuccess = { report ->
+                        DiagnosticsState.Complete(report, TetherService.REPORT_PATH)
+                    },
+                    onFailure = { failure ->
+                        DiagnosticsState.Failed(
+                            "${failure.javaClass.simpleName}: ${failure.message}",
+                        )
+                    },
+                )
             refreshShizukuState()
         }
+    }
+
+    /** Drops a finished run's result, so its toast leaves the screen. */
+    fun dismissDiagnostics() {
+        if (localDiagnostics.value is DiagnosticsState.Running) return
+        localDiagnostics.value = DiagnosticsState.Idle
     }
 
     override fun onCleared() {

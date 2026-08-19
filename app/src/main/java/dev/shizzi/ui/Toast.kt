@@ -34,13 +34,27 @@ data class ToastAction(val label: String, val onClick: () -> Unit)
  *   already showing updates it in place rather than stacking a second copy, so
  *   a state that changes repeatedly (the session going up, then down, then
  *   failing) occupies one slot rather than three.
+ * @param detail a second line under the message, muted. For the specifics a
+ *   headline should not carry — a file path, an interface name — which are
+ *   worth stating exactly but not worth the weight of the first line.
+ * @param isBusy draws a spinner in the leading position. Pairs with
+ *   [ToastDuration.Indefinite]: a toast reporting work in progress is dismissed
+ *   by the work finishing, not by a timer.
+ * @param onDismiss run when the toast leaves the screen, however it leaves —
+ *   tapped away, expired, or replaced by its action. For a toast whose content
+ *   is owned elsewhere: without it, clearing the host would leave the state
+ *   that produced the toast still set, and revisiting the screen would post the
+ *   same stale result again.
  */
 @Immutable
 data class Toast(
     val key: String,
     val message: String,
+    val detail: String = "",
     val duration: ToastDuration = ToastShort,
     val action: ToastAction? = null,
+    val isBusy: Boolean = false,
+    val onDismiss: (() -> Unit)? = null,
 )
 
 /** Keys for toasts that are posted from more than one place. */
@@ -50,6 +64,9 @@ object ToastKeys {
 
     /** Shizuku availability and permission. */
     const val SHIZUKU = "shizuku"
+
+    /** A diagnostics run: in progress, then its outcome. */
+    const val DIAGNOSTICS = "diagnostics"
 }
 
 /**
