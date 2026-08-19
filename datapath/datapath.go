@@ -30,7 +30,8 @@ const nicID tcpip.NICID = 1
 // this deliberately exposes no gVisor types: the Kotlin side sees a handle it
 // can start and stop, nothing more.
 type Session struct {
-	stack *stack.Stack
+	stack   *stack.Stack
+	binding *networkBinding
 }
 
 // Start builds a netstack over tunFD and attaches it to the TUN.
@@ -81,9 +82,33 @@ func Start(tunFD int, mtu int) (*Session, error) {
 		{Destination: header.IPv6EmptySubnet, NIC: nicID},
 	})
 
-	installForwarders(netStack, &net.Dialer{Timeout: dialTimeout})
+	binding := &networkBinding{}
+	installForwarders(netStack, &net.Dialer{
+		Timeout: dialTimeout,
+		Control: binding.control,
+	})
 
-	return &Session{stack: netStack}, nil
+	return &Session{stack: netStack, binding: binding}, nil
+}
+
+// SetNetwork pins every subsequent dial to the given network handle.
+//
+// 0 unbinds, which is how a session with no VPN behaves: dials follow the shell
+// process's default network. Callers pass a value from Network.getNetworkHandle.
+//
+// Binding is what makes VPN loss fail rather than fall back. An unbound socket
+// follows the default network, so the moment a VPN drops it leaves over the
+// physical one instead and tethered clients keep browsing untunneled with
+// nothing in the stack noticing.
+//
+// int64 rather than uint64 because gomobile has no unsigned type. A handle
+// packs a netid above a fixed magic word, so it is routinely negative as a
+// signed value; the conversion reinterprets the bits without changing them.
+func (s *Session) SetNetwork(handle int64) {
+	if s.binding == nil {
+		return
+	}
+	s.binding.set(uint64(handle))
 }
 
 // Stop tears the netstack down. It does not close the TUN fd.
