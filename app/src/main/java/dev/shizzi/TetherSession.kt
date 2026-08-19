@@ -1,6 +1,7 @@
 package dev.shizzi
 
 import android.content.Context
+import android.os.Build
 import android.util.Log
 import org.json.JSONObject
 
@@ -32,6 +33,9 @@ class TetherSession(private val context: Context) {
     private var state = SessionState.IDLE
     private var detail = "not started"
     private var interfaceName: String? = null
+
+    /** When the session went ACTIVE, for the summary [stop] writes. */
+    private var activeSince: Long = 0
     private var watchdog: SessionWatchdog? = null
     private val teardown = SessionTeardown(context)
     private val downstream = DownstreamInspector()
@@ -49,6 +53,14 @@ class TetherSession(private val context: Context) {
 
         state = SessionState.STARTING
         SessionLog.info("session start requested")
+        // The first thing worth knowing about a log someone sends in: which
+        // device and build produced it, and whether the shell process matches
+        // the app that is talking to it.
+        SessionLog.info(
+            "device: ${Build.MANUFACTURER} ${Build.MODEL}, " +
+                "android ${Build.VERSION.RELEASE} (sdk ${Build.VERSION.SDK_INT}), " +
+                "contract ${TetherService.CONTRACT_VERSION}",
+        )
 
         return runCatching { bringUp() }
             .getOrElse { failure ->
@@ -79,9 +91,10 @@ class TetherSession(private val context: Context) {
 
         val name = group.acquire(tunAddresses(), TEST_NETWORK_DNS_SERVERS, AVAILABILITY_TIMEOUT_MS)
         interfaceName = name
-        SessionLog.info("tun up: $name")
+        SessionLog.info("tun up: $name (mtu $TUN_MTU, $TUN_ADDRESS, $TUN_ADDRESS_V6)")
 
         group.startDatapath(TUN_MTU)
+        SessionLog.info("datapath attached to $name")
         vpn.follow(group)
 
         preferTestNetworks()
@@ -91,6 +104,7 @@ class TetherSession(private val context: Context) {
         SessionLog.info("upstream verified: $name is sole upstream")
 
         state = SessionState.ACTIVE
+        activeSince = System.currentTimeMillis()
         detail = "tethered clients routing through $name"
 
         teardown.installShutdownHook()
@@ -147,7 +161,7 @@ class TetherSession(private val context: Context) {
     private fun preferTestNetworks() {
         val api = TetheringPreferenceApi(context)
         runCatching { api.setPreferTestNetworks(false) }
-            .onFailure { Log.w(TAG, "preferTestNetworks: clear ${it.message}") }
+            .onFailure { SessionLog.warn("could not clear the stale test-network preference: ${it.message}") }
         api.setPreferTestNetworks(true)
     }
 
@@ -235,14 +249,23 @@ class TetherSession(private val context: Context) {
         vpn.stop()
         teardown.removeShutdownHook()
 
+        // Read before anything is released: the counters come from
+        // /proc/net/dev, which stops knowing the interface once it is gone.
+        // Null when the session never went active, whose summary would be all
+        // zeroes on top of the failure the user is actually reading.
+        val summary = if (activeSince == 0L) null else sessionSummary()
+
         val downstreamProblem = teardown.releaseDownstream()
 
         teardown.releaseUpstreamSelection(interfaceName)
 
-        resources?.release()?.forEach { Log.w(TAG, "stop: $it") }
+        // release() already logs each problem; this keeps the count in the
+        // teardown's own narrative rather than leaving it implicit.
+        val releaseProblems = resources?.release().orEmpty()
         resources = null
 
         interfaceName = null
+        activeSince = 0
         state = if (downstreamProblem == null) SessionState.IDLE else SessionState.ERROR
         detail = downstreamProblem ?: "stopped"
 
@@ -250,7 +273,43 @@ class TetherSession(private val context: Context) {
             null -> SessionLog.info("session stopped; downstream confirmed down")
             else -> SessionLog.error("teardown: $downstreamProblem")
         }
+        if (releaseProblems.isNotEmpty()) {
+            SessionLog.warn("${releaseProblems.size} resource(s) not released cleanly")
+        }
+        summary?.let(SessionLog::info)
         return status()
+    }
+
+    /**
+     * What the session did, in one line, for the log.
+     *
+     * Only for a session that reached ACTIVE. A failed start tears down through
+     * the same path, and summarising it would report all zeroes over the error
+     * that is the actual finding.
+     */
+    private fun sessionSummary(): String {
+        val traffic = interfaceName?.let(InterfaceCounters::read) ?: Traffic()
+        val elapsed = when (activeSince) {
+            0L -> 0L
+            else -> System.currentTimeMillis() - activeSince
+        }
+
+        return "session summary: active ${formatDuration(elapsed)}, " +
+            "${Traffic.format(traffic.up)} up, ${Traffic.format(traffic.down)} down"
+    }
+
+    /** Whole units only: a log line reporting a session's length is not a stopwatch. */
+    private fun formatDuration(millis: Long): String {
+        val totalSeconds = millis / 1000
+        val hours = totalSeconds / 3600
+        val minutes = (totalSeconds % 3600) / 60
+        val seconds = totalSeconds % 60
+
+        return when {
+            hours > 0 -> "${hours}h ${minutes}m"
+            minutes > 0 -> "${minutes}m ${seconds}s"
+            else -> "${seconds}s"
+        }
     }
 
     fun status(): String = JSONObject().apply {

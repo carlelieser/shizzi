@@ -5,7 +5,6 @@ import android.net.Network
 import android.net.NetworkRequest
 import android.os.Binder
 import android.os.ParcelFileDescriptor
-import android.util.Log
 import datapath.Datapath
 import datapath.Session as DatapathSession
 
@@ -201,12 +200,14 @@ class SessionResources(
         fileDescriptor = null
         tun = null
 
-        problems.forEach { Log.w(TAG, "teardown problem: $it") }
+        // To the session log, not only logcat: a leaked TUN, fd, or test
+        // network is what the next start trips over, and the user reading the
+        // log after a bad session is the one who needs to see it.
+        problems.forEach { SessionLog.warn("teardown problem: $it") }
         return problems
     }
 
     private companion object {
-        const val TAG = "SessionResources"
         const val POLL_INTERVAL_MS = 200L
     }
 }

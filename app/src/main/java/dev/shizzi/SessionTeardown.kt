@@ -1,7 +1,6 @@
 package dev.shizzi
 
 import android.content.Context
-import android.util.Log
 
 /**
  * Releases what a session holds outside its own resource group.
@@ -31,13 +30,13 @@ class SessionTeardown(private val context: Context) {
      */
     fun installShutdownHook() {
         val hook = Thread {
-            Log.w(TAG, "process exiting with session active; dropping downstream")
+            SessionLog.warn("process exiting with session active; dropping downstream")
             runCatching { DownstreamControl(context).stopWifiTethering() }
         }
 
         runCatching { Runtime.getRuntime().addShutdownHook(hook) }
             .onSuccess { shutdownHook = hook }
-            .onFailure { Log.w(TAG, "installShutdownHook: ${it.message}") }
+            .onFailure { SessionLog.warn("shutdown hook not installed: ${it.message}") }
     }
 
     fun removeShutdownHook() {
@@ -73,7 +72,12 @@ class SessionTeardown(private val context: Context) {
      */
     fun releaseUpstreamSelection(interfaceName: String?) {
         val cleared = runCatching { TetheringPreferenceApi(context).setPreferTestNetworks(false) }
-            .onFailure { Log.w(TAG, "stop: preference ${it.message}") }
+            .onFailure {
+                SessionLog.error(
+                    "could not clear the test-network preference: ${it.message}; " +
+                        "the upstream stays selected and the next start may fail",
+                )
+            }
         if (cleared.isFailure) return
 
         val name = interfaceName ?: return
@@ -97,7 +101,7 @@ class SessionTeardown(private val context: Context) {
 
         val didAccept = runCatching { control.stopWifiTethering() }
             .getOrElse { failure ->
-                Log.w(TAG, "stop: downstream ${failure.message}")
+                SessionLog.error("stopping the hotspot failed: ${failure.message}")
                 false
             }
 
@@ -112,7 +116,6 @@ class SessionTeardown(private val context: Context) {
     }
 
     private companion object {
-        const val TAG = "SessionTeardown"
         const val UPSTREAM_POLL_MS = 500L
 
         /**

@@ -3,7 +3,6 @@ package dev.shizzi
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
-import android.util.Log
 import java.util.concurrent.atomic.AtomicBoolean
 
 /** What the poller last observed, as the session needs to act on it. */
@@ -158,7 +157,7 @@ class VpnWatchdog(
                 ?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) == true
         }
     }.getOrElse { failure ->
-        Log.w(TAG, "findVpn: ${failure.message}")
+        SessionLog.warn("could not read the VPN list: ${failure.message}")
         null
     }
 
@@ -171,7 +170,6 @@ class VpnWatchdog(
     }
 
     private companion object {
-        const val TAG = "VpnWatchdog"
         const val UNBOUND = 0L
         const val POLL_INTERVAL_MS = 5_000L
 

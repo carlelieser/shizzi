@@ -15,6 +15,15 @@ class DownstreamInspector(private val inspector: UpstreamInspector = UpstreamIns
     private var cachedCount = 0
     private var lastReadAt = 0L
 
+    /**
+     * The last count written to the log, which is not [cachedCount].
+     *
+     * Kept apart so the log records changes rather than readings: the count is
+     * polled for the whole life of a session, and a line per poll would bury
+     * everything else in the file well before the size cap.
+     */
+    private var loggedCount = 0
+
     /** @return null when nothing is tethered, else what is still up. */
     fun findTetheredDownstream(): String? {
         val observation = inspector.observe()
@@ -57,7 +66,23 @@ class DownstreamInspector(private val inspector: UpstreamInspector = UpstreamIns
 
         lastReadAt = now
         cachedCount = parseDeviceCount(observation.rawOutput)
+        logCountChange(cachedCount)
         return cachedCount
+    }
+
+    /**
+     * Records a change in how many devices are connected.
+     *
+     * Who is on the hotspot is the event a tethering log is most often opened
+     * to answer, and it is the one thing the session never recorded. Only
+     * transitions are written; a steady count says nothing new.
+     */
+    private fun logCountChange(count: Int) {
+        if (count == loggedCount) return
+
+        val direction = if (count > loggedCount) "connected" else "disconnected"
+        loggedCount = count
+        SessionLog.info("client $direction: $count now on the hotspot")
     }
 
     /**
