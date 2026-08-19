@@ -97,7 +97,7 @@ class ProbeRunner(private val context: Context) {
         if (attemptTethering) restartDownstreamBeforeTun(report)
 
         val acquired = runCatching {
-            group.acquire(tunAddress(), availabilityTimeoutMs)
+            group.acquire(tunAddresses(), TEST_NETWORK_DNS_SERVERS, availabilityTimeoutMs)
         }
 
         acquired.fold(
@@ -503,8 +503,10 @@ class ProbeRunner(private val context: Context) {
         ).forEach { (id, question) -> report.recordSkip(id, question, reason) }
     }
 
-    private fun tunAddress(): LinkAddress =
-        buildLinkAddress(InetAddress.getByName(TUN_ADDRESS), TUN_PREFIX_LENGTH)
+    private fun tunAddresses(): List<LinkAddress> = listOf(
+        buildLinkAddress(InetAddress.getByName(TUN_ADDRESS), TUN_PREFIX_LENGTH),
+        buildLinkAddress(InetAddress.getByName(TUN_ADDRESS_V6), TUN_PREFIX_LENGTH_V6),
+    )
 
     private fun environment(): JSONObject = JSONObject().apply {
         put("device", "${Build.MANUFACTURER} ${Build.MODEL}")
@@ -523,6 +525,11 @@ class ProbeRunner(private val context: Context) {
         /** TEST-NET-1 per spec R3.2. */
         const val TUN_ADDRESS = "192.0.2.2"
         const val TUN_PREFIX_LENGTH = 24
+
+        /** The IPv6 counterpart, from the documentation range so it cannot collide. */
+        const val TUN_ADDRESS_V6 = "2001:db8::2"
+        const val TUN_PREFIX_LENGTH_V6 = 64
+
 
         /**
          * Link MTU for the TUN (R5.5 default). Egress is direct rather than

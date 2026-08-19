@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.LinkAddress
+import android.net.LinkProperties
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.os.Build
@@ -61,15 +62,19 @@ object HiddenApiCatalog {
             since = 29,
             notes = "Signature changed across releases: API 29-30 take " +
                 "LinkAddress[], later releases take Collection<LinkAddress>. " +
-                "Both overloads are probed.",
+                "Both overloads are probed, and both are passed the IPv4 and " +
+                "IPv6 TUN addresses together.",
         ),
         HiddenApiPath(
             id = "TestNetworkManager.setupTestNetwork",
             className = "android.net.TestNetworkManager",
             memberName = "setupTestNetwork",
             since = 29,
-            notes = "Overload used takes (String iface, IBinder binder). " +
-                "Requires MANAGE_TEST_NETWORKS, held by shell UID 2000.",
+            notes = "The (LinkProperties, boolean, IBinder) overload is used so " +
+                "the network carries IPv6 DNS servers, without which tethering " +
+                "will not provision IPv6 downstream; falls back to " +
+                "(String iface, IBinder binder). Requires MANAGE_TEST_NETWORKS, " +
+                "held by shell UID 2000.",
         ),
         HiddenApiPath(
             id = "TestNetworkManager.teardownTestNetwork",
@@ -145,6 +150,15 @@ object HiddenApiCatalog {
         ),
     )
 }
+
+/**
+ * DNS servers the test network advertises.
+ *
+ * Not cosmetic: tethering's getIPv6Interface returns null unless the upstream
+ * has an IPv6 DNS server, and IPv6 is then never provisioned downstream.
+ */
+val TEST_NETWORK_DNS_SERVERS: List<InetAddress>
+    get() = listOf("2001:4860:4860::8888", "8.8.8.8").map(InetAddress::getByName)
 
 /**
  * Builds a [LinkAddress] without the package-private constructor.
@@ -237,18 +251,18 @@ class TestNetworkApi(private val context: Context) {
     }
 
     /**
-     * Creates a TUN carrying [address].
+     * Creates a TUN carrying [addresses].
      *
      * Tries the Collection overload first (API 31+) then the array overload
      * (API 29-30), because the parameter type changed between releases.
      */
-    fun createTunInterface(address: LinkAddress): TunHandle {
+    fun createTunInterface(addresses: List<LinkAddress>): TunHandle {
         val instance = manager ?: error("createTunInterface: test_network service unavailable")
         val owner = managerClass ?: error("createTunInterface: TestNetworkManager class absent")
 
-        val created = invokeCollectionOverload(owner, instance, address)
-            ?: invokeArrayOverload(owner, instance, address)
-            ?: error("createTunInterface: no known overload accepted LinkAddress $address")
+        val created = invokeCollectionOverload(owner, instance, addresses)
+            ?: invokeArrayOverload(owner, instance, addresses)
+            ?: error("createTunInterface: no known overload accepted LinkAddresses $addresses")
 
         return TunHandle(created)
     }
@@ -256,31 +270,67 @@ class TestNetworkApi(private val context: Context) {
     private fun invokeCollectionOverload(
         owner: Class<*>,
         instance: Any,
-        address: LinkAddress,
+        addresses: List<LinkAddress>,
     ): Any? = runCatching {
         val method = owner.getMethod("createTunInterface", Collection::class.java)
-        method.invoke(instance, listOf(address))
+        method.invoke(instance, addresses)
     }.getOrNull()
 
     private fun invokeArrayOverload(
         owner: Class<*>,
         instance: Any,
-        address: LinkAddress,
+        addresses: List<LinkAddress>,
     ): Any? = runCatching {
         val arrayType = Class.forName("[Landroid.net.LinkAddress;")
         val method = owner.getMethod("createTunInterface", arrayType)
-        val argument = java.lang.reflect.Array.newInstance(LinkAddress::class.java, 1)
-        java.lang.reflect.Array.set(argument, 0, address)
+        val argument = java.lang.reflect.Array.newInstance(LinkAddress::class.java, addresses.size)
+        addresses.forEachIndexed { index, address ->
+            java.lang.reflect.Array.set(argument, index, address)
+        }
         method.invoke(instance, argument)
     }.getOrNull()
 
-    /** Registers [interfaceName] as a test network bound to the lifetime of [binder]. */
-    fun setupTestNetwork(interfaceName: String, binder: IBinder) {
+    /**
+     * Registers [interfaceName] as a test network bound to the lifetime of [binder].
+     *
+     * Registered with LinkProperties carrying [dnsServers], because tethering
+     * refuses to provision IPv6 downstream without them: getIPv6Interface
+     * requires hasIpv6DnsServer(), and the plain overload leaves the list
+     * empty. The interface name and link addresses in the LinkProperties are
+     * overwritten by the framework; only the DNS servers survive.
+     *
+     * Falls back to the plain overload when the LinkProperties one is absent,
+     * so a build without it still gets a working IPv4 session.
+     */
+    fun setupTestNetwork(interfaceName: String, dnsServers: List<InetAddress>, binder: IBinder) {
         val instance = manager ?: error("setupTestNetwork: test_network service unavailable")
         val owner = managerClass ?: error("setupTestNetwork: TestNetworkManager class absent")
+
+        val properties = LinkProperties().apply {
+            setInterfaceName(interfaceName)
+            val addDnsServer = LinkProperties::class.java
+                .getMethod("addDnsServer", InetAddress::class.java)
+            dnsServers.forEach { addDnsServer.invoke(this, it) }
+        }
+        if (setupWithLinkProperties(owner, instance, properties to binder)) return
+
         val method = owner.getMethod("setupTestNetwork", String::class.java, IBinder::class.java)
         method.invoke(instance, interfaceName, binder)
     }
+
+    private fun setupWithLinkProperties(
+        owner: Class<*>,
+        instance: Any,
+        request: Pair<LinkProperties, IBinder>,
+    ): Boolean = runCatching {
+        val method = owner.getMethod(
+            "setupTestNetwork",
+            LinkProperties::class.java,
+            Boolean::class.javaPrimitiveType,
+            IBinder::class.java,
+        )
+        method.invoke(instance, request.first, true, request.second)
+    }.isSuccess
 
     /** Tears down the framework-side test network for [network]. */
     fun teardownTestNetwork(network: Network) {
