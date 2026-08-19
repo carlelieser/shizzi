@@ -58,10 +58,16 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
 
+      - name: Test datapath
+        # Runs on the host, not under the NDK: an android/arm64 test binary
+        # would not execute on this runner. bind.go is tagged android-only and
+        # stubbed elsewhere precisely so the package builds here.
+        run: cd datapath && go test ./...
+
       - name: Vet datapath
-        # The datapath is cgo against <android/multinetwork.h>, so it only
-        # compiles for Android. Vetting it under the NDK toolchain catches
-        # breakage here rather than inside the gomobile bind further down.
+        # Also vet the real Android build. The stub means a host-only check
+        # would never look at bind.go, which is the one file that can break on
+        # a toolchain the tests do not use.
         env:
           ANDROID_NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/27.0.12077973
         run: |
