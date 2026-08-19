@@ -82,8 +82,8 @@ android {
         // devices at install time is the honest failure.
         minSdk = 33
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
 
         // Identifies the build to the shell-side daemon, which survives APK
         // replacement and will not reload an already-loaded class. Without a
