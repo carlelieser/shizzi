@@ -145,6 +145,19 @@ object SessionLog {
         .flatMap(::readFile)
         .sortedByDescending { it.timestamp }
 
+    /**
+     * Empties every file this process can write.
+     *
+     * Truncates rather than deletes: the shell's file carries permissions the
+     * app process depends on to read it, and recreating it on the next append
+     * would only restore them if that append came from the shell.
+     *
+     * Each process clears its own. Called in the app this empties the app's
+     * file and fails harmlessly on the shell's, which lives in /data/local/tmp
+     * and is world-readable but not world-writable — clearing that half is what
+     * ITetherService.clearLog is for. The failure is logged rather than raised
+     * because the caller cannot act on it: the half that could be cleared was.
+     */
     fun clear() {
         readPaths.forEach { path ->
             runCatching { File(path).takeIf { it.exists() }?.writeText("") }

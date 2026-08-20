@@ -58,6 +58,16 @@ interface ITetherService {
      */
     String runProbes(boolean attemptTethering, int availabilityTimeoutMs);
 
+    /**
+     * Empties this process's log file.
+     *
+     * Needed because the shell writes to /data/local/tmp, which the app process
+     * can read but not write: without a call across the binder, clearing from
+     * the UI would silently empty only the app's half of the history and leave
+     * the shell's entries — most of what is worth reading — in place.
+     */
+    void clearLog();
+
     /** Contract version, checked by the app to detect a stale shell process (R2.5). */
     int getContractVersion();
 }

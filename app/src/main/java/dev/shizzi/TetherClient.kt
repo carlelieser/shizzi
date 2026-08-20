@@ -251,6 +251,34 @@ class TetherClient {
     }
 
     /**
+     * Empties the shell process's half of the log.
+     *
+     * Binds to deliver this, unlike [setLogging]. A setting pushed at an
+     * unbound process is carried across by the next start, but a file left
+     * unwritten stays written — and the shell's file is where most of the
+     * history lives, so skipping it would report a clear that visibly did not
+     * happen the moment the screen reloaded.
+     *
+     * @return null on success, else why the shell's entries could not be
+     *   dropped, for a UI that should not claim more than it did.
+     */
+    suspend fun clearLog(): String? = withContext(Dispatchers.IO) {
+        runCatching {
+            val bound = service()
+
+            // Checked here as well as on start and runProbes: clearLog is newer
+            // than some daemons that may still be running, and calling it on
+            // one that predates it raises an AbstractMethodError whose message
+            // says nothing about why. This turns that into the real reason.
+            verifyContract(bound)
+            bound.clearLog()
+        }.fold(
+            onSuccess = { null },
+            onFailure = { failure -> failure.message ?: "could not reach Shizuku" },
+        )
+    }
+
+    /**
      * Drops a downstream left tethered by a shell process that died.
      *
      * The app process outlives the shell process — it survived at

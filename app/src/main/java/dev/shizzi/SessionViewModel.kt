@@ -9,9 +9,11 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Renders whatever the session service is doing, and asks it to start or stop.
@@ -171,6 +173,27 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
     fun dismissDiagnostics() {
         if (localDiagnostics.value is DiagnosticsState.Running) return
         localDiagnostics.value = DiagnosticsState.Idle
+    }
+
+    /**
+     * Empties both halves of the log.
+     *
+     * The app's file is cleared here and the shell's across the binder, because
+     * neither process can write the other's. The shell half is attempted even
+     * when nothing is bound, which costs a bind — worth it, since that file
+     * holds most of the history and leaving it would show a "cleared" log that
+     * still had entries in it.
+     *
+     * @param onCleared runs on the main thread once both halves are done,
+     *   carrying null on success or why the shell's half survived. The screen
+     *   needs it to reload: the list is read once per visit, so a clear that
+     *   did not re-read would leave the entries on screen.
+     */
+    fun clearLog(onCleared: (String?) -> Unit) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) { SessionLog.clear() }
+            onCleared(diagnostics.clearLog())
+        }
     }
 
     override fun onCleared() {

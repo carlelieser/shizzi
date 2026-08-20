@@ -67,6 +67,22 @@ class TetherService : ITetherService.Stub {
     }
 
     /**
+     * Empties the file this process writes.
+     *
+     * [SessionLog.clear] walks this process's own read paths, which in the
+     * shell is the one file at /data/local/tmp. The app clears its own half
+     * directly; neither process can reach the other's, which is why this
+     * crosses the binder at all.
+     *
+     * Never throws across the binder: failing to clear a log is not worth a
+     * RemoteException in the app process, and the UI reports what it can see.
+     */
+    override fun clearLog() {
+        runCatching { SessionLog.clear() }
+            .onFailure { failure -> Log.w(TAG, "clearLog: ${failure.message}") }
+    }
+
+    /**
      * Never throws across the binder: a RemoteException in the app process loses
      * the diagnostic detail, which is the entire point of a probe run (R7.5).
      *
