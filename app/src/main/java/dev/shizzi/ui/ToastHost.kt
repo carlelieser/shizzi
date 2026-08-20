@@ -29,6 +29,7 @@ import androidx.compose.ui.composed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import dev.shizzi.ui.theme.ScreenPadding
@@ -214,6 +215,10 @@ private fun ToastSurface(toast: Toast, onDismiss: () -> Unit, modifier: Modifier
  * The detail takes `log` rather than `caption`: both are mono, but caption is
  * tracked and uppercase wherever it is used, which is the wrong treatment for a
  * path. `log` is what the log screen already renders these in.
+ *
+ * The two lines separate by weight rather than by size. A second size in a
+ * surface this small would read as two unrelated things stacked; one step of
+ * weight says the first line names what happened and the second qualifies it.
  */
 @Composable
 private fun ToastText(toast: Toast, modifier: Modifier = Modifier) {
@@ -221,9 +226,13 @@ private fun ToastText(toast: Toast, modifier: Modifier = Modifier) {
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(ShizziTheme.spacing.xs),
     ) {
+        // W500, the weight a settings row's name carries. The message is the
+        // toast's title and the detail under it is its description, which is
+        // the same relationship — so it takes the same step up from the line
+        // below it rather than sitting at the log's reading weight.
         Text(
             text = toast.message,
-            style = ShizziTheme.typography.log,
+            style = ShizziTheme.typography.log.copy(fontWeight = FontWeight.W500),
             color = ShizziTheme.colors.onSurface,
         )
 
@@ -238,7 +247,12 @@ private fun ToastText(toast: Toast, modifier: Modifier = Modifier) {
 }
 
 /**
- * Turquoise, like every other element that means something is being worked on.
+ * Muted, matching the connect button's spinner.
+ *
+ * Work in progress is not the accent's job. Turquoise means a session is up,
+ * and a spinner is the state before anyone knows whether that will be true —
+ * colouring it the same makes the palette say "connected" during the wait that
+ * might yet fail.
  *
  * A determinate bar would be the better shape if the work reported progress,
  * but a probe sequence has no measurable fraction complete — it waits on
@@ -247,7 +261,7 @@ private fun ToastText(toast: Toast, modifier: Modifier = Modifier) {
 @Composable
 private fun ToastSpinner() {
     CircularProgressIndicator(
-        color = ShizziTheme.colors.primary,
+        color = ShizziTheme.colors.onSurfaceMuted,
         strokeWidth = SpinnerStroke,
         modifier = Modifier.size(SpinnerSize),
     )
@@ -257,14 +271,21 @@ private fun ToastSpinner() {
  * The action label, styled as text rather than as a second bordered box.
  *
  * A button inside a bordered surface would nest two of the same treatment and
- * read as a box in a box; turquoise on the label carries the affordance.
+ * read as a box in a box, so weight carries the affordance instead: heavier
+ * than the message beside it, in the same colour.
+ *
+ * Not turquoise. The accent means a session is up — it belongs to the connect
+ * button and the connected status glyph — and spending it on every toast that
+ * happens to carry a button dilutes the one thing it is for. A toast is already
+ * the most prominent thing on screen while it is up; its action does not also
+ * need the loudest colour in the app.
  */
 @Composable
 private fun ToastActionButton(action: ToastAction, onDismiss: () -> Unit) {
     Text(
         text = action.label.uppercase(),
-        style = ShizziTheme.typography.label,
-        color = ShizziTheme.colors.primary,
+        style = ShizziTheme.typography.label.copy(fontWeight = FontWeight.W700),
+        color = ShizziTheme.colors.onSurface,
         textAlign = TextAlign.End,
         modifier = Modifier
             .clickable {
