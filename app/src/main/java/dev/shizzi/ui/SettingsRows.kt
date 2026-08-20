@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
@@ -20,9 +21,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import dev.shizzi.ui.theme.ShizziTheme
+import dev.shizzi.ui.theme.Spacing
 
 /** Trailing glyph size, smaller than a header icon since it only marks a row. */
 private val RowIconSize = 20.dp
+
+/** Vertical padding shared by every settings row. */
+private val RowPadding = Spacing.md
+
+/**
+ * The height the switch occupies in layout.
+ *
+ * Roughly a single-line label's, so the toggle row is as tall as the text rows
+ * around it. requiredHeight overrides the incoming constraint rather than
+ * negotiating within it, which is what lets the control keep drawing at its
+ * natural size and stay comfortably touchable while occupying less.
+ */
+private val SwitchLayoutHeight = 24.dp
 
 /**
  * The label pair every settings row carries: name, then what it does.
@@ -72,7 +87,18 @@ fun SectionLabel(text: String) {
     )
 }
 
-/** A setting that is on or off. */
+/**
+ * A setting that is on or off.
+ *
+ * The switch is 48dp tall against a title's ~22dp, and a row centred on the
+ * taller child would take its height from the control — putting ~13dp of air
+ * above and below the label that the text-only rows beside it do not have. So
+ * the row is padded to match [SettingsAction] and the switch is allowed to
+ * overhang it, keeping every row in the section on the same rhythm.
+ *
+ * Invisible while the rows carried subtitles: a two-line label came close
+ * enough to the switch's height to hide the difference.
+ */
 @Composable
 fun SettingsToggle(
     label: SettingsText,
@@ -80,7 +106,7 @@ fun SettingsToggle(
     onCheckedChange: (Boolean) -> Unit,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = ShizziTheme.spacing.md),
+        modifier = Modifier.fillMaxWidth().padding(vertical = RowPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         SettingsLabel(
@@ -89,9 +115,15 @@ fun SettingsToggle(
             modifier = Modifier.weight(1f),
         )
 
+        // Laid out at the label's height while still drawing and responding to
+        // touch at its natural 48dp. The switch is a fixed-size control — that
+        // size being its own touch target — and a row centred on it takes its
+        // height from the control, putting air around the label that the
+        // text-only rows beside it do not have.
         Switch(
             checked = isChecked,
             onCheckedChange = onCheckedChange,
+            modifier = Modifier.requiredHeight(SwitchLayoutHeight),
             colors = SwitchDefaults.colors(
                 checkedThumbColor = ShizziTheme.colors.onPrimary,
                 checkedTrackColor = ShizziTheme.colors.primary,
@@ -123,7 +155,7 @@ fun SettingsAction(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(vertical = ShizziTheme.spacing.md),
+            .padding(vertical = RowPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         SettingsLabel(
