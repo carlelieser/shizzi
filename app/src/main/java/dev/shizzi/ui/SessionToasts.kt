@@ -6,15 +6,12 @@ import dev.shizzi.ShizukuState
 import dev.shizzi.SessionUiState
 
 /**
- * Turns state into toasts.
+ * Turns state into toasts, in one place: all three screens float the same host,
+ * and "what deserves a message" is worth reading together rather than inferring
+ * from scattered call sites.
  *
- * Kept out of the screens because all three of them float the same toast host,
- * and because "what deserves a message" is a product decision worth reading in
- * one place rather than inferring from scattered call sites.
- *
- * Only two things get announced: a session failure and a Shizuku problem the
- * user can act on. Success is visible in the status icon and the button label,
- * so toasting it would narrate what the screen already shows.
+ * Only two things are announced — a session failure, and a Shizuku problem the
+ * user can act on. Success is already in the status icon and the button label.
  */
 @Composable
 fun SessionToasts(
@@ -27,8 +24,8 @@ fun SessionToasts(
 }
 
 /**
- * Indefinite: an error the user has not read is not one that should time out
- * while they are looking away from the phone they just tried to tether from.
+ * Indefinite: an unread error should not time out while the user is looking
+ * away from the phone they just tried to tether from.
  */
 @Composable
 private fun ErrorToast(lastError: String, toasts: ToastState) {

@@ -32,11 +32,10 @@ data class SessionUiState(
 }
 
 /**
- * The state a stopped session renders as.
- *
- * Defined once because both the service and the ViewModel apply it optimistically
- * the moment the user asks to stop, and a copy that forgot to clear
- * [SessionUiState.interfaceName] left "via testtunNN" under an idle screen.
+ * Defined once because both the service and the ViewModel apply it
+ * optimistically the moment the user asks to stop, and a copy that forgot to
+ * clear [SessionUiState.interfaceName] left "via testtunNN" under an idle
+ * screen. Clients and traffic go for the same reason.
  */
 fun SessionUiState.asStopped(): SessionUiState = copy(
     isBusy = false,
@@ -45,9 +44,6 @@ fun SessionUiState.asStopped(): SessionUiState = copy(
     detail = "Stopped",
     interfaceName = "",
     isVpnBound = false,
-    // Same reasoning: a stopped session has no clients and carries nothing,
-    // so holding the last reading would caption an idle screen with live
-    // numbers that stopped moving.
     clientCount = 0,
     traffic = Traffic(),
 )
@@ -56,11 +52,9 @@ fun SessionUiState.asStopped(): SessionUiState = copy(
  * Folds a privileged call's result into the rendered state.
  *
  * A thrown exception and a status reporting ERROR are different failures — a
- * dead binder versus the session refusing to come up — so both are surfaced
- * rather than collapsed into one message.
- *
- * Lives beside the state it produces rather than in a ViewModel: the session
- * outlives any one screen, so the service folds these results too.
+ * dead binder versus the session refusing to come up — so both are surfaced.
+ * Lives here rather than in a ViewModel because the session outlives any one
+ * screen, so the service folds these results too.
  */
 fun SessionUiState.applyOutcome(outcome: Result<String>): SessionUiState {
     val failure = outcome.exceptionOrNull()
@@ -69,11 +63,9 @@ fun SessionUiState.applyOutcome(outcome: Result<String>): SessionUiState {
             isBusy = false,
             status = UiStatus.ERROR,
             lastError = "${failure.javaClass.simpleName}: ${failure.message}",
-            // A failed start tears its TUN down on the way out, so keeping the
-            // name would caption an idle screen with an interface that is gone.
+            // A failed start tears its TUN down on the way out; a stale badge
+            // would claim a session that no longer exists is on a VPN.
             interfaceName = "",
-            // Same reasoning, and worse: a stale badge would claim the traffic
-            // of a session that no longer exists is going through a VPN.
             isVpnBound = false,
             clientCount = 0,
             traffic = Traffic(),
@@ -119,8 +111,6 @@ class TetherClient {
     private var pendingBind: CompletableDeferred<ITetherService>? = null
 
     /**
-     * Notified when the shell process dies while a session is running.
-     *
      * The app process outlives the shell process — it stayed alive at
      * oom_score_adj 0 through every observed death — so without this the UI
      * keeps showing CONNECTED for a session that no longer exists.
@@ -132,18 +122,15 @@ class TetherClient {
     private val userServiceArgs = Shizuku.UserServiceArgs(
         ComponentName(BuildConfig.APPLICATION_ID, TetherService::class.java.name),
     )
-        // The session outlives the binder call that starts it: the test network
-        // is tied to a Binder token held in this process, and a non-daemon
-        // service is reaped once the call returns, taking the network with it.
-        // That showed up as "TestNetworkAgent: NetworkAgent channel lost" about
+        // The test network is tied to a Binder token held in this process, and
+        // a non-daemon service is reaped once the call returns, taking the
+        // network with it: "TestNetworkAgent: NetworkAgent channel lost" about
         // four seconds after start() returned, with the upstream reverting.
         .daemon(true)
-        // Without an explicit tag Shizuku keys each service record by a fresh
-        // UUID, so every bind creates a *new* daemon and unbind cannot reach the
-        // one already running. That leaked a shell process per session, each
-        // holding its TUN's file descriptor and so keeping the interface alive
-        // in the kernel. A stable tag makes bind and unbind name the same
-        // record, which is what lets the daemon actually be terminated.
+        // Without a tag Shizuku keys each service record by a fresh UUID, so
+        // every bind creates a *new* daemon that unbind cannot reach — leaking
+        // a shell process per session, each holding its TUN's fd and keeping
+        // the interface alive in the kernel.
         .tag(SERVICE_TAG)
         .processNameSuffix("probe")
         .debuggable(true)
@@ -170,10 +157,8 @@ class TetherClient {
     }
 
     /**
-     * Binds the shell-side service, reusing an existing binding when live.
-     *
-     * A dead binder is discarded rather than reused: after an APK update the old
-     * shell process is stale (R2.5, T-5).
+     * Reuses a live binding; discards a dead one, which after an APK update is
+     * a stale shell process (R2.5, T-5).
      */
     private suspend fun service(): ITetherService {
         boundService?.let { existing ->
@@ -191,12 +176,9 @@ class TetherClient {
     }
 
     /**
-     * Reports the session as lost when the shell process dies.
-     *
      * onServiceDisconnected does not cover this: the shell process is a child
      * of the Shizuku server, and when that server dies the child exits without
-     * the binding being torn down through the normal path. Linking to the
-     * binder itself catches both.
+     * the binding being torn down. Linking to the binder catches both.
      */
     private fun observeDeath(bound: ITetherService) {
         deathRecipient = null
@@ -221,36 +203,62 @@ class TetherClient {
         bound.runProbes(attemptTethering, AVAILABILITY_TIMEOUT_MS)
     }
 
-    suspend fun start(debugLogging: Boolean): String = withContext(Dispatchers.IO) {
+    suspend fun start(logging: Boolean): String = withContext(Dispatchers.IO) {
         val bound = service()
         verifyContract(bound)
-        bound.start(debugLogging)
+        bound.start(logging)
     }
 
     /**
-     * Tears the session down.
-     *
-     * Binds if nothing is bound: with a stable service tag that reaches the
-     * daemon already running rather than starting a fresh one, so a stop issued
-     * from a process that never bound — the notification action, a restarted
-     * service — still finds the session it needs to end.
+     * No-ops when unbound rather than binding to deliver: an unbound process
+     * holds no session to log, and start() carries the setting across.
+     */
+    fun setLogging(enabled: Boolean) {
+        runCatching { boundService?.setLogging(enabled) }
+    }
+
+    /**
+     * Binds if nothing is bound — the stable tag reaches the daemon already
+     * running, so a stop from a process that never bound (the notification
+     * action, a restarted service) still finds the session it needs to end.
      */
     suspend fun stop(): String = withContext(Dispatchers.IO) {
         service().stop()
     }
 
     /**
-     * Drops a downstream left tethered by a shell process that died.
+     * Empties the shell process's half of the log.
      *
-     * The app process outlives the shell process — it survived at
-     * oom_score_adj 0 through every observed death — so it is the only place
-     * that can still act. A device test showed SIGTERM leaves the hotspot
-     * tethered and tethering falling back to cellular with clients attached,
-     * which the in-process shutdown hook cannot catch.
+     * Binds to deliver this, unlike [setLogging]: a setting survives being
+     * skipped, but a file left unwritten stays written, and the shell's file
+     * holds most of the history — the screen would reload and show the clear
+     * had not happened.
      *
-     * This binds a *new* shell process purely to issue the teardown: the old
-     * one is gone along with the session object it owned, and stop() on the
-     * fresh instance still tears down the downstream that outlived it.
+     * @return null on success, else why the entries could not be dropped, for
+     *   a UI that should not claim more than it did.
+     */
+    suspend fun clearLog(): String? = withContext(Dispatchers.IO) {
+        runCatching {
+            val bound = service()
+
+            // clearLog is newer than daemons that may still be running, where
+            // it raises an AbstractMethodError saying nothing about why.
+            verifyContract(bound)
+            bound.clearLog()
+        }.fold(
+            onSuccess = { null },
+            onFailure = { failure -> failure.message ?: "could not reach Shizuku" },
+        )
+    }
+
+    /**
+     * Drops a downstream left tethered by a shell process that died — SIGTERM
+     * leaves the hotspot up and tethering falling back to cellular with clients
+     * attached, which the in-process shutdown hook cannot catch.
+     *
+     * Binds a *new* shell process purely to issue the teardown: the old one is
+     * gone with the session object it owned, but stop() on a fresh instance
+     * still drops the downstream that outlived it.
      *
      * @return null on success, else why the downstream could not be dropped.
      */
@@ -271,11 +279,10 @@ class TetherClient {
     /**
      * T-5: a shell process left over from a previous APK must not be used.
      *
-     * The daemon survives APK replacement by design, and an already-loaded
-     * class is not reloaded — so a rebuilt implementation keeps running the old
-     * code behind an unchanged AIDL surface. Keying the version on the build
-     * rather than the interface makes that detectable: a debug build carries
-     * its APK timestamp, so any reinstall invalidates a running daemon.
+     * The daemon survives APK replacement and does not reload its classes, so a
+     * rebuilt implementation keeps running old code behind an unchanged AIDL
+     * surface. Keying the version on the build makes that detectable — a debug
+     * build carries its APK timestamp, so any reinstall invalidates a daemon.
      */
     private fun verifyContract(bound: ITetherService) {
         val remote = bound.contractVersion
@@ -286,25 +293,18 @@ class TetherClient {
     }
 
     /**
-     * Drops the binding without destroying the shell process.
-     *
-     * Passing remove=true would tear down the daemon, and with it the test
-     * network the session depends on. Leaving the UI must not drop tethered
-     * clients; only an explicit stop() ends the session.
+     * Keeps the daemon, and with it the test network the session depends on:
+     * leaving the UI must not drop tethered clients. Only stop() ends a session.
      */
     fun unbind() = releaseBinding(shouldTerminate = false)
 
     /**
-     * Drops the binding *and* terminates the shell process behind it.
-     *
-     * Called once a session has been torn down, which is the only point where
-     * killing the daemon is safe — and necessary. The daemon holds the TUN's
-     * file descriptor, so a process that outlives its session keeps the
-     * interface alive in the kernel no matter what teardown closes on this
-     * side. A device test found fourteen orphaned daemons and eight surviving
-     * testtun interfaces after a single evening of starts and stops, and
-     * tethering selecting one of those leftovers is what failed the next
-     * session's upstream check.
+     * Safe only once a session is torn down, and necessary then: the daemon
+     * holds the TUN's fd, so a process outliving its session keeps the
+     * interface alive in the kernel whatever teardown closes on this side. An
+     * evening of starts and stops left fourteen orphaned daemons and eight
+     * surviving testtun interfaces, and tethering picking one of those is what
+     * failed the next session's upstream check.
      */
     fun unbindAndStopDaemon() = releaseBinding(shouldTerminate = true)
 
@@ -320,15 +320,14 @@ class TetherClient {
 
     private companion object {
         /**
-         * The daemon's stable identity across binds, and across the two
-         * controllers that reach it — the service's and the ViewModel's — so
-         * both address one shell process rather than one each.
+         * Stable across binds and across both controllers that reach it — the
+         * service's and the ViewModel's — so they address one shell process.
          */
         private const val SERVICE_TAG = "shizzi-session"
 
         /**
-         * Binding is fast; the probe run itself is not. Q5 waits up to 45s for
-         * upstream selection to settle, so this bound covers only the bind.
+         * Covers only the bind, which is fast. The probe run is not: Q5 waits
+         * up to 45s for upstream selection to settle.
          */
         const val BIND_TIMEOUT_MS = 10_000L
 

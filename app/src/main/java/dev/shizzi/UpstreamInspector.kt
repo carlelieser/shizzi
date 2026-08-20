@@ -13,22 +13,18 @@ data class UpstreamObservation(
     /**
      * [interfaceNames] minus any interface the kernel no longer has.
      *
-     * Tethering can keep naming an interface that has already been destroyed.
-     * Its own detach needs the interface to exist — it logs "Could not detach
-     * program: Fail to get interface params" and gives up — so once the TUN is
-     * gone the reference is stuck for the life of the boot. Correct teardown
-     * ordering is what stops one being created; this is what keeps a device
-     * that already has one from failing every future session forever. Nobody
-     * should have to reboot to recover from a session they were never told
-     * about.
+     * Tethering keeps naming destroyed interfaces: its detach needs the
+     * interface to exist, so once the TUN is gone the reference is stuck for
+     * the boot. Teardown ordering stops one being created; this is what saves a
+     * device that already has one from failing every future session.
      *
-     * Only *absent* interfaces are dropped, which leaves the guarantee intact:
-     * the risk being guarded against is clients silently routing over a real
-     * physical upstream, and an interface that does not exist cannot carry
-     * their traffic. Anything present and competing is still a hard failure.
+     * Dropping only *absent* interfaces leaves the guarantee intact — the risk
+     * is clients routing over a real physical upstream, and an interface that
+     * does not exist carries nothing. Anything present and competing is still a
+     * hard failure.
      *
-     * @param owned kept unconditionally — it is the session's own TUN, and a
-     *   check that raced its creation must not discard it.
+     * @param owned kept unconditionally: a check that raced the session's own
+     *   TUN into existence must not discard it.
      */
     fun liveInterfaceNames(owned: String): List<String> {
         val (live, absent) = interfaceNames.partition { it == owned || interfaceExists(it) }
@@ -40,12 +36,9 @@ data class UpstreamObservation(
 }
 
 /**
- * Whether the kernel still has this interface.
- *
- * Reads sysfs rather than shelling out to `ip`: this runs on the watchdog's
- * polling path, and the answer is a single stat rather than a process launch.
- * An unreadable sysfs is treated as "present" so an unexpected failure keeps
- * the caller failing closed rather than silently ignoring a real upstream.
+ * Sysfs rather than shelling out to `ip`: this runs on the watchdog's polling
+ * path, so the answer is one stat instead of a process launch. Unreadable
+ * counts as present, keeping the caller failing closed.
  */
 private fun interfaceExists(name: String): Boolean =
     runCatching { java.io.File("/sys/class/net/$name").exists() }.getOrDefault(true)
@@ -53,21 +46,15 @@ private fun interfaceExists(name: String): Boolean =
 /**
  * Reads tethering upstream state out of `dumpsys tethering`.
  *
- * R4.6 requires the probe to be drained concurrently under a short deadline:
- * a stalled OEM tethering service must not be able to wedge teardown. Both
- * stdout and stderr are drained on separate threads, because a process that
- * fills an undrained pipe buffer blocks forever regardless of any timeout on
- * waitFor.
+ * R4.6: drained concurrently under a short deadline, so a stalled OEM tethering
+ * service cannot wedge teardown. Both streams get their own thread — a process
+ * that fills an undrained pipe buffer blocks forever whatever waitFor says.
  */
 class UpstreamInspector(private val deadlineMs: Long = DEFAULT_DEADLINE_MS) {
 
     fun observe(): UpstreamObservation = run("tethering")
 
-    /**
-     * The Wi-Fi dump, for facts tethering's own dump reports only historically.
-     *
-     * Same capture and timeout handling; only the service differs.
-     */
+    /** For facts tethering's own dump reports only historically. */
     fun observeWifi(): UpstreamObservation = run("wifi")
 
     private fun run(service: String): UpstreamObservation {
@@ -100,24 +87,19 @@ class UpstreamInspector(private val deadlineMs: Long = DEFAULT_DEADLINE_MS) {
     }
 
     /**
-     * Extracts the currently selected upstream interfaces from the dump.
-     *
-     * Reads only the lines that state which upstream tethering has *selected*.
-     * An earlier version matched any line containing "Upstream:", which also
-     * caught the BPF forwarding-rule tables:
+     * Reads only lines stating which upstream tethering has *selected*. An
+     * earlier version matched any "Upstream:", which caught the BPF rule tables:
      *
      *     IPv4 Upstream: proto [inDstMac] iif(iface) src -> nat -> dst ...
      *
-     * Those tables hold rules for interfaces that no longer exist — a device
-     * test found a destroyed TUN still listed there seven sessions later, which
-     * failed every subsequent start with "expected only testtun77, tethering
-     * reports [testtun70]" while `ip link` showed no TUN at all and the
-     * authoritative line read null. Rule tables and quota maps describe what
-     * was, not what is.
+     * Those hold rules for interfaces that no longer exist — a destroyed TUN
+     * was still listed seven sessions later, failing every start with "expected
+     * only testtun77, tethering reports [testtun70]" while `ip link` showed no
+     * TUN at all. Rule tables describe what was, not what is.
      *
-     * The format is still not contractual, so the line match stays loose within
-     * that narrower set and [rawOutput] is kept alongside so a parse miss is
-     * visible rather than silently wrong.
+     * The format is not contractual, so the match stays loose within that
+     * narrower set and [rawOutput] is kept so a parse miss is visible rather
+     * than silently wrong.
      */
     private fun parseUpstreamInterfaces(output: String): List<String> {
         val interesting = output.lineSequence()
@@ -137,11 +119,9 @@ class UpstreamInspector(private val deadlineMs: Long = DEFAULT_DEADLINE_MS) {
         const val DEFAULT_DEADLINE_MS = 3_000L
 
         /**
-         * Line prefixes that name the *selected* upstream, across AOSP versions.
-         *
-         * Prefixes rather than substrings, and deliberately without a bare
-         * "Upstream:" — that one matched the BPF rule-table headers nested
-         * under it and pulled in interfaces that had already been destroyed.
+         * Prefixes rather than substrings, and no bare "Upstream:" — that
+         * matched the nested BPF rule-table headers and pulled in interfaces
+         * already destroyed.
          */
         private val UPSTREAM_HINTS = listOf(
             "current upstream interface(s):",

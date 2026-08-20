@@ -3,7 +3,6 @@ package dev.shizzi
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
-import android.util.Log
 import java.util.concurrent.atomic.AtomicBoolean
 
 /** What the poller last observed, as the session needs to act on it. */
@@ -18,21 +17,17 @@ sealed interface VpnBinding {
 
 /**
  * Follows the VPN the datapath's sockets are pinned to, and reports its loss.
- *
- * The datapath dials its upstream sockets from this process, so "is traffic
- * tunnelled?" is a question about *this* process's networks rather than the
- * app's, and the answer is only authoritative here.
+ * The datapath dials from this process, so the question is only authoritative
+ * here.
  *
  * Polls rather than registering a callback: from the shell UID
  * registerNetworkCallback is rejected with "Package android does not belong to
- * 2000", while getAllNetworks and getNetworkCapabilities carry no such check.
- * SessionResources.findNetworkOn documents the same restriction.
+ * 2000", while getAllNetworks carries no such check.
  *
  * A session that never sees a VPN runs unbound and is never torn down by this.
- * Once one is adopted, losing it is a failure — binding is what makes that safe
- * to promise, because an adopted session's sockets stop working the moment the
- * VPN goes rather than falling back to the physical network. The window between
- * the drop and this noticing therefore carries no untunnelled traffic.
+ * Losing an adopted one is a failure — and binding is what makes the promise
+ * safe, since those sockets stop working rather than falling back, so the
+ * window before this notices carries no untunnelled traffic.
  */
 class VpnWatchdog(
     private val connectivityManager: ConnectivityManager,
@@ -46,21 +41,15 @@ class VpnWatchdog(
     private var boundHandle = UNBOUND
 
     /**
-     * Consecutive polls finding no VPN at all, once one had been adopted.
-     *
-     * One miss is not evidence, for the reason SessionWatchdog debounces too: a
-     * VPN app restarting can leave a single poll empty, and a one-sample
-     * teardown would turn that into a dropped hotspot.
+     * One miss is not evidence: a VPN app restarting can leave a single poll
+     * empty, and a one-sample teardown turns that into a dropped hotspot.
      */
     private var consecutiveMisses = 0
 
     /**
-     * Adopts whatever VPN is up right now, so a session that starts under one
-     * is bound before any client can dial.
-     *
-     * Mutates [boundHandle] rather than only reporting it: the first poll would
-     * otherwise read the same VPN as a change and log a second adoption for a
-     * network already bound.
+     * Adopts whatever VPN is up now, so a session starting under one is bound
+     * before any client can dial. Mutates [boundHandle] rather than only
+     * reporting it, or the first poll reads the same VPN as a change.
      */
     fun adoptCurrentVpn(): Long {
         boundHandle = currentVpnHandle()
@@ -101,19 +90,17 @@ class VpnWatchdog(
     /**
      * @return null while nothing needs to change, else what the session must do.
      *
-     * The strike counter deliberately counts *absence*, never *change*. A VPN
-     * that reconnects comes back as a new Network with a new handle, and the
-     * framework offers no stable identity across that — so treating a changed
-     * handle as a loss would tear the session down on every VPN reconnect.
-     * Only a VPN still missing on the next poll is a loss.
+     * The strike counter counts *absence*, never *change*: a reconnecting VPN
+     * comes back as a new Network with a new handle and no stable identity
+     * across the gap, so treating a changed handle as loss would tear the
+     * session down on every reconnect.
      */
     private fun evaluate(): VpnBinding? {
         val observed = currentVpnHandle()
 
         if (observed != UNBOUND) return adopt(observed)
 
-        // Never adopted: this session makes no VPN promise, so an absent VPN is
-        // its normal state rather than a failure.
+        // Never adopted: this session makes no VPN promise to break.
         if (boundHandle == UNBOUND) return null
 
         consecutiveMisses++
@@ -141,16 +128,13 @@ class VpnWatchdog(
     private fun currentVpnHandle(): Long = findVpn()?.let(::handleOf) ?: UNBOUND
 
     /**
-     * The first network reporting TRANSPORT_VPN.
+     * The first network reporting TRANSPORT_VPN; the session's own TUN carries
+     * TRANSPORT_TEST and cannot be mistaken for one. Two VPNs can coexist
+     * mid-handover, and picking the first beats refusing to pick — the handover
+     * then reads as a re-adopt next poll.
      *
-     * The session's own TUN carries TRANSPORT_TEST, so it cannot be mistaken
-     * for one. Two VPNs can legitimately coexist mid-handover, and picking the
-     * first is better than refusing to pick — the handover then reads as a
-     * re-adopt on the next poll.
-     *
-     * A read that throws returns null without counting as a strike: a binder
-     * hiccup is not evidence the VPN is gone, and tearing a session down over
-     * one would be the drift response firing at nothing.
+     * A throw returns null without counting as a strike: a binder hiccup is not
+     * evidence the VPN is gone.
      */
     private fun findVpn(): Network? = runCatching {
         connectivityManager.allNetworks.firstOrNull { candidate ->
@@ -158,7 +142,7 @@ class VpnWatchdog(
                 ?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) == true
         }
     }.getOrElse { failure ->
-        Log.w(TAG, "findVpn: ${failure.message}")
+        SessionLog.warn("could not read the VPN list: ${failure.message}")
         null
     }
 
@@ -171,7 +155,6 @@ class VpnWatchdog(
     }
 
     private companion object {
-        const val TAG = "VpnWatchdog"
         const val UNBOUND = 0L
         const val POLL_INTERVAL_MS = 5_000L
 

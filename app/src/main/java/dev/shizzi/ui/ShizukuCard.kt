@@ -18,11 +18,9 @@ import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.brutalSurface
 
 /**
- * Shizuku's state, expanded into the detail the home badge cannot carry.
- *
- * A bordered card rather than a row: this is the one thing on the screen a
- * user opens Settings to check when a session will not start, and the version
- * in particular matters — 13.5.4 on Android 16 crashes within minutes.
+ * A card rather than a row: this is what a user opens Settings to check when a
+ * session will not start, and the version matters in particular — 13.5.4 on
+ * Android 16 crashes within minutes.
  */
 @Composable
 fun ShizukuCard(state: ShizukuState, onGrant: () -> Unit) {
@@ -44,10 +42,8 @@ fun ShizukuCard(state: ShizukuState, onGrant: () -> Unit) {
 }
 
 /**
- * One name/value pair.
- *
- * The value is right-aligned and takes the remaining width so a long version
- * string wraps within its own column instead of pushing the name off the row.
+ * The value takes the remaining width so a long version string wraps in its own
+ * column instead of pushing the name off the row.
  */
 @Composable
 private fun StatusRow(name: String, value: String) {
@@ -69,10 +65,8 @@ private fun StatusRow(name: String, value: String) {
 }
 
 /**
- * Offered only when permission is the thing standing in the way.
- *
- * R1.3 forbids requesting on launch, so this is the explicit user action that
- * triggers the request.
+ * Offered only when permission is what stands in the way. R1.3 forbids
+ * requesting on launch, so this is the explicit action that triggers it.
  */
 @Composable
 private fun GrantButton(onGrant: () -> Unit) {
@@ -101,10 +95,8 @@ private fun statusText(state: ShizukuState): String = when (state) {
 }
 
 /**
- * What the privileged service runs as, which is only known once it is Ready.
- *
- * Shown as a dash rather than hidden when unknown: a row that disappears
- * changes the card's height as state changes, and its absence would read as
+ * What the privileged service runs as, known only once it is Ready. A dash
+ * rather than a hidden row, which would change the card's height and read as
  * information it is not.
  */
 private fun serviceText(state: ShizukuState): String = when (state) {

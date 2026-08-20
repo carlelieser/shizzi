@@ -3,20 +3,15 @@ package dev.shizzi
 import kotlin.math.roundToLong
 
 /**
- * Bytes carried by a session, counted from the tethered device's point of view.
- *
- * "Up" is what those devices sent, "down" is what they received — the user's
- * reading, not the phone's, since the notification showing these numbers is
- * describing what their other devices are doing.
+ * Bytes carried by a session, from the tethered device's point of view: "up" is
+ * what those devices sent. The notification describes what the user's other
+ * devices are doing, not what the phone is doing.
  */
 data class Traffic(val up: Long = 0, val down: Long = 0) {
 
     /**
-     * Renders a byte count the way a phone's data screen does.
-     *
-     * Decimal units rather than binary: 1.4 GB here has to agree with what
-     * Android's own data usage screen says about the same traffic, and that
-     * screen counts in powers of ten.
+     * Decimal units rather than binary, so 1.4 GB here agrees with Android's
+     * own data usage screen, which counts in powers of ten.
      */
     companion object {
         private const val UNIT = 1000.0
@@ -32,8 +27,7 @@ data class Traffic(val up: Long = 0, val down: Long = 0) {
                 step++
             }
 
-            // One decimal below 10, none above: "9.4 MB" but "94 MB", which is
-            // how much precision reads as informative rather than as noise.
+            // "9.4 MB" but "94 MB" — past ten, the decimal is noise.
             val rendered = when {
                 value < 10 -> String.format("%.1f", value)
                 else -> value.roundToLong().toString()

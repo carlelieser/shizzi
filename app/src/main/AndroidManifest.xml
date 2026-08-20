@@ -75,6 +75,23 @@
           gated instead by INTERACT_ACROSS_USERS_FULL, a signature-level
           permission no ordinary app can hold.
         -->
+        <!--
+          Serves the exported probe report to whichever app the user picks.
+
+          Not exported, and granted per intent: the receiving app gets a
+          read permission scoped to the one uri, for as long as the intent
+          lives, rather than standing access to app storage.
+        -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.exports"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
         <provider
             android:name="rikka.shizuku.ShizukuProvider"
             android:authorities="${applicationId}.shizuku"

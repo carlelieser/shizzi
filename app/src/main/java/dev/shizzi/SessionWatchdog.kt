@@ -6,15 +6,13 @@ import java.util.concurrent.atomic.AtomicBoolean
 /**
  * Tears the session down when the tunnel stops being the sole upstream.
  *
- * verifyUpstream only covers the first few seconds after start. Tethering can
+ * verifyUpstream covers only the first seconds after start, but tethering can
  * reselect later — a cell handover, the retry timer, a Wi-Fi change — and
- * nothing else notices: the session still reports ACTIVE while clients have
- * silently moved onto the physical upstream. That silent fallback is the
- * failure this exists to prevent, so the response is to stop rather than to
- * repair.
+ * nothing else notices the session reporting ACTIVE while clients have moved
+ * onto the physical upstream. That silent fallback is why the response is to
+ * stop rather than repair.
  *
- * Runs inside the shell process alongside the session it guards, so it dies
- * exactly when the session does.
+ * Runs in the shell process beside the session, so it dies when the session does.
  */
 class SessionWatchdog(
     private val expectedInterface: String,
@@ -26,12 +24,9 @@ class SessionWatchdog(
     private var thread: Thread? = null
 
     /**
-     * Consecutive bad reads seen so far.
-     *
-     * A single dumpsys miss is not evidence: parsing is deliberately loose and
-     * the upstream is briefly empty during normal reselection. Acting on one
-     * sample would turn a rare silent leak into frequent spurious disconnects,
-     * so drift has to persist across [FAILURES_BEFORE_TEARDOWN] reads.
+     * A single dumpsys miss is not evidence: parsing is loose and the upstream
+     * is briefly empty during normal reselection, so acting on one sample would
+     * trade a rare silent leak for frequent spurious disconnects.
      */
     private var consecutiveFailures = 0
 
@@ -45,13 +40,10 @@ class SessionWatchdog(
     }
 
     /**
-     * Stops watching.
-     *
-     * Safe to call from [onDrift]: interrupting the watchdog thread from inside
-     * its own callback would set the interrupt flag on the thread about to run
-     * teardown, and stopWifiTethering sleeps through a settle that would then
-     * throw InterruptedException — skipping the settle precisely when the
-     * downstream most needs to come down.
+     * Safe to call from [onDrift]: interrupting from inside its own callback
+     * would flag the thread about to run teardown, and stopWifiTethering's
+     * settle would throw InterruptedException exactly when the downstream most
+     * needs to come down.
      */
     fun stop() {
         isRunning.set(false)
@@ -83,10 +75,9 @@ class SessionWatchdog(
     private fun checkUpstream(): String? {
         val observation = inspector.observe()
 
-        // Filtered for the same reason the start path filters: a destroyed
-        // interface that tethering still names is not traffic leaving over a
-        // physical upstream, and tearing down a healthy session over a ghost
-        // would be the drift response firing at nothing.
+        // A destroyed interface tethering still names is not traffic leaving
+        // over a physical upstream; tearing down over a ghost would be the
+        // drift response firing at nothing.
         val names = observation.liveInterfaceNames(expectedInterface)
 
         val isHealthy = !observation.didTimeout &&

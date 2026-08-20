@@ -35,16 +35,12 @@ private val DividerWidth = 1.dp
 private val DividerHeight = 12.dp
 
 /**
- * The status line along the bottom edge: what the session is, then the build.
+ * The bottom-edge status line: what the session is, then the build.
  *
- * Uppercase and mostly muted: it is a status line rather than prose. Only the
- * state itself takes full contrast, so the eye lands on the one word that
- * changes without the row competing with the button for attention.
- *
- * Always present, unlike the detail it replaced, which hid itself whenever it
- * had nothing to say and took the version down with it. The status word is
- * derived from [UiStatus] rather than from the session's own `detail` string,
- * which carries things like the raw interface name — true, and not a status.
+ * Only the state takes full contrast, so the eye lands on the one word that
+ * changes without the row competing with the button. Always present, unlike the
+ * detail it replaced, which hid whenever it had nothing to say and took the
+ * version with it.
  */
 @Composable
 fun StatusRow(state: SessionUiState, modifier: Modifier = Modifier) {
@@ -55,9 +51,7 @@ fun StatusRow(state: SessionUiState, modifier: Modifier = Modifier) {
     ) {
         StatusLabel(statusWord(state.status))
 
-        // Only while a session is up: this describes the tunnel carrying
-        // traffic, and leaving it under an idle screen would claim a session
-        // that ended.
+        // Only while a session is up, or it claims one that ended.
         if (state.status == UiStatus.CONNECTED && state.interfaceName.isNotEmpty()) {
             StatusDivider()
             TunnelSegment(state.interfaceName)
@@ -79,11 +73,9 @@ private fun StatusText(text: String) {
 }
 
 /**
- * "STATUS" muted, the state itself in full contrast.
- *
- * One Text rather than two composables: the caption carries letter-spacing,
- * and splitting the pair would put the word's trailing track between them and
- * open a gap wider than the space it is meant to be.
+ * One Text rather than two composables: the caption carries letter-spacing, so
+ * splitting them puts the trailing track between the words and opens a gap
+ * wider than the space it should be.
  */
 @Composable
 private fun StatusLabel(status: String) {
@@ -105,27 +97,22 @@ private fun StatusLabel(status: String) {
 }
 
 /**
- * What the tunnel says it is, with its real name a tap away.
+ * A phrase by default, the real name a tap away.
  *
- * The interface name is assigned by the framework — TestNetworkService
- * hardcodes a "testtun" prefix and appends a counter, and neither
- * createTunInterface overload accepts a name — so it cannot be made to say
- * anything friendlier at the source. It is also meaningless to anyone not
- * reading Android internals, which is why the default here is a phrase.
- *
- * It stays reachable rather than hidden: it is the string that matches
- * `dumpsys tethering` output, so it is exactly what someone filing a bug
- * needs. Tapping toggles between the two.
+ * The framework assigns the name — TestNetworkService hardcodes a "testtun"
+ * prefix and a counter, and no createTunInterface overload accepts one — so it
+ * cannot be made friendlier at the source, and it means nothing to anyone not
+ * reading Android internals. It stays reachable because it is the string that
+ * matches `dumpsys tethering`, which is what someone filing a bug needs.
  */
 @Composable
 private fun TunnelSegment(name: String) {
-    // Keyed on the interface, so a new session starts at the phrase rather
-    // than inheriting the previous one's expanded state and showing a name the
-    // user never asked to see.
+    // Keyed on the interface, so a new session starts at the phrase rather than
+    // inheriting the last one's expanded state.
     var isShowingName by remember(name) { mutableStateOf(false) }
 
-    // No ripple and no press colour: this sits in a row of muted captions, and
-    // an indication here would make it the loudest thing on an idle screen.
+    // No ripple or press colour: in a row of muted captions, an indication here
+    // would be the loudest thing on an idle screen.
     val interaction = remember { MutableInteractionSource() }
 
     Text(
@@ -143,11 +130,8 @@ private fun TunnelSegment(name: String) {
 }
 
 /**
- * Separates the segments.
- *
- * A drawn rule rather than a "|" character: the divider should be the height
- * of the text it separates, and a pipe glyph carries the font's own spacing
- * and sits off-centre against uppercase caption text.
+ * Drawn rather than a "|" character, which carries the font's own spacing and
+ * sits off-centre against uppercase caption text.
  */
 @Composable
 private fun StatusDivider() {
@@ -161,10 +145,8 @@ private fun StatusDivider() {
 }
 
 /**
- * The one word for each state.
- *
- * Deliberately not the session's `detail`: an error's text belongs to the
- * toast, and repeating it here put the same sentence on screen twice.
+ * Not the session's `detail`, which carries things like the raw interface name
+ * — true, and not a status. An error's text belongs to the toast.
  */
 private fun statusWord(status: UiStatus): String = when (status) {
     UiStatus.READY -> "Ready"

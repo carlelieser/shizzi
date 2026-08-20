@@ -15,17 +15,13 @@ import dev.shizzi.ui.theme.ShizziTheme
 /**
  * Says the tethered clients are going out through a VPN.
  *
- * No surface behind it. Every bordered element in this app is something to
- * press, so wearing that treatment made a label look like a control; without
- * it, nothing about this invites a tap.
+ * No surface behind it: every bordered element here is something to press, so
+ * that treatment made a label look like a control. The key glyph is what
+ * Android itself puts in the status bar for an active VPN.
  *
- * The key glyph is the one Android itself puts in the status bar for an active
- * VPN, so it is already the thing a user reads as "VPN" without being taught.
- *
- * Drawn in the accent. The palette otherwise reserves it for a state worth
- * acting on, and a VPN being up is merely true — but this is the one thing on
- * the screen a user opens the app to confirm, and with no surface to frame it
- * the colour is what keeps it from reading as a caption.
+ * In the accent, against the usual rule, because this is the one thing a user
+ * opens the app to confirm — and with no surface to frame it, the colour is
+ * what keeps it from reading as a caption.
  */
 @Composable
 fun VpnChip() {

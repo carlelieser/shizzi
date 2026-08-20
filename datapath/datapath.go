@@ -24,23 +24,17 @@ import (
 // nicID identifies the single TUN-backed interface in the stack.
 const nicID tcpip.NICID = 1
 
-// Session owns a running netstack bound to one TUN file descriptor.
-//
-// gomobile can only expose a narrow set of types across the JNI boundary, so
-// this deliberately exposes no gVisor types: the Kotlin side sees a handle it
-// can start and stop, nothing more.
+// Session owns a running netstack bound to one TUN file descriptor. Exposes no
+// gVisor types: gomobile carries only a narrow set across JNI, so the Kotlin
+// side sees a handle it can start and stop.
 type Session struct {
 	stack   *stack.Stack
 	binding *networkBinding
 }
 
-// Start builds a netstack over tunFD and attaches it to the TUN.
-//
-// The fd must already be open and owned by the caller; ownership does not
-// transfer, because SessionResources on the Kotlin side holds the TUN, the
-// framework interface, and the network handle as one atomic group.
-//
-// mtu is the link MTU of the TUN interface.
+// Start builds a netstack over tunFD, already open, and attaches it to the TUN.
+// Ownership does not transfer -- SessionResources holds the TUN, the framework
+// interface, and the network handle as one atomic group. mtu is the link MTU.
 func Start(tunFD int, mtu int) (*Session, error) {
 	// ICMP is registered for both families so the stack can answer and relay
 	// errors. IPv6 in particular cannot fragment in flight, so a client only
@@ -91,19 +85,16 @@ func Start(tunFD int, mtu int) (*Session, error) {
 	return &Session{stack: netStack, binding: binding}, nil
 }
 
-// SetNetwork pins every subsequent dial to the given network handle.
+// SetNetwork pins every subsequent dial to a handle from
+// Network.getNetworkHandle; 0 unbinds, which is how a session with no VPN runs.
 //
-// 0 unbinds, which is how a session with no VPN behaves: dials follow the shell
-// process's default network. Callers pass a value from Network.getNetworkHandle.
+// Binding is what makes VPN loss fail rather than fall back: an unbound socket
+// follows the default network, so a dropped VPN leaves over the physical one
+// and tethered clients keep browsing untunneled with nothing noticing.
 //
-// Binding is what makes VPN loss fail rather than fall back. An unbound socket
-// follows the default network, so the moment a VPN drops it leaves over the
-// physical one instead and tethered clients keep browsing untunneled with
-// nothing in the stack noticing.
-//
-// int64 rather than uint64 because gomobile has no unsigned type. A handle
-// packs a netid above a fixed magic word, so it is routinely negative as a
-// signed value; the conversion reinterprets the bits without changing them.
+// int64 because gomobile has no unsigned type. A handle packs a netid above a
+// magic word, so it is routinely negative signed; the conversion reinterprets
+// the bits without changing them.
 func (s *Session) SetNetwork(handle int64) {
 	if s.binding == nil {
 		return

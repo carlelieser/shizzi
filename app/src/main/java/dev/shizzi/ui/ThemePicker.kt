@@ -8,11 +8,17 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Brightness4
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.ThemeChoice
@@ -22,13 +28,37 @@ import dev.shizzi.ui.theme.isPressed
 /** Tall enough to take a finger, shorter than the connect button. */
 private val OptionHeight = 44.dp
 
+/** Sized like a settings row's trailing glyph rather than a header icon. */
+private val OptionIconSize = 20.dp
+
 /**
- * The three theme options, as one row of adjacent surfaces.
+ * Sun, moon, and both at once for the one that follows the device —
+ * Brightness4 is a rayed sun with a crescent cut into it, which reads as
+ * "either, depending" and keeps the three in one visual family.
  *
- * Not a radio group: this design has no unfilled-circle vocabulary, and
- * inventing one for a single screen would sit oddly beside everything else,
- * which is bordered boxes. A filled box is already how the app says "this one
- * is active" on the connect button.
+ * Not BrightnessAuto or SettingsBrightness, which read as automatic
+ * *brightness* — a different setting that also exists on the device.
+ */
+private fun glyphFor(choice: ThemeChoice): ImageVector = when (choice) {
+    ThemeChoice.SYSTEM -> Icons.Filled.Brightness4
+    ThemeChoice.LIGHT -> Icons.Filled.LightMode
+    ThemeChoice.DARK -> Icons.Filled.DarkMode
+}
+
+/**
+ * Written out rather than derived from the enum name: with the text gone this
+ * is the only thing naming the option, so it is copy, not a debug string that
+ * happens to be readable.
+ */
+private fun labelFor(choice: ThemeChoice): String = when (choice) {
+    ThemeChoice.SYSTEM -> "Match system"
+    ThemeChoice.LIGHT -> "Light"
+    ThemeChoice.DARK -> "Dark"
+}
+
+/**
+ * Not a radio group: this design has no unfilled-circle vocabulary, and a
+ * filled box is already how the app says "this one is active".
  */
 @Composable
 fun ThemePicker(selected: ThemeChoice, onSelect: (ThemeChoice) -> Unit) {
@@ -71,10 +101,12 @@ private fun ThemeOption(
             ),
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            text = choice.name,
-            style = ShizziTheme.typography.caption,
-            color = if (isSelected) colors.onPrimary else colors.onSurfaceMuted,
+        // With the glyph replacing the word, this is all a screen reader has.
+        Icon(
+            imageVector = glyphFor(choice),
+            contentDescription = labelFor(choice),
+            tint = if (isSelected) colors.onPrimary else colors.onSurfaceMuted,
+            modifier = Modifier.size(OptionIconSize),
         )
     }
 }

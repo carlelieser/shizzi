@@ -33,11 +33,8 @@ class MainActivity : ComponentActivity() {
         Shizuku.OnBinderDeadListener { viewModel.refreshShizukuState() }
 
     /**
-     * Asked for once at launch, and never blocking.
-     *
-     * The service runs either way — the notification is how Android lets the
-     * process stay alive, not something the session depends on. A denied
-     * permission costs the user visibility, not function.
+     * Once at launch, never blocking: the service runs either way, so a denial
+     * costs the user visibility rather than function.
      */
     private val notificationPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
@@ -54,11 +51,9 @@ class MainActivity : ComponentActivity() {
             ShizziTheme(choice = loaded.theme) {
                 val colors = ShizziTheme.colors
 
-                // The activity draws edge-to-edge, so the system bar icons are
-                // the app's responsibility: without this they stay
-                // light-on-light in the light theme and are invisible. Keyed
-                // on the resolved theme rather than the system one, since the
-                // setting can override it.
+                // Edge-to-edge makes the bar icons the app's responsibility, or
+                // they stay light-on-light and invisible. Keyed on the resolved
+                // theme, since the setting can override the system's.
                 SideEffect {
                     WindowCompat.getInsetsController(window, window.decorView)
                         .isAppearanceLightStatusBars = !colors.isDark
@@ -66,16 +61,21 @@ class MainActivity : ComponentActivity() {
 
                 Surface(color = colors.background) {
                     val state by viewModel.state.collectAsState()
+                    val diagnostics by viewModel.diagnosticsState.collectAsState()
+
                     HomeScreen(
                         state = state,
                         settings = loaded,
+                        diagnostics = diagnostics,
                         actions = AppActions(
                             onToggle = viewModel::toggle,
                             onCancel = viewModel::cancel,
                             onRequestPermission = viewModel::requestPermission,
                             onSetTheme = viewModel::setTheme,
-                            onSetDebugLogging = viewModel::setDebugLogging,
+                            onSetLogging = viewModel::setLogging,
                             onRunProbes = viewModel::runProbes,
+                            onDismissDiagnostics = viewModel::dismissDiagnostics,
+                            onClearLog = viewModel::clearLog,
                         ),
                     )
                 }
@@ -88,13 +88,9 @@ class MainActivity : ComponentActivity() {
     }
 
     /**
-     * Suspends drawing until the stored theme is known.
-     *
-     * Without this the window paints under the default theme for a frame or
-     * two while DataStore reads, so a user who chose Light on a dark-mode
-     * phone sees a dark flash on every launch. The composition returns early
-     * until settings arrive; this keeps the window from drawing that empty
-     * composition.
+     * Holds the window until the stored theme is known: otherwise it paints
+     * under the default for a frame or two while DataStore reads, flashing dark
+     * on every launch for a user who chose Light on a dark-mode phone.
      */
     private fun holdFirstFrameUntilSettingsLoad() {
         val content = findViewById<View>(android.R.id.content)

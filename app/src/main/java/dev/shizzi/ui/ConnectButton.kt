@@ -23,19 +23,13 @@ private val ButtonHeight = 56.dp
 private val SpinnerSize = 24.dp
 
 /**
- * The session control: turquoise to start, neutral to stop.
+ * Turquoise to start, neutral to stop: only starting is the primary action, and
+ * a filled Stop would compete with the connected status glyph for the eye.
+ * Not red either — ending your own session is not destructive.
  *
- * Only starting is the primary action. Once a session is up the screen's job is
- * to say so, and a filled button competing with the connected status glyph
- * gives the eye two things claiming to be the most important. Stop stays
- * available and legible without asking to be pressed — and it is not red
- * either, since ending your own session is not destructive.
- *
- * While a session is coming up the button holds a progress indicator and goes
- * neutral — the action is unavailable until the attempt resolves, and a
- * turquoise button that ignores taps invites them. Cancel is the live control
- * during that window. The footprint is unchanged throughout, so nothing
- * reflows.
+ * Goes neutral with a spinner while coming up, since a turquoise button that
+ * ignores taps invites them; Cancel is the live control in that window. The
+ * footprint never changes, so nothing reflows.
  */
 @Composable
 fun ConnectButton(
@@ -93,10 +87,8 @@ fun ConnectButton(
 enum class ConnectButtonState { START, STOP, LOADING, DISABLED }
 
 /**
- * The way out of a start that is taking too long.
- *
- * Plain text rather than a second bordered box: two surfaces stacked under each
- * other would read as two equal choices, and cancelling is the lesser one.
+ * Plain text rather than a second bordered box: two stacked surfaces would read
+ * as equal choices, and cancelling is the lesser one.
  */
 @Composable
 fun CancelButton(onClick: () -> Unit) {

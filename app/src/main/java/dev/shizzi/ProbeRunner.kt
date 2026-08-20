@@ -20,17 +20,21 @@ class ProbeRunner(private val context: Context) {
 
     private val testNetworkApi = TestNetworkApi(context)
     private val inspector = UpstreamInspector()
+    private val teardown = SessionTeardown(context)
     private var resources: SessionResources? = null
 
     /**
-     * Runs the probe sequence and always releases the session it created.
-     *
-     * Releasing here rather than only in [teardown] is a correctness fix, not
-     * tidiness: teardown is a separate binder call driven by its own button, so
-     * an un-torn-down run left its test network alive. Successive runs then
-     * stacked orphaned testtun interfaces (17 through 21 across five runs), and
-     * the stack's CMD_RETRY_UPSTREAM timer reselected among the leftovers —
-     * which is what made Q5 read a different interface than the one it owned.
+     * Whether this run started the hotspot, and so owes stopping it — killing
+     * one the user brought up would make a diagnostic destructive.
+     */
+    private var didStartDownstream = false
+
+    /**
+     * Releases in its own finally rather than leaving it to [teardown], which
+     * is a separate binder call behind its own button: un-torn-down runs left
+     * their test networks alive, stacking orphaned testtun interfaces (17
+     * through 21 across five runs) that CMD_RETRY_UPSTREAM then reselected
+     * among — which is what made Q5 read an interface it did not own.
      */
     fun run(attemptTethering: Boolean, availabilityTimeoutMs: Int): String {
         val report = ProbeReportBuilder()
@@ -50,15 +54,32 @@ class ProbeRunner(private val context: Context) {
     }
 
     /**
-     * Releases the session, recording any problems as T-2 evidence.
+     * Undoes everything the run changed, recording problems in the report as
+     * T-2 evidence rather than only in the log — a silent release would hide
+     * exactly the leak that case is about.
      *
-     * A silent release would hide exactly the leak the spec's T-2 case is about,
-     * so the outcome goes in the report rather than only the log.
+     * Order matches [TetherSession.stop], where the same hazards are documented:
+     * downstream first, fail-closed per R6.1, then the upstream preference back
+     * *while the TUN still exists*, then the interface.
      */
     private fun releaseSession(report: ProbeReportBuilder) {
-        val problems = resources?.release() ?: return
+        val downstreamProblem = when {
+            didStartDownstream -> teardown.releaseDownstream()
+            else -> null
+        }
+        didStartDownstream = false
+
+        teardown.releaseUpstreamSelection(resources?.interfaceName)
+
+        val problems = resources?.release().orEmpty()
         resources = null
-        report.recordReleaseProblems(problems)
+
+        report.recordReleaseProblems(
+            when (downstreamProblem) {
+                null -> problems
+                else -> problems + "downstream: $downstreamProblem"
+            },
+        )
     }
 
     /** Q0/Q1: are we actually shell, with the service present? */
@@ -107,20 +128,13 @@ class ProbeRunner(private val context: Context) {
     }
 
     /**
-     * Sets the test-network preference before the TUN exists.
+     * Sets the preference before the TUN exists, because setPreferTestNetworks
+     * only writes the flag — the disassembly is a Handler.post then
+     * sendTetherResult, no reselection — and selection re-runs only on an
+     * event. The flag must already be true when the test network arrives, or
+     * that arrival is evaluated with it false and nothing revisits it.
      *
-     * Tethering.setPreferTestNetworks only writes the flag — the disassembly is
-     * a Handler.post of setPreferTestNetworks then sendTetherResult, with no
-     * reselection. Upstream selection re-runs only on an event: a network
-     * arriving or leaving, or the retry timer.
-     *
-     * So the flag must already be true when the test network arrives, or that
-     * arrival is evaluated with it false and nothing re-evaluates afterwards.
-     * Setting it here makes the TUN's own onAvailable the event that selects
-     * it. Q8 confirmed that event does reach the monitor.
-     *
-     * Q4 still records the call the spec asks about (R4.1); this earlier call
-     * is about ordering, not about whether the API is accepted.
+     * Q4 still records the call R4.1 asks about; this one is about ordering.
      */
     private fun preferTestNetworksBeforeTunExists(report: ProbeReportBuilder) {
         runCatching { TetheringPreferenceApi(context).setPreferTestNetworks(true) }
@@ -136,21 +150,20 @@ class ProbeRunner(private val context: Context) {
     /**
      * Restarts the downstream before the TUN exists, so its arrival is seen.
      *
-     * startTethering runs startObserveUpstreamNetworks, which calls stop()
-     * first: that unregisters the listen callback and clears mNetworkMap, then
-     * registers a fresh one. A TUN created beforehand has already fired its
-     * onAvailable, so it is dropped by the wipe and never re-delivered — the
-     * previous run showed exactly that, with the TUN absent from the upstream
-     * quota table for the first time.
-     *
-     * Creating the TUN after the restart puts its arrival inside the new
-     * callback's window, which is the only way both conditions hold at once:
-     * the preference already true, and the network present in the map.
+     * startTethering runs startObserveUpstreamNetworks, whose stop() clears
+     * mNetworkMap and re-registers: a TUN created beforehand has already fired
+     * onAvailable and is dropped by that wipe, never re-delivered. Creating it
+     * after puts its arrival inside the new callback's window, the only way to
+     * hold both conditions at once — preference already true, network in the map.
      */
     private fun restartDownstreamBeforeTun(report: ProbeReportBuilder) {
         val control = DownstreamControl(context)
         val didStop = control.stopWifiTethering()
         val (didStart, startDetail) = control.startWifiTethering()
+
+        // Even when the start is rejected: "stopped, then failed to start"
+        // still leaves the radio in a state the run changed.
+        didStartDownstream = didStop || didStart
 
         if (!didStart) {
             report.recordFail(
@@ -179,10 +192,8 @@ class ProbeRunner(private val context: Context) {
     }
 
     /**
-     * Starts the userspace stack before tethering begins.
-     *
-     * Ordering matters: clients that associate before the datapath is reading
-     * would send into a TUN nothing drains, so the stack comes up first.
+     * Before tethering begins: clients associating first would send into a TUN
+     * nothing drains.
      */
     private fun probeDatapath(report: ProbeReportBuilder) {
         val group = resources
@@ -204,16 +215,14 @@ class ProbeRunner(private val context: Context) {
     /**
      * Q8: does a listen callback ever fire for the test network?
      *
-     * UpstreamNetworkMonitor populates mNetworkMap only from its own
-     * NetworkCallback: handleAvailable is what inserts, and handleNetCap
-     * returns early when the network is not already in the map. If onAvailable
-     * never arrives, findFirstTestNetwork has nothing to find no matter what
-     * mPreferTestNetworks says — which is exactly the observed failure.
+     * mNetworkMap is populated only from the monitor's own NetworkCallback —
+     * handleAvailable inserts, handleNetCap returns early for anything not
+     * already there. Without onAvailable, findFirstTestNetwork has nothing to
+     * find whatever mPreferTestNetworks says.
      *
-     * This registers the same request the monitor builds on API 33+
-     * (clearCapabilities, forbidding LOCAL_NETWORK) and reports whether the
-     * framework delivers our TUN through it. That is the value every previous
-     * theory assumed and none measured.
+     * Registers the same request the monitor builds on API 33+
+     * (clearCapabilities, forbidding LOCAL_NETWORK) and reports whether the TUN
+     * is delivered — the value every previous theory assumed and none measured.
      */
     private fun probeUpstreamCallback(report: ProbeReportBuilder, interfaceName: String) {
         val network = resources?.acquiredNetwork
@@ -232,11 +241,8 @@ class ProbeRunner(private val context: Context) {
     }
 
     /**
-     * Registers the monitor's listen request and waits for our TUN to arrive.
-     *
-     * Returns whether it was delivered, plus the verbatim outcome: a rejected
-     * registration and a silent non-delivery are different findings and must
-     * not be reported the same way.
+     * Returns delivery plus the verbatim outcome: a rejected registration and a
+     * silent non-delivery are different findings.
      */
     private fun awaitCallbackDelivery(interfaceName: String): Pair<Boolean, String> {
         val manager = context.connectivityManager()
@@ -304,14 +310,12 @@ class ProbeRunner(private val context: Context) {
      *         if (state != null) return state;
      *     }
      *
-     * The branch returns before any INTERNET, cellular, or DUN check, and
-     * findFirstTestNetwork filters on TRANSPORT_TEST alone. So the eligibility
-     * criterion is the test transport, not NET_CAPABILITY_INTERNET — which
-     * TestNetworkService never grants and exposes no parameter to add.
-     *
-     * INTERNET is still reported: absent it, the network is unusable as a
-     * general default route, which constrains the datapath design even though
-     * it does not block tethering upstream selection.
+     * That returns before any INTERNET, cellular, or DUN check, and
+     * findFirstTestNetwork filters on TRANSPORT_TEST alone — so eligibility is
+     * the test transport, not NET_CAPABILITY_INTERNET, which TestNetworkService
+     * never grants anyway. INTERNET is still reported because without it the
+     * network cannot serve as a general default route, which constrains the
+     * datapath even though it does not block upstream selection.
      */
     private fun probeUpstreamEligibility(report: ProbeReportBuilder) {
         val network = resources?.acquiredNetwork
@@ -340,13 +344,11 @@ class ProbeRunner(private val context: Context) {
     }
 
     /**
-     * Sets the preference, then observes selection either side of a restart.
-     *
-     * [attemptTethering] false no longer skips Q5. Q5 passed once on a run where
-     * the downstream was already up and no restart happened, and has failed on
-     * every run that restarted it — so "observe without restarting" is the
-     * comparison that separates those two cases. Skipping the probe measured
-     * nothing and hid the one condition under which it is known to work.
+     * [attemptTethering] false no longer skips Q5: it passed once on a run
+     * where the downstream was already up, and failed on every run that
+     * restarted it, so "observe without restarting" is the comparison that
+     * separates the two. Skipping measured nothing and hid the one condition
+     * under which it is known to work.
      */
     private fun probeTetheringPreference(
         report: ProbeReportBuilder,
@@ -377,11 +379,8 @@ class ProbeRunner(private val context: Context) {
     }
 
     /**
-     * Q5 is the actual viability answer: does the tethering stack select our TUN?
-     *
-     * The probe does not start tethering itself — the user enables the hotspot
-     * from Settings — so this polls whatever the stack reports until it either
-     * settles on the owned TUN or the settle deadline passes.
+     * Q5 is the actual viability answer: does the tethering stack select our
+     * TUN? Polls what the stack reports until it settles or the deadline passes.
      */
     private fun observeUpstream(
         report: ProbeReportBuilder,
@@ -413,13 +412,9 @@ class ProbeRunner(private val context: Context) {
     }
 
     /**
-     * Keeps only the dumpsys lines that bear on upstream selection.
-     *
      * The raw dump opens with several KB of static tetherable-regex and DHCP
-     * config, so a leading excerpt spent its whole budget before reaching
-     * anything decision-relevant. These keys carry the actual signal: the chosen
-     * upstream, the quota table the TUN was missing from, and the DUN and
-     * automatic-selection flags that constrain the choice.
+     * config, so a leading excerpt spent its budget before reaching anything
+     * decision-relevant.
      */
     private fun selectionLines(rawOutput: String): String =
         rawOutput.lineSequence()
@@ -428,13 +423,10 @@ class ProbeRunner(private val context: Context) {
             .take(DUMP_EXCERPT_CHARS)
 
     /**
-     * Polls the upstream until it settles on the owned TUN, or the deadline passes.
-     *
-     * Upstream reselection is asynchronous: setPreferTestNetworks(true) does not
-     * move an already-chosen upstream synchronously, and the first device run
-     * read wlan0 microseconds after setting the preference. Returning the last
-     * observation on timeout keeps the failure detail honest rather than
-     * reporting an empty result.
+     * Reselection is asynchronous — setPreferTestNetworks(true) does not move
+     * an already-chosen upstream, and the first device run read wlan0
+     * microseconds after setting it. Returns the last observation on timeout so
+     * the failure detail stays honest.
      */
     private fun awaitUpstreamSettle(interfaceName: String): UpstreamObservation {
         val deadline = System.currentTimeMillis() + UPSTREAM_SETTLE_MS
@@ -453,11 +445,9 @@ class ProbeRunner(private val context: Context) {
     }
 
     /**
-     * Q6: can IPv6 be suppressed on the downstream?
-     *
-     * Spec R6.4 requires IPv6 blocked or unadvertised, and L-7 is unpassable if
-     * shell cannot influence it. This only reports the current forwarding and
-     * RA state so the answer is known before Phase 6 depends on it.
+     * Q6: can IPv6 be suppressed on the downstream? R6.4 needs it blocked or
+     * unadvertised and L-7 is unpassable otherwise, so this reports the current
+     * forwarding and RA state before Phase 6 depends on it.
      */
     private fun probeIpv6Surface(report: ProbeReportBuilder) {
         val forwarding = readProcValue(IPV6_FORWARDING_PATH)
@@ -477,15 +467,32 @@ class ProbeRunner(private val context: Context) {
     private fun readProcValue(path: String): String? =
         runCatching { java.io.File(path).readText().trim() }.getOrNull()
 
-    /** Fail-closed teardown order: caller stops the downstream before this runs (R6.1). */
+    /**
+     * Normally a no-op — [run] releases in its own finally — but kept so
+     * TetherService.stop can guarantee a diagnostic's resources cannot outlive
+     * an unrelated session teardown.
+     *
+     * Fail-closed order as in [releaseSession]: the caller has already stopped
+     * the session's downstream (R6.1), and this hands the upstream back before
+     * destroying the TUN.
+     */
     fun teardown(): String {
-        val restored = runCatching { TetheringPreferenceApi(context).setPreferTestNetworks(false) }
+        val downstreamProblem = when {
+            didStartDownstream -> teardown.releaseDownstream()
+            else -> null
+        }
+        didStartDownstream = false
+
+        val restored = runCatching {
+            teardown.releaseUpstreamSelection(resources?.interfaceName)
+        }
         val problems = resources?.release() ?: emptyList()
         resources = null
 
         val result = JSONObject()
         result.put("preferTestNetworksRestored", restored.isSuccess)
         restored.exceptionOrNull()?.let { result.put("restoreError", it.message) }
+        downstreamProblem?.let { result.put("downstreamProblem", it) }
         result.put("teardownProblems", org.json.JSONArray(problems))
         return result.toString(2)
     }
@@ -551,26 +558,11 @@ class ProbeRunner(private val context: Context) {
         )
 
         /**
-         * R4.4 requires waiting for the framework to settle but fixes no
-         * duration. 15s is long enough to cover an observed reselection and
-         * short enough to keep a failing run interactive; E-2's 20-cycle bar
-         * should be used to tune it.
-         */
-        /**
-         * Device logs show selection reaching the TUN several seconds after the
-         * downstream restart, and a 15s window closed first: Q5 read wlan0 while
-         * the dump's own log showed "Found upstream interface(s): [testtun18]"
-         * from the run before. The test network carries no INTERNET capability,
-         * so it settles more slowly than a validated Wi-Fi upstream.
-         */
-        /**
-         * How long Q5 waits for upstream selection to settle.
-         *
-         * Was 45s, chasing a timing theory that proved wrong: when selection
-         * picks the TUN it does so in ~100ms, and the loop returns as soon as
-         * it sees that. The deadline is therefore only ever paid in full on
-         * failure, which made every failing run cost 45s to learn what the
-         * first second already showed.
+         * How long Q5 waits for upstream selection to settle (R4.4 fixes no
+         * duration). Selection that works takes ~100ms and the loop returns
+         * immediately, so this is only ever paid in full on failure — a longer
+         * deadline just made failing runs slow to say what the first second
+         * already showed.
          */
         const val UPSTREAM_SETTLE_MS = 8_000L
         const val UPSTREAM_POLL_MS = 1_000L

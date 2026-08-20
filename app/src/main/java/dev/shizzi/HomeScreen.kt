@@ -6,9 +6,11 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import dev.shizzi.ui.DiagnosticsToast
 import dev.shizzi.ui.HandleBack
 import dev.shizzi.ui.HomeActions
 import dev.shizzi.ui.HomePage
+import dev.shizzi.ui.LogActions
 import dev.shizzi.ui.LogPage
 import dev.shizzi.ui.Screen
 import dev.shizzi.ui.SessionToasts
@@ -30,8 +32,10 @@ data class AppActions(
     val onCancel: () -> Unit,
     val onRequestPermission: () -> Unit,
     val onSetTheme: (ThemeChoice) -> Unit,
-    val onSetDebugLogging: (Boolean) -> Unit,
+    val onSetLogging: (Boolean) -> Unit,
     val onRunProbes: () -> Unit,
+    val onDismissDiagnostics: () -> Unit,
+    val onClearLog: (onCleared: (String?) -> Unit) -> Unit,
 )
 
 /**
@@ -44,11 +48,18 @@ data class AppActions(
 fun HomeScreen(
     state: SessionUiState,
     settings: Settings,
+    diagnostics: DiagnosticsState,
     actions: AppActions,
 ) {
     val current = rememberNavigator()
     val goHome = { current.value = Screen.HOME }
-    HandleBack(current.value, goHome)
+
+    // Back from the log returns to settings, which is now the only way into it
+    // — sending it to Home would drop the user two levels from one gesture.
+    val goBack = {
+        current.value = if (current.value == Screen.LOG) Screen.SETTINGS else Screen.HOME
+    }
+    HandleBack(current.value, goBack)
 
     val toasts = rememberToastState()
     SessionToasts(
@@ -57,39 +68,64 @@ fun HomeScreen(
         onRequestPermission = actions.onRequestPermission,
     )
 
+    // Not from the settings screen: a run outlives a visit to it, and that
+    // toast would vanish the moment the user navigated home to wait — taking
+    // the export button with it.
+    DiagnosticsToast(
+        state = diagnostics,
+        toasts = toasts,
+        onDismiss = actions.onDismissDiagnostics,
+    )
+
     Box(modifier = Modifier.fillMaxSize()) {
         when (current.value) {
             Screen.SETTINGS -> SettingsPage(
                 state = SettingsState(
                     shizuku = state.shizukuState,
                     theme = settings.theme,
-                    isDebugLogging = settings.isDebugLogging,
+                    isLogging = settings.isLogging,
+                    isRunningDiagnostics = diagnostics is DiagnosticsState.Running,
                 ),
                 actions = SettingsActions(
                     onSetTheme = actions.onSetTheme,
-                    onSetDebugLogging = actions.onSetDebugLogging,
+                    onSetLogging = actions.onSetLogging,
+                    onOpenLog = { current.value = Screen.LOG },
                     onRunProbes = actions.onRunProbes,
                     onRequestPermission = actions.onRequestPermission,
                 ),
                 onBack = goHome,
             )
 
-            Screen.LOG -> LogPage(entries = rememberLogEntries(), onBack = goHome)
+            Screen.LOG -> LogPage(
+                log = rememberLogEntries(),
+                toasts = toasts,
+                isLogging = settings.isLogging,
+                actions = LogActions(
+                    onClear = actions.onClearLog,
+                    onEnableLogging = { actions.onSetLogging(true) },
+                    // Goes home as well as starting: the status glyph and the
+                    // button are what report progress, and neither is here.
+                    onStartSession = {
+                        goHome()
+                        actions.onToggle()
+                    },
+                    onBack = goBack,
+                ),
+            )
 
             Screen.HOME -> HomePage(
                 state = state,
                 actions = HomeActions(
                     onToggle = actions.onToggle,
                     onCancel = actions.onCancel,
-                    onOpenLog = { current.value = Screen.LOG },
                     onOpenSettings = { current.value = Screen.SETTINGS },
                 ),
             )
         }
 
-        // Last child, so it draws over whichever screen is showing. Toasts are
-        // app-level rather than per-screen: an error raised on Home is still
-        // worth seeing after navigating to the log to investigate it.
+        // Last child, so it draws over whichever screen is showing. App-level
+        // rather than per-screen: an error raised on Home is still worth seeing
+        // after navigating to the log to investigate it.
         ToastHost(
             state = toasts,
             modifier = Modifier.align(Alignment.BottomCenter).systemBarsPadding(),

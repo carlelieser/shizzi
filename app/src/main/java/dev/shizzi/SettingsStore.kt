@@ -14,17 +14,14 @@ import kotlinx.coroutines.flow.map
 /** Everything the user can configure, in one readable shape. */
 data class Settings(
     val theme: ThemeChoice = ThemeChoice.SYSTEM,
-    val isDebugLogging: Boolean = false,
+    val isLogging: Boolean = true,
 )
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore("settings")
 
 /**
- * Persists the two settings the app has.
- *
- * Debug logging previously lived in ViewModel memory and reset on every
- * launch, which made it a setting the user could not rely on. Both values now
- * outlive the process.
+ * Persists the two settings the app has. Logging used to live in ViewModel
+ * memory and reset on every launch, which made it unreliable as a setting.
  */
 class SettingsStore(private val context: Context) {
 
@@ -34,24 +31,22 @@ class SettingsStore(private val context: Context) {
         context.dataStore.edit { it[THEME] = choice.name }
     }
 
-    suspend fun setDebugLogging(enabled: Boolean) {
-        context.dataStore.edit { it[DEBUG_LOGGING] = enabled }
+    suspend fun setLogging(enabled: Boolean) {
+        context.dataStore.edit { it[LOGGING] = enabled }
     }
 
     /**
-     * An unrecognised stored theme falls back rather than throwing.
-     *
-     * A downgrade, or a value written by a future build, should not crash the
-     * app on launch over a preference.
+     * An unrecognised theme falls back rather than throwing: a downgrade, or a
+     * value from a future build, should not crash the app over a preference.
      */
     private fun toSettings(preferences: Preferences) = Settings(
         theme = runCatching { ThemeChoice.valueOf(preferences[THEME].orEmpty()) }
             .getOrDefault(ThemeChoice.SYSTEM),
-        isDebugLogging = preferences[DEBUG_LOGGING] ?: false,
+        isLogging = preferences[LOGGING] ?: true,
     )
 
     private companion object {
         val THEME = stringPreferencesKey("theme")
-        val DEBUG_LOGGING = booleanPreferencesKey("debug_logging")
+        val LOGGING = booleanPreferencesKey("logging")
     }
 }

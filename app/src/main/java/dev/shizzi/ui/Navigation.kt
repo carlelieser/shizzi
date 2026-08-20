@@ -8,20 +8,13 @@ import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 
 /**
- * The three screens, which form a two-level stack rather than a graph.
- *
- * Home is the root; Log and Settings are its children and return to it. A
- * navigation library would add a dependency and a graph declaration to express
- * exactly this, so the app keeps its own.
+ * A stack, not a graph: Home is the root, Settings its child, Log a child of
+ * Settings. A navigation library would be a dependency and a graph declaration
+ * to express exactly this.
  */
 enum class Screen { HOME, LOG, SETTINGS }
 
-/**
- * Saved by name rather than by Parcelable.
- *
- * The alternative is the kotlin-parcelize plugin, which is a build dependency
- * to serialise what is already an enum.
- */
+/** By name rather than Parcelable, which means a plugin to serialise an enum. */
 private val ScreenSaver = Saver<MutableState<Screen>, String>(
     save = { it.value.name },
     restore = { name ->
@@ -29,21 +22,12 @@ private val ScreenSaver = Saver<MutableState<Screen>, String>(
     },
 )
 
-/**
- * Remembers the current screen across configuration change and process death.
- *
- * Saveable rather than plain state: a rotation while reading the log should
- * not return the user to Home.
- */
+/** Saveable so a rotation while reading the log does not return to Home. */
 @Composable
 fun rememberNavigator(): MutableState<Screen> =
     rememberSaveable(saver = ScreenSaver) { mutableStateOf(Screen.HOME) }
 
-/**
- * Sends the system back gesture to Home, for the two child screens.
- *
- * Disabled on Home so back leaves the app rather than being swallowed.
- */
+/** Disabled on Home, so back leaves the app rather than being swallowed. */
 @Composable
 fun HandleBack(current: Screen, onBack: () -> Unit) {
     BackHandler(enabled = current != Screen.HOME, onBack = onBack)

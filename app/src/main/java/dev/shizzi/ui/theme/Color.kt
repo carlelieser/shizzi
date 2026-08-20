@@ -4,13 +4,10 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 
 /**
- * The app's colours, named by role rather than by hue.
- *
- * Turquoise is the only colour in the app; everything else is neutral. A state
- * worth acting on is turquoise, a state that is merely true is not — so the
- * connect button and the connected status icon are the only saturated things
- * on screen, and an error is communicated by the text of its toast rather than
- * by a red icon that carries alarm without information.
+ * Named by role rather than hue. Turquoise is the only colour in the app and
+ * marks a state worth acting on, not one merely true — so an error speaks
+ * through the text of its toast rather than a red icon carrying alarm without
+ * information.
  */
 @Immutable
 data class ShizziColors(
@@ -25,12 +22,7 @@ data class ShizziColors(
     val isDark: Boolean,
 )
 
-/**
- * Black on turquoise in both themes.
- *
- * Turquoise is light enough that white text on it fails contrast at body
- * sizes, so the button label is black whichever theme is active.
- */
+/** Turquoise is light enough that white on it fails contrast at body sizes. */
 private val OnPrimary = Color(0xFF000000)
 
 val LightColors = ShizziColors(
@@ -46,15 +38,9 @@ val LightColors = ShizziColors(
 )
 
 /**
- * Dark mode inverts the structural colours rather than recolouring them.
- *
- * The flat offset shadow is the load-bearing element of the whole design, and
- * a black shadow on a near-black background is invisible. So borders and
- * shadows go white, which is a different look from the light theme rather than
- * a tinted copy of it.
- *
- * Both stay structural rather than taking the accent: a turquoise border drawn
- * around a turquoise button is a border nobody can see.
+ * Inverts the structural colours rather than recolouring them: the flat offset
+ * shadow is load-bearing, and a black shadow on a near-black background is
+ * invisible. Borders and shadows go white — a different look, not a tinted copy.
  */
 val DarkColors = ShizziColors(
     primary = Color(0xFF2DD4BF),

@@ -14,13 +14,11 @@ import java.lang.reflect.Method
 import java.net.InetAddress
 
 /**
- * Every hidden/system API this prototype depends on, named and described in one
- * place.
+ * Every hidden/system API this depends on, in one place.
  *
- * Exit criterion #4 of the spec requires a written record of which hidden APIs
- * were touched and which reflection paths were required. That record is this
- * file plus docs/hidden-api-record.md: each [HiddenApiPath] entry is both the
- * documentation and the thing actually invoked, so the two cannot drift.
+ * Exit criterion #4 requires a written record of which hidden APIs were touched.
+ * Each [HiddenApiPath] entry is both the documentation and the thing invoked, so
+ * the two cannot drift; see also docs/hidden-api-record.md.
  */
 data class HiddenApiPath(
     val id: String,
@@ -34,16 +32,11 @@ data class HiddenApiPath(
  * The reflection paths, as data. Resolution failures are reported per-path so a
  * single missing method identifies itself instead of collapsing the whole run.
  *
- * `since` values are verified against AOSP sources, not assumed. Two
- * subsystems appear here, and they have different floors:
- *
- * - Test-network creation (TestNetworkManager, TestNetworkInterface,
- *   LinkAddress, TRANSPORT_TEST) ships from API 29. The app can build a
- *   TUN and register it as a test network on Android 10.
- * - Tethering-side upstream selection (setPreferTestNetworks) ships from
- *   API 33. That is why the floor is 33, and why creating a working test
- *   network on Android 10 achieves nothing: the tethering stack has no
- *   code that would look at it. See docs/android-10-support.md.
+ * `since` values are verified against AOSP sources. The two subsystems here
+ * have different floors: test-network creation ships from API 29, but
+ * tethering-side upstream selection (setPreferTestNetworks) only from 33 —
+ * which is why the app's floor is 33, and why a working test network on
+ * Android 10 achieves nothing. See docs/android-10-support.md.
  */
 object HiddenApiCatalog {
     val paths: List<HiddenApiPath> = listOf(
@@ -152,8 +145,6 @@ object HiddenApiCatalog {
 }
 
 /**
- * DNS servers the test network advertises.
- *
  * Not cosmetic: tethering's getIPv6Interface returns null unless the upstream
  * has an IPv6 DNS server, and IPv6 is then never provisioned downstream.
  */
@@ -161,10 +152,8 @@ val TEST_NETWORK_DNS_SERVERS: List<InetAddress>
     get() = listOf("2001:4860:4860::8888", "8.8.8.8").map(InetAddress::getByName)
 
 /**
- * Builds a [LinkAddress] without the package-private constructor.
- *
- * Kotlin cannot call it directly even with the hidden-API exemptions lifted,
- * because the restriction is a compile-time visibility rule rather than the
+ * Kotlin cannot call the package-private constructor even with hidden-API
+ * exemptions lifted: the restriction is compile-time visibility, not the
  * runtime greylist.
  */
 fun buildLinkAddress(address: InetAddress, prefixLength: Int): LinkAddress {
@@ -175,10 +164,8 @@ fun buildLinkAddress(address: InetAddress, prefixLength: Int): LinkAddress {
 }
 
 /**
- * Reads NetworkCapabilities.TRANSPORT_TEST at runtime.
- *
  * Falls back to the known AOSP value only when reflection fails, and the caller
- * reports which path was taken so a silent mismatch cannot masquerade as a
+ * reports which path was taken — a silent mismatch would masquerade as a
  * working test network.
  */
 fun resolveTransportTest(): Int = runCatching {
@@ -195,11 +182,9 @@ sealed interface Resolution {
 }
 
 /**
- * Thin typed wrapper over the hidden test-network surface.
- *
  * Construction resolves nothing; each accessor resolves lazily and reports its
- * own failure, so a probe run can distinguish "class absent" from "method
- * renamed" from "permission denied".
+ * own failure, so a probe run can tell "class absent" from "method renamed"
+ * from "permission denied".
  */
 class TestNetworkApi(private val context: Context) {
 
@@ -291,16 +276,15 @@ class TestNetworkApi(private val context: Context) {
     }.getOrNull()
 
     /**
-     * Registers [interfaceName] as a test network bound to the lifetime of [binder].
+     * Registers [interfaceName] as a test network bound to [binder]'s lifetime.
      *
-     * Registered with LinkProperties carrying [dnsServers], because tethering
-     * refuses to provision IPv6 downstream without them: getIPv6Interface
-     * requires hasIpv6DnsServer(), and the plain overload leaves the list
-     * empty. The interface name and link addresses in the LinkProperties are
-     * overwritten by the framework; only the DNS servers survive.
+     * The LinkProperties overload carries [dnsServers] because tethering's
+     * getIPv6Interface requires hasIpv6DnsServer() and the plain overload
+     * leaves that empty. Only the DNS servers survive — the framework
+     * overwrites the interface name and link addresses.
      *
-     * Falls back to the plain overload when the LinkProperties one is absent,
-     * so a build without it still gets a working IPv4 session.
+     * Falls back to the plain overload where the other is absent, so such a
+     * build still gets a working IPv4 session.
      */
     fun setupTestNetwork(interfaceName: String, dnsServers: List<InetAddress>, binder: IBinder) {
         val instance = manager ?: error("setupTestNetwork: test_network service unavailable")
@@ -358,11 +342,8 @@ class TunHandle(private val delegate: Any) {
 }
 
 /**
- * Wrapper over TetheringManager.setPreferTestNetworks (API 33+).
- *
- * This is the single call the whole approach rests on; if it is absent the
- * prototype is not viable on that build, so its absence is reported rather than
- * swallowed.
+ * TetheringManager.setPreferTestNetworks (API 33+), the single call the whole
+ * approach rests on — so its absence is reported rather than swallowed.
  */
 class TetheringPreferenceApi(private val context: Context) {
 

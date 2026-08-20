@@ -10,6 +10,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import dev.shizzi.ShizukuState
 import dev.shizzi.ui.theme.ScreenPadding
@@ -20,29 +23,33 @@ private const val SOURCE_URL = "https://github.com/carlelieser/shizzi"
 private const val ISSUE_URL = "https://github.com/carlelieser/shizzi/issues/new"
 private const val AUTHOR_URL = "https://carlelieser.dev"
 
-/** What the settings screen renders, so the page takes state rather than four values. */
+/**
+ * Enough to read as unavailable, not so far the user loses their place — the
+ * run's toast sits over this, and a page faded to nothing would make it look
+ * like a dialog on an empty screen.
+ */
+private const val BusyAlpha = 0.4f
+
+/** Grouped so the page takes state rather than four values. */
 data class SettingsState(
     val shizuku: ShizukuState,
     val theme: ThemeChoice,
-    val isDebugLogging: Boolean,
+    val isLogging: Boolean,
+    val isRunningDiagnostics: Boolean,
 )
 
-/**
- * The callbacks the settings screen needs, grouped so it stays within the
- * parameter limit alongside the state it renders.
- */
+/** Likewise, so the page stays within the parameter limit. */
 data class SettingsActions(
     val onSetTheme: (ThemeChoice) -> Unit,
-    val onSetDebugLogging: (Boolean) -> Unit,
+    val onSetLogging: (Boolean) -> Unit,
+    val onOpenLog: () -> Unit,
     val onRunProbes: () -> Unit,
     val onRequestPermission: () -> Unit,
 )
 
 /**
  * Everything configurable, plus the Shizuku detail the home badge cannot hold.
- *
- * Scrolls: four sections already exceed a short screen, and a list that
- * clipped its last row would hide the links entirely.
+ * Scrolls, since four sections already exceed a short screen.
  */
 @Composable
 fun SettingsPage(
@@ -50,12 +57,18 @@ fun SettingsPage(
     actions: SettingsActions,
     onBack: () -> Unit,
 ) {
+    val isBusy = state.isRunningDiagnostics
+
     Column(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
+        // Outside the dimmed region: a run lasts as long as upstream selection
+        // takes to settle, and the ViewModel owns it, so leaving is free.
         ScreenHeader(title = "Settings", onBack = onBack)
 
         Column(
             modifier = Modifier
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(rememberScrollState(), enabled = !isBusy)
+                .alpha(if (isBusy) BusyAlpha else 1f)
+                .inert(isBusy)
                 .padding(horizontal = ScreenPadding),
         ) {
             SectionLabel("Shizuku")
@@ -64,8 +77,8 @@ fun SettingsPage(
             SectionLabel("Appearance")
             ThemePicker(selected = state.theme, onSelect = actions.onSetTheme)
 
-            SectionLabel("Diagnostics")
-            DiagnosticsSection(isDebugLogging = state.isDebugLogging, actions = actions)
+            SectionLabel("Developer")
+            DeveloperSection(isLogging = state.isLogging, actions = actions)
 
             SectionLabel("About")
             AboutSection()
@@ -76,45 +89,70 @@ fun SettingsPage(
     }
 }
 
+/**
+ * Swallows every pointer event over this subtree while [isBusy].
+ *
+ * At the boundary rather than an `isEnabled` per row: this screen has three
+ * kinds of control, and disabling them individually means every future row has
+ * to remember to opt in. Consumed in the initial pass, so events never reach
+ * the children at all.
+ */
+private fun Modifier.inert(isBusy: Boolean): Modifier = when {
+    !isBusy -> this
+    else -> this.pointerInput(Unit) {
+        awaitPointerEventScope {
+            while (true) {
+                awaitPointerEvent(PointerEventPass.Initial)
+                    .changes
+                    .forEach { it.consume() }
+            }
+        }
+    }
+}
+
+/**
+ * Titles only: these name things a developer already knows, so a description
+ * under each just restated the title at greater length.
+ */
 @Composable
-private fun DiagnosticsSection(isDebugLogging: Boolean, actions: SettingsActions) {
+private fun DeveloperSection(isLogging: Boolean, actions: SettingsActions) {
     SettingsToggle(
-        label = SettingsText(
-            title = "Debug logging",
-            subtitle = "Records extra detail while a session runs",
-        ),
-        isChecked = isDebugLogging,
-        onCheckedChange = actions.onSetDebugLogging,
+        label = SettingsText(title = "Logging"),
+        isChecked = isLogging,
+        onCheckedChange = actions.onSetLogging,
+    )
+
+    // Under the toggle that decides whether it records anything.
+    SettingsAction(
+        label = SettingsText(title = "View logs"),
+        onClick = actions.onOpenLog,
     )
 
     SettingsAction(
-        label = SettingsText(
-            title = "Run diagnostics",
-            subtitle = "Runs the full probe sequence and writes a report",
-        ),
+        label = SettingsText(title = "Run diagnostics"),
         onClick = actions.onRunProbes,
     )
 }
 
 /**
- * The three outbound links.
+ * Opened from the context rather than a callback threaded from the ViewModel:
+ * no state changes, so routing it upward adds a hop that forwards an intent.
  *
- * Opened from the context rather than through a callback threaded from the
- * ViewModel: there is no state to change and nothing to decide, so routing it
- * upward would add a hop that only forwards an intent.
+ * Only Author keeps a subtitle, where it names the destination rather than
+ * restating what the title and the external-link glyph already carry.
  */
 @Composable
 private fun AboutSection() {
     val context = LocalContext.current
 
     SettingsAction(
-        label = SettingsText(title = "Source", subtitle = "View the code on GitHub"),
+        label = SettingsText(title = "GitHub"),
         isExternal = true,
         onClick = { context.openUrl(SOURCE_URL) },
     )
 
     SettingsAction(
-        label = SettingsText(title = "Report a bug", subtitle = "Open an issue"),
+        label = SettingsText(title = "Report a bug"),
         isExternal = true,
         onClick = { context.openUrl(ISSUE_URL) },
     )

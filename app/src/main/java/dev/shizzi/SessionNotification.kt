@@ -9,14 +9,11 @@ import android.content.Intent
 import android.os.Build
 
 /**
- * Builds the notification a running session posts.
+ * The notification a running session posts, split from SessionService so the
+ * wording is not interleaved with the concurrency.
  *
- * Split from SessionService so the wording lives in one readable place rather
- * than interleaved with the concurrency the service exists to manage.
- *
- * The register throughout is the user's: a hotspot they are sharing, not a
- * tunnel, a test network, or an interface name. Those are ours, and they are
- * already in the log for anyone filing a bug.
+ * The register throughout is the user's — a hotspot they are sharing, not a
+ * tunnel or an interface name. Those live in the log.
  */
 class SessionNotification(private val context: Context) {
 
@@ -39,13 +36,12 @@ class SessionNotification(private val context: Context) {
     /**
      * [isStopping] disambiguates LOADING, which covers both directions.
      *
-     * Deliberately no longer says "protected". That claimed a security property
-     * the app does not deliver: with no VPN up, traffic leaves over the physical
-     * network exactly as ordinary tethering would, and the only thing the word
-     * ever referred to was an implementation detail.
+     * Never says "protected": with no VPN up, traffic leaves over the physical
+     * network exactly as ordinary tethering would, so the word claimed a
+     * security property the app does not deliver.
      *
-     * ERROR and READY share a title because the fact is the same in both — the
-     * session is over. Which of the two it was is what the body carries.
+     * ERROR and READY share a title — the session is over either way, and the
+     * body carries which.
      */
     private fun titleFor(state: SessionUiState, isStopping: Boolean): String =
         when (state.status) {
@@ -56,11 +52,9 @@ class SessionNotification(private val context: Context) {
         }
 
     /**
-     * The VPN fact rides in the title, where a collapsed notification shows it.
-     *
-     * Its absence is not stated. "Connected" alone is the honest reading of
-     * ordinary tethering, and a notification that announces what is *not*
-     * happening spends the one line it has on a non-event.
+     * In the title, where a collapsed notification shows it. Its absence goes
+     * unstated — announcing what is *not* happening spends the one line
+     * available on a non-event.
      */
     private fun connectedTitle(isVpnBound: Boolean): String = when {
         isVpnBound -> "Connected · VPN"
@@ -68,17 +62,12 @@ class SessionNotification(private val context: Context) {
     }
 
     /**
-     * What the notification says under its title.
-     *
      * An error outranks everything: it is the only text here a user may need to
      * act on.
      *
-     * Nothing reaches this that was not written for a user to read. The former
-     * fallthrough handed [SessionUiState.detail] over verbatim, which put
-     * "tethered clients routing through testtun47" — and, on a failed start, a
-     * raw exception class name — on a notification. Both are diagnostics; they
-     * stay in the log and the in-app toast, which is where someone filing a bug
-     * looks for them.
+     * Nothing reaches this that was not written to be read. The old fallthrough
+     * handed [SessionUiState.detail] over verbatim and put "tethered clients
+     * routing through testtun47" — or a raw exception name — on a notification.
      */
     private fun bodyFor(state: SessionUiState, isStopping: Boolean): String = when {
         state.lastError.isNotEmpty() -> userFacingError(state.lastError)
@@ -88,11 +77,9 @@ class SessionNotification(private val context: Context) {
     }
 
     /**
-     * @return [raw] when it was written for a user, else a plain stand-in.
-     *
-     * A stack-trace fragment tells the user nothing they can act on and reads
-     * as a crash. The detail survives in the log either way, so the notification
-     * loses nothing by declining to show it.
+     * @return [raw] when it was written for a user, else a plain stand-in. A
+     *   stack-trace fragment reads as a crash and offers nothing to act on; it
+     *   survives in the log either way.
      */
     private fun userFacingError(raw: String): String = when {
         raw.contains(EXCEPTION_MARKER) -> "Something went wrong. Check the app for details."
@@ -103,19 +90,12 @@ class SessionNotification(private val context: Context) {
         if (isStopping) "Turning the hotspot off…" else "Turning the hotspot on…"
 
     /**
-     * What is actually happening: how many devices, and how much has moved.
+     * How many devices and how much has moved — the only thing on the
+     * notification that changes while a session runs.
      *
-     * The body carries information rather than a longer restatement of the
-     * title. It is also the half a user keeps looking at, since the counts are
-     * the only thing on the notification that changes while a session runs.
-     *
-     * Before any device connects there is nothing to count, and "0 devices ·
-     * ↓ 0 B" reads as a fault rather than as an empty hotspot, so that case is
-     * stated plainly instead.
-     *
-     * No terminal period on any of these: they are fragments, and a stop after
-     * a phrase that is not a sentence reads as a typo. The full sentences below
-     * — the ones telling a user what to do — keep theirs.
+     * "0 devices · ↓ 0 B" reads as a fault rather than an empty hotspot, so
+     * that case is stated plainly. No terminal periods: these are fragments,
+     * unlike the full sentences below that tell a user what to do.
      */
     private fun connectedBody(state: SessionUiState): String = when (state.clientCount) {
         0 -> "No devices connected"
@@ -178,12 +158,9 @@ class SessionNotification(private val context: Context) {
         const val EXCEPTION_MARKER = "Exception"
 
         /**
-         * Plain arrows, not the emoji ones.
-         *
-         * U+2193/U+2191 render in the notification's own text font at the
-         * weight of the digits beside them. The emoji variants would be
-         * substituted from the colour font and sit as coloured blobs against
-         * monochrome text.
+         * U+2193/U+2191 render in the notification's text font at the weight of
+         * the digits beside them; the emoji variants come from the colour font
+         * and sit as blobs against monochrome text.
          */
         const val DOWN_ARROW = "\u2193"
         const val UP_ARROW = "\u2191"
