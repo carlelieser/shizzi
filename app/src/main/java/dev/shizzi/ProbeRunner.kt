@@ -20,7 +20,17 @@ class ProbeRunner(private val context: Context) {
 
     private val testNetworkApi = TestNetworkApi(context)
     private val inspector = UpstreamInspector()
+    private val teardown = SessionTeardown(context)
     private var resources: SessionResources? = null
+
+    /**
+     * Whether this run started the hotspot, and so owes stopping it.
+     *
+     * A run with [attemptTethering] false only observes a downstream the user
+     * brought up themselves, and stopping that would turn a diagnostic into a
+     * destructive action.
+     */
+    private var didStartDownstream = false
 
     /**
      * Runs the probe sequence and always releases the session it created.
@@ -50,15 +60,43 @@ class ProbeRunner(private val context: Context) {
     }
 
     /**
-     * Releases the session, recording any problems as T-2 evidence.
+     * Undoes everything the run changed, recording problems as T-2 evidence.
      *
      * A silent release would hide exactly the leak the spec's T-2 case is about,
      * so the outcome goes in the report rather than only the log.
+     *
+     * The order matches [TetherSession.stop] because the same hazards apply.
+     * The downstream goes first, fail-closed per R6.1: a hotspot left
+     * broadcasting after the TUN is gone falls back to the physical upstream
+     * with clients still attached, which is the state this app exists to
+     * prevent. The upstream preference is then handed back *while the TUN still
+     * exists* — clearing it afterwards leaves tethering naming a destroyed
+     * interface as its current upstream, permanently, as SessionTeardown
+     * documents. Only then is the interface destroyed.
+     *
+     * A run used to do none of this: it released its TUN and test network and
+     * left both the hotspot up and setPreferTestNetworks(true) set, so the
+     * phone kept a hotspot the user had not asked for and the next session
+     * started against a preference the diagnostic had turned on.
      */
     private fun releaseSession(report: ProbeReportBuilder) {
-        val problems = resources?.release() ?: return
+        val downstreamProblem = when {
+            didStartDownstream -> teardown.releaseDownstream()
+            else -> null
+        }
+        didStartDownstream = false
+
+        teardown.releaseUpstreamSelection(resources?.interfaceName)
+
+        val problems = resources?.release().orEmpty()
         resources = null
-        report.recordReleaseProblems(problems)
+
+        report.recordReleaseProblems(
+            when (downstreamProblem) {
+                null -> problems
+                else -> problems + "downstream: $downstreamProblem"
+            },
+        )
     }
 
     /** Q0/Q1: are we actually shell, with the service present? */
@@ -151,6 +189,11 @@ class ProbeRunner(private val context: Context) {
         val control = DownstreamControl(context)
         val didStop = control.stopWifiTethering()
         val (didStart, startDetail) = control.startWifiTethering()
+
+        // Recorded even when the start is rejected: "stopped, then failed to
+        // start" still leaves the radio in a state the run changed, and the
+        // release path should confirm it is down rather than assume it.
+        didStartDownstream = didStop || didStart
 
         if (!didStart) {
             report.recordFail(
@@ -477,15 +520,35 @@ class ProbeRunner(private val context: Context) {
     private fun readProcValue(path: String): String? =
         runCatching { java.io.File(path).readText().trim() }.getOrNull()
 
-    /** Fail-closed teardown order: caller stops the downstream before this runs (R6.1). */
+    /**
+     * Releases anything a run left behind, for the session's stop path.
+     *
+     * Normally a no-op: [run] releases in its own finally, so this only has
+     * work to do when a run died in a way that skipped it. It stays because
+     * TetherService.stop calls it to make sure a diagnostic's resources cannot
+     * outlive an unrelated session teardown.
+     *
+     * Fail-closed order, as in [releaseSession]: the caller stops the session's
+     * own downstream before this runs (R6.1), and this hands the upstream back
+     * before the TUN is destroyed.
+     */
     fun teardown(): String {
-        val restored = runCatching { TetheringPreferenceApi(context).setPreferTestNetworks(false) }
+        val downstreamProblem = when {
+            didStartDownstream -> teardown.releaseDownstream()
+            else -> null
+        }
+        didStartDownstream = false
+
+        val restored = runCatching {
+            teardown.releaseUpstreamSelection(resources?.interfaceName)
+        }
         val problems = resources?.release() ?: emptyList()
         resources = null
 
         val result = JSONObject()
         result.put("preferTestNetworksRestored", restored.isSuccess)
         restored.exceptionOrNull()?.let { result.put("restoreError", it.message) }
+        downstreamProblem?.let { result.put("downstreamProblem", it) }
         result.put("teardownProblems", org.json.JSONArray(problems))
         return result.toString(2)
     }
