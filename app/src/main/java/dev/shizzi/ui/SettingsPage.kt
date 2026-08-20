@@ -122,13 +122,18 @@ private fun Modifier.inert(isBusy: Boolean): Modifier = when {
     }
 }
 
+/**
+ * Titles only.
+ *
+ * The three rows name things a developer already knows — a log, a switch that
+ * fills it, a probe run — so a description under each restated the title in a
+ * longer sentence. The About rows keep theirs, where the subtitle carries the
+ * destination rather than a gloss.
+ */
 @Composable
 private fun DeveloperSection(isLogging: Boolean, actions: SettingsActions) {
     SettingsToggle(
-        label = SettingsText(
-            title = "Logging",
-            subtitle = "Records session activity to the log",
-        ),
+        label = SettingsText(title = "Logging"),
         isChecked = isLogging,
         onCheckedChange = actions.onSetLogging,
     )
@@ -136,18 +141,12 @@ private fun DeveloperSection(isLogging: Boolean, actions: SettingsActions) {
     // Directly under the toggle that decides whether it records anything, so
     // the switch and what it fills sit together.
     SettingsAction(
-        label = SettingsText(
-            title = "View logs",
-            subtitle = "Everything this session recorded",
-        ),
+        label = SettingsText(title = "View logs"),
         onClick = actions.onOpenLog,
     )
 
     SettingsAction(
-        label = SettingsText(
-            title = "Run diagnostics",
-            subtitle = "Runs the full probe sequence and writes a report",
-        ),
+        label = SettingsText(title = "Run diagnostics"),
         onClick = actions.onRunProbes,
     )
 }
