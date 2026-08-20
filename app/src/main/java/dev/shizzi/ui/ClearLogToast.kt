@@ -6,17 +6,13 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.getValue
 
 /**
- * Asks before emptying the log, then says what was emptied.
+ * Asks before emptying the log.
  *
- * A toast rather than a dialog. Nothing in this app dims the screen behind a
- * modal, and clearing a log is not grave enough to be the first thing that
- * does — but it is irreversible, so it does not happen on a single tap either.
- * The toast is the app's existing way to put a decision in front of someone
- * without taking the screen away from them: CLEAR confirms, and every other
- * way out of a toast — tapping it, swiping it, or waiting — cancels.
- *
- * That asymmetry is deliberate. The destructive path needs an explicit press;
- * the safe path is whatever happens by accident.
+ * A toast, not a dialog: nothing here dims the screen behind a modal, and
+ * clearing a log is not grave enough to be the first thing that does — but it
+ * is irreversible, so not a single tap either. CLEAR confirms; every other way
+ * out of a toast cancels. The destructive path needs an explicit press, the
+ * safe one is whatever happens by accident.
  */
 @Composable
 fun ClearLogToast(
@@ -36,11 +32,8 @@ fun ClearLogToast(
             return@LaunchedEffect
         }
 
-        // The host runs onDismiss on every exit, including the one the action
-        // itself triggers — so a bare cancel() here would also fire on
-        // confirm. This latch keeps the two answers exclusive rather than
-        // relying on confirm() having already changed the state by the time
-        // the dismiss lands.
+        // The host runs onDismiss on every exit, the action's own included, so
+        // a bare cancel() here would also fire on confirm.
         var isAnswered = false
 
         toasts.show(
@@ -48,9 +41,7 @@ fun ClearLogToast(
                 key = ToastKeys.CLEAR_LOG,
                 message = "Clear the log?",
                 detail = "This action cannot be undone.",
-                // Indefinite: a question that timed out would be answered by
-                // inattention. It leaves on an answer, and the answer to
-                // ignoring it is no.
+                // A question that timed out would be answered by inattention.
                 duration = ToastDuration.Indefinite,
                 action = ToastAction("Clear") {
                     isAnswered = true
@@ -63,13 +54,9 @@ fun ClearLogToast(
 }
 
 /**
- * Reports what a clear actually managed to empty.
- *
- * Worth its own toast because the answer is not always "all of it". The log
- * lives in two files owned by two processes, and the shell's — which holds
- * most of it — is reachable only through Shizuku. If that call fails the app's
- * half is gone and the shell's is not, and a screen that said "Log cleared"
- * while still showing entries would be lying about which.
+ * Reports what a clear actually emptied, which is not always all of it: the
+ * shell's file holds most of the log and is reachable only through Shizuku, so
+ * a failed call leaves entries that "Log cleared" would be lying about.
  */
 fun clearedToast(problem: String?): Toast = when (problem) {
     null -> Toast(

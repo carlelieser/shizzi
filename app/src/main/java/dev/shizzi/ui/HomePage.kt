@@ -25,12 +25,7 @@ import dev.shizzi.ui.theme.ShizziTheme
 private fun buttonLabel(status: UiStatus): String =
     if (status == UiStatus.CONNECTED) "Stop" else "Start"
 
-/**
- * How the button presents itself.
- *
- * Derived here rather than inside the button so the rule lives next to the
- * state it reads: only an available start is the primary action.
- */
+/** Derived here so the rule lives beside the state it reads. */
 private fun buttonState(state: SessionUiState): ConnectButtonState = when {
     state.status == UiStatus.LOADING -> ConnectButtonState.LOADING
     state.status == UiStatus.CONNECTED -> ConnectButtonState.STOP
@@ -39,12 +34,9 @@ private fun buttonState(state: SessionUiState): ConnectButtonState = when {
 }
 
 /**
- * The screen the app opens on.
- *
- * Three things, vertically: the status glyph, the one button, and — pinned to
- * the bottom edge rather than floating under the button — whatever detail the
- * session reports. Errors and Shizuku prompts are toasts, so nothing here
- * moves when one arrives.
+ * Three things vertically: the status glyph, the one button, and the session
+ * detail pinned to the bottom edge. Errors and Shizuku prompts are toasts, so
+ * nothing here moves when one arrives.
  */
 @Composable
 fun HomePage(
@@ -63,20 +55,15 @@ fun HomePage(
 
         HomeBody(state = state, actions = actions)
 
-        // The VPN line rides with the status row rather than with the button,
-        // so both readings of "what is this session doing" sit together at the
-        // bottom edge instead of one floating mid-screen.
+        // The VPN line rides with the status row, so both readings of "what is
+        // this session doing" sit together at the bottom edge.
         Column(
             modifier = Modifier.align(Alignment.BottomCenter),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // Reserved whether or not it is showing: a VPN can be adopted
-            // mid-session with the screen open, and the status row must not
-            // shift down when it is.
-            //
-            // Bottom-aligned inside the band so the line sits close to the
-            // status row it belongs with, rather than floating in the middle
-            // of its own reserved space.
+            // Space reserved either way: a VPN can be adopted mid-session with
+            // the screen open, and the status row must not shift down. Bottom-
+            // aligned so the line sits with the row it belongs to.
             Box(
                 modifier = Modifier.height(ShizziTheme.spacing.xxxl),
                 contentAlignment = Alignment.BottomCenter,
@@ -89,10 +76,7 @@ fun HomePage(
     }
 }
 
-/**
- * The callbacks the home screen needs, grouped so it takes two parameters
- * rather than five.
- */
+/** Grouped so the screen takes two parameters rather than five. */
 data class HomeActions(
     val onToggle: () -> Unit,
     val onCancel: () -> Unit,
@@ -100,18 +84,11 @@ data class HomeActions(
 )
 
 /**
- * Badge on the left, navigation on the right.
+ * Badge on the left, navigation on the right. No title — naming the one home
+ * screen would state the obvious at the largest size on the page.
  *
- * No title: the app has one home screen and naming it would state the obvious
- * at the largest type size on the page.
- *
- * One destination. The log used to sit beside settings, which gave the header
- * two icons for a screen that is read occasionally and one that is opened
- * rarely; it now lives under Developer in settings, alongside the toggle that
- * decides whether it records anything.
- *
- * Settings is secondary here — the connect button is the screen's purpose, and
- * the header is where you go when you are not doing that.
+ * One destination: the log now lives under Developer in settings, beside the
+ * toggle deciding whether it records anything.
  */
 @Composable
 private fun HomeHeader(
@@ -131,9 +108,8 @@ private fun HomeHeader(
 
         Spacer(Modifier.weight(1f))
 
-        // Muted rather than full strength. The connect button is what the
-        // screen is for, and a header glyph at the same weight as the status
-        // text reads as an equal peer of it.
+        // Muted: the connect button is what the screen is for, and a header
+        // glyph at full strength reads as its peer.
         ShizziIconButton(
             icon = Icons.Filled.Settings,
             contentDescription = "Settings",
@@ -144,20 +120,15 @@ private fun HomeHeader(
 }
 
 /**
- * Whether the VPN line should show.
- *
  * Guarded on the status as well as the flag: a session torn down for VPN loss
- * holds ERROR alongside the last VPN reading until the next publish, and the
- * line must not outlive the session it describes.
+ * holds ERROR alongside the last VPN reading until the next publish.
  */
 private fun isShowingVpn(state: SessionUiState): Boolean =
     state.isVpnBound && state.status == UiStatus.CONNECTED
 
 /**
- * The centred stack: glyph, button, and the cancel affordance.
- *
- * Cancel appears only while starting. Stopping is already the fast path and
- * cancelling it would leave the session in the state this app exists to avoid.
+ * Cancel appears only while starting: stopping is already the fast path, and
+ * cancelling that would leave the session in the state this app exists to avoid.
  */
 @Composable
 private fun HomeBody(state: SessionUiState, actions: HomeActions) {
@@ -170,9 +141,9 @@ private fun HomeBody(state: SessionUiState, actions: HomeActions) {
     ) {
         StatusIcon(status = state.status)
 
-        // Two of the largest step rather than one arbitrary value, so the
-        // gap stays on the spacing scale. It preserves the distance from when
-        // a reserved VPN band sat between the glyph and the button.
+        // Two of the largest step rather than an arbitrary value, keeping the
+        // gap on the scale. Preserves the distance from when a reserved VPN
+        // band sat here.
         Spacer(Modifier.height(ShizziTheme.spacing.xxxl * 2))
 
         ConnectButton(

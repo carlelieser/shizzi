@@ -20,11 +20,8 @@ data class Settings(
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore("settings")
 
 /**
- * Persists the two settings the app has.
- *
- * Logging previously lived in ViewModel memory and reset on every launch,
- * which made it a setting the user could not rely on. Both values now outlive
- * the process.
+ * Persists the two settings the app has. Logging used to live in ViewModel
+ * memory and reset on every launch, which made it unreliable as a setting.
  */
 class SettingsStore(private val context: Context) {
 
@@ -39,10 +36,8 @@ class SettingsStore(private val context: Context) {
     }
 
     /**
-     * An unrecognised stored theme falls back rather than throwing.
-     *
-     * A downgrade, or a value written by a future build, should not crash the
-     * app on launch over a preference.
+     * An unrecognised theme falls back rather than throwing: a downgrade, or a
+     * value from a future build, should not crash the app over a preference.
      */
     private fun toSettings(preferences: Preferences) = Settings(
         theme = runCatching { ThemeChoice.valueOf(preferences[THEME].orEmpty()) }

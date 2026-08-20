@@ -56,11 +56,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * Gutter width, fixed rather than measured.
- *
- * Wide enough for four digits at the log style's size, which outlasts the
- * entries a 1 MB cap can hold. Measuring it per frame would make the rule
- * between gutter and text shift as the list scrolls past line 100.
+ * Fixed rather than measured: four digits at the log style's size outlasts what
+ * a 1 MB cap holds, and measuring per frame would shift the rule between gutter
+ * and text as the list scrolls past line 100.
  */
 private val GutterWidth = 44.dp
 
@@ -71,53 +69,37 @@ private val RuleWidth = 1.dp
 /** How much turquoise a selected row's background carries. */
 private const val SelectionTint = 0.12f
 
-/**
- * The band the jump button sits in.
- *
- * Tall enough that the fade has room to be a fade rather than a hard edge —
- * below this the gradient reads as a grey stripe laid over the text.
- */
+/** Tall enough for the fade to be a fade; below this it reads as a grey stripe. */
 private val JumpBandHeight = 96.dp
 
 /**
- * The empty state's glyph.
- *
- * Smaller than Home's 96dp status glyph: that one is the subject of its screen,
- * this one is a marker above the sentence that carries the meaning.
+ * Smaller than Home's 96dp status glyph, which is the subject of its screen;
+ * this one only marks the sentence that carries the meaning.
  */
 private val EmptyIconSize = 64.dp
 
 /**
- * How far from an end counts as already there.
+ * How far from an end counts as already there — roughly a screen, since a
+ * reader two lines from an edge needs no offer to move two lines, and a
+ * threshold tripping on the last item alone would flicker as it scrolled.
  *
- * Roughly a screen of entries rather than an exact index: a reader a couple of
- * lines from an edge does not need a band offering to move them a couple of
- * lines, and a threshold that tripped on the first or last item alone would
- * flicker as that row scrolled in and out.
- *
- * Shared by both bands. A log long enough to be far from both ends at once
- * shows both, which is the honest answer: from the middle of a thousand
- * entries, both ends really are somewhere else.
+ * Shared by both bands, so a long log far from both ends shows both. From the
+ * middle of a thousand entries, both ends really are somewhere else.
  */
 private const val JumpThreshold = 8
 
 /**
- * The log as read from disk, with a way to read it again.
- *
- * File I/O, so it does not belong on the composition thread — at the 1 MB cap
- * this parses a megabyte across two files.
+ * The log as read from disk, with a way to read it again. File I/O — at the cap
+ * this parses a megabyte across two files — so it stays off the composition
+ * thread.
  *
  * Not observed for changes: entries arrive while a session runs, and a list
- * that reordered itself under a finger mid-read would be worse than one that
- * is current as of opening it. [reload] exists for the one case where the
- * screen knows the file changed because it changed it — clearing — since
- * without it the entries would sit on screen after being deleted from disk.
- */
-/**
- * @param isLoaded whether the read has finished. Distinct from an empty list,
- *   which is also what the first frame holds — and the empty state is a large
- *   glyph and a filled button, too loud to flash on the way to a log that was
- *   never empty.
+ * reordering itself under a finger would be worse than one current as of
+ * opening it. [reload] covers the one case where the screen knows the file
+ * changed because it changed it.
+ *
+ * @param isLoaded whether the read has finished, distinct from an empty list —
+ *   which is also what the first frame holds.
  */
 @Immutable
 data class LogEntries(
@@ -127,10 +109,8 @@ data class LogEntries(
 )
 
 /**
- * What the log screen can do, grouped so it stays inside the parameter limit.
- *
- * [onClear] hands back what it could not empty, rather than returning nothing
- * and leaving the screen to claim a clear it may only half have achieved.
+ * Grouped so [LogPage] stays inside the parameter limit. [onClear] hands back
+ * what it could not empty, so the screen cannot claim a half-achieved clear.
  */
 @Immutable
 data class LogActions(
@@ -145,8 +125,8 @@ fun rememberLogEntries(): LogEntries {
     var entries by remember { mutableStateOf(emptyList<LogEntry>()) }
     var isLoaded by remember { mutableStateOf(false) }
 
-    // Bumping this re-runs the read. A plain counter rather than a flag, so a
-    // second clear while the first is still reading is still a distinct key.
+    // A counter rather than a flag, so a second clear while the first is still
+    // reading is still a distinct key.
     var generation by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(generation) {
@@ -155,20 +135,16 @@ fun rememberLogEntries(): LogEntries {
     }
 
     // A reload does not clear isLoaded: the entries on screen stay valid until
-    // the new read replaces them, and dropping back to the loading state would
-    // blank a list that is about to be redrawn with nearly the same contents.
+    // the new read replaces them, and blanking would flash a list about to be
+    // redrawn with nearly the same contents.
     return LogEntries(entries, isLoaded) { generation++ }
 }
 
 /**
- * The session log.
+ * The session log, both files interleaved by timestamp.
  *
- * Reads both files through [SessionLog.merged] — the shell process writes the
- * events worth reading and the app cannot write to that directory, so the
- * history is two files interleaved by timestamp.
- *
- * Oldest first here, unlike `merged()`, which returns newest first: a log read
- * top to bottom is a story, and reversing it puts the cause after the effect.
+ * Oldest first, unlike `merged()`: a log read top to bottom is a story, and
+ * reversing it puts the cause after the effect.
  */
 @Composable
 fun LogPage(
@@ -202,23 +178,18 @@ fun LogPage(
             title = "Log",
             onBack = actions.onBack,
             action = {
-                // Absent rather than greyed out when there is nothing to act
-                // on. Both items work on entries, and this screen cannot
-                // produce any — a permanently dead control is furniture, and
-                // the empty state already says what to do instead.
-                //
-                // Gated on the read having landed as well, so it does not
-                // appear for a frame and then leave once an empty log resolves.
+                // Absent rather than greyed out: both items work on entries,
+                // this screen cannot produce any, and the empty state already
+                // says what to do. Gated on the read landing too, so it does
+                // not appear for a frame before an empty log resolves.
                 if (log.isLoaded && entries.isNotEmpty()) {
                     val isAllSelected = selected.size == entries.size
 
                     OverflowMenu(isMarked = selected.isNotEmpty()) {
                         OverflowItem(
-                            // The count rides on the label, as it did when this
-                            // was a header button: the menu is the only place
-                            // left to say what Copy will take, and "COPY" alone
-                            // beside a selection the user made would be
-                            // ambiguous.
+                            // The menu is the only place left to say what Copy
+                            // will take; "COPY" alone beside a selection the
+                            // user made would be ambiguous.
                             label = copyLabel(selected.size, entries.size),
                             onClick = {
                                 clipboard.setText(
@@ -228,10 +199,8 @@ fun LogPage(
                             },
                         )
 
-                        // One item that flips, rather than two sitting side by
-                        // side with one of them always inert: which one applies
-                        // is already decided by what is selected, and the menu
-                        // can simply offer that one.
+                        // One item that flips rather than two with one always
+                        // inert — the selection already decides which applies.
                         OverflowItem(
                             label = when {
                                 isAllSelected -> "DESELECT ALL"
@@ -254,9 +223,8 @@ fun LogPage(
             },
         )
 
-        // Nothing at all until the read lands. The empty state is a large glyph
-        // and a filled button, and flashing it on the way to a log that was
-        // never empty would be worse than a blank moment.
+        // Nothing until the read lands: a glyph-and-button empty state flashing
+        // on the way to a log that was never empty is worse than a blank moment.
         if (!log.isLoaded) return@Column
 
         if (entries.isEmpty()) {
@@ -268,8 +236,8 @@ fun LogPage(
             return@Column
         }
 
-        // The list and both jump bands share a box so the overlays can sit over
-        // the text rather than taking a strip of layout away from it.
+        // One box, so the bands overlay the text rather than taking a strip of
+        // layout from it.
         Box(modifier = Modifier.fillMaxSize()) {
             LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
                 itemsIndexed(entries) { index, entry ->
@@ -309,25 +277,19 @@ fun LogPage(
 private enum class JumpEdge { TOP, BOTTOM }
 
 /**
- * The way back to either end of the log.
+ * The way back to either end of the log — a session's start and its outcome,
+ * with a long scroll stranding the reader far from both.
  *
- * The log is oldest first, so the two ends are the two things worth returning
- * to — the start of a session and its outcome — and a long scroll strands you
- * far from both. A gradient carries the label rather than a bar: the band has
- * to be legible over whatever text happens to be underneath it without drawing
- * another horizontal edge across a screen that already has one under the
- * header. Each fades from transparent toward its own edge, so the opaque end
- * is the edge the label sits against.
+ * A gradient rather than a bar, so the label stays legible over whatever text
+ * is underneath without drawing a second horizontal edge under the header's.
+ * Each fades from transparent toward its own edge.
  *
- * Named in full rather than drawn as a chevron. A bare arrow over a scrolling
- * list is ambiguous — end of the log, or one page down — and the label costs
- * nothing on a screen whose content is already monospaced text.
+ * Named in full rather than drawn as a chevron: a bare arrow over a scrolling
+ * list could mean the end of the log or one page down.
  *
- * Hidden when its end is already in view. The band itself never takes touch:
- * it spans the width and is mostly transparent, and the rows under it are this
- * screen's selection targets, so swallowing taps there would cost more than
- * the affordance is worth. Only the label is interactive, and only the label
- * scrolls.
+ * The band never takes touch — it is a full-width mostly-transparent rectangle
+ * over the rows that are this screen's selection targets. Only the label is
+ * interactive.
  */
 @Composable
 private fun JumpBand(
@@ -340,9 +302,9 @@ private fun JumpBand(
     val colors = ShizziTheme.colors
     val isTop = edge == JumpEdge.TOP
 
-    // derivedStateOf so the comparison is what recomposition keys on, not the
-    // scroll position: this reads a value that changes every frame of a fling
-    // and answers a question whose answer changes twice.
+    // derivedStateOf so recomposition keys on the comparison, not the scroll
+    // position: this reads a value that changes every frame of a fling to
+    // answer a question whose answer changes twice.
     val isShowing by remember(count, edge) {
         derivedStateOf {
             val visible = listState.layoutInfo.visibleItemsInfo
@@ -363,11 +325,9 @@ private fun JumpBand(
         exit = fadeOut(),
         modifier = modifier,
     ) {
-        // The gradient is drawn by the container and the label is its only
-        // child, so the band is paint and nothing else. Giving the band a
-        // clickable or a pointer handler of its own would turn a full-width
-        // mostly-transparent rectangle into a touch target sitting over the
-        // rows, which are this screen's selection targets.
+        // The container paints and the label is its only child, so the band is
+        // paint and nothing else — a clickable here would put a full-width
+        // touch target over the rows.
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -377,24 +337,22 @@ private fun JumpBand(
                 ),
             contentAlignment = if (isTop) Alignment.TopCenter else Alignment.BottomCenter,
         ) {
-            // Bare text, like COPY in the header: these are the only things on
-            // this screen that act rather than select, and a bordered box here
-            // would outrank the one in the header while doing less.
+            // Bare text: a bordered box here would outrank the header's while
+            // doing less.
             Text(
                 text = if (isTop) "SCROLL TO TOP" else "SCROLL TO BOTTOM",
                 style = ShizziTheme.typography.label,
                 color = colors.onSurface,
                 modifier = Modifier
-                    // Outside the clickable: this is clearance from the screen
-                    // edge, not part of the target.
+                    // Outside the clickable: clearance from the screen edge,
+                    // not part of the target.
                     .padding(
                         top = if (isTop) ShizziTheme.spacing.lg else 0.dp,
                         bottom = if (isTop) 0.dp else ShizziTheme.spacing.lg,
                     )
                     .clickable {
-                        // Animated rather than instant: a jump that teleports
-                        // gives no sense of how much was skipped, and this is a
-                        // screen people scroll back through.
+                        // Animated: a teleport gives no sense of how much was
+                        // skipped, on a screen people scroll back through.
                         scope.launch {
                             listState.animateScrollToItem(if (isTop) 0 else count - 1)
                         }
@@ -406,11 +364,8 @@ private fun JumpBand(
 }
 
 /**
- * One entry, its number in the gutter and its text wrapped beside it.
- *
- * The row is the selection unit: character-level drag selection is a large
- * amount of machinery and awkward to land on with a finger, and a log is read
- * and quoted by the line anyway.
+ * The row is the selection unit: character-level drag selection is a lot of
+ * machinery and awkward under a finger, and a log is quoted by the line anyway.
  */
 @Composable
 private fun LogRow(
@@ -428,8 +383,8 @@ private fun LogRow(
                 if (isSelected) colors.primary.copy(alpha = SelectionTint) else colors.background,
             )
             .clickable(onClick = onToggle)
-            // Drawn rather than composed: the gutter rule runs the full height
-            // of a wrapped row, which a Divider between two columns would not.
+            // Drawn, not composed: the rule runs the full height of a wrapped
+            // row, which a Divider between two columns would not.
             .drawBehind {
                 val rule = GutterWidth.toPx()
                 drawLine(
@@ -463,12 +418,8 @@ private fun LogRow(
 }
 
 /**
- * The entry itself: time, level, message.
- *
- * The level is bold rather than coloured. The palette carries one accent and
- * spends it on actionable state, so a red line here would introduce a second
- * signal that means something quieter — and the level word already says which
- * it is.
+ * The level is bold rather than coloured: the palette spends its one accent on
+ * actionable state, and the level word already says which it is.
  */
 @Composable
 private fun LogText(entry: LogEntry, modifier: Modifier = Modifier) {
@@ -477,9 +428,8 @@ private fun LogText(entry: LogEntry, modifier: Modifier = Modifier) {
 
     Text(
         text = buildString {
-            // Date and level are dropped from the display but kept in a copy:
-            // on screen the date is the same for every visible row, and the
-            // level is about to be rendered in its own weight.
+            // Dropped here but kept in a copy: on screen the date is the same
+            // for every visible row, and the level gets its own weight.
             append(entry.timestamp.substringAfter(' ').ifEmpty { entry.timestamp })
             if (isNotEmpty()) append("  ")
             append(entry.message)
@@ -493,18 +443,12 @@ private fun LogText(entry: LogEntry, modifier: Modifier = Modifier) {
 }
 
 /**
- * The screen with nothing to show, which is two different situations.
+ * Two different situations. Usually no session has run yet, and the way out is
+ * to run one — but the screen reads the same with logging switched off, where
+ * that message would be a lie, since a session would produce nothing either.
  *
- * An empty log usually means no session has run yet, and the way out is to run
- * one. But it also reads as empty when logging is switched off — and there the
- * first message would be a lie, since starting a session would produce nothing
- * either. So the state names which of the two it is and offers the action that
- * actually fixes it.
- *
- * The logging CTA acts here rather than sending the user to Settings to find a
- * toggle: this screen already knows what is wrong and can undo it in place,
- * and a button that only opens the screen where the real button lives is a
- * detour dressed as an action.
+ * The logging CTA toggles in place rather than opening Settings: a button that
+ * only leads to the real button is a detour dressed as an action.
  */
 @Composable
 private fun EmptyLog(
@@ -532,9 +476,8 @@ private fun EmptyLog(
             color = ShizziTheme.colors.onSurface,
         )
 
-        // Only the waiting state gets a second line. "Logging is disabled" is
-        // already the whole fact, and the action under it says what to do about
-        // it — a sentence between the two would restate both.
+        // Only the waiting state gets a second line: "Logging is disabled" is
+        // the whole fact, and the action below says what to do about it.
         if (isLogging) {
             Spacer(Modifier.height(ShizziTheme.spacing.sm))
 
@@ -546,9 +489,8 @@ private fun EmptyLog(
             )
         }
 
-        // Smaller than the gap above the title: the action carries its own
-        // 48dp touch target, so most of the separation is already inside it and
-        // a full xl on top of that reads as a gap rather than as a grouping.
+        // Smaller than the gap above the title: the action's own 48dp target
+        // already holds most of the separation.
         Spacer(Modifier.height(ShizziTheme.spacing.sm))
 
         EmptyAction(
@@ -559,17 +501,10 @@ private fun EmptyLog(
 }
 
 /**
- * The empty state's one action.
- *
- * Bare text, like CANCEL on Home and the jump bands on this screen — not a
- * filled box. The app spends its accent on the connect button, and a turquoise
- * button here would claim to be the same order of thing as starting a session
- * while sitting two screens away from it. This is a suggestion about a screen
- * that happens to be empty, not the app's main action.
- *
- * Turquoise text rather than turquoise fill keeps it findable on an otherwise
- * empty screen without competing: the only saturated pixels in the app still
- * belong to a session that is actually up.
+ * Bare text, like CANCEL on Home — not a filled box. The accent belongs to the
+ * connect button, and a filled one here would claim to be the same order of
+ * thing while two screens away from it. Turquoise text keeps it findable
+ * without competing.
  */
 @Composable
 private fun EmptyAction(label: String, onClick: () -> Unit) {
@@ -590,17 +525,12 @@ private fun EmptyAction(label: String, onClick: () -> Unit) {
 }
 
 /**
- * What the copy item says it will take.
+ * Keyed on what lands on the clipboard, not on the selection: nothing selected
+ * and everything selected both copy the whole log, so both say ALL.
  *
- * Keyed on what actually lands on the clipboard rather than on the selection.
- * Two different states copy the whole log — nothing selected, and every row
- * selected — and both say ALL, because the label's job is to describe the
- * result rather than to report how the user arrived at it.
- *
- * A count appears only for a genuine subset, and names the unit rather than
- * leaving a bare number to be read as characters or bytes. Singular at one:
- * "1 LINES" makes an interface look unfinished, and the case comes up
- * constantly here since selection is per row.
+ * A count appears only for a genuine subset, and names its unit so a bare
+ * number is not read as characters. Singular at one — the case comes up
+ * constantly with per-row selection.
  */
 private fun copyLabel(count: Int, total: Int): String = when {
     count == 0 || count == total -> "COPY ALL"
@@ -609,11 +539,8 @@ private fun copyLabel(count: Int, total: Int): String = when {
 }
 
 /**
- * What lands on the clipboard: full timestamps, no line numbers.
- *
- * The numbers are a reading aid for a screen where entries wrap, not part of
- * the record — pasting them into an issue would be pasting this screen's
- * layout rather than the log.
+ * Full timestamps, no line numbers: the numbers are a reading aid for wrapped
+ * entries, so pasting them would paste this screen's layout, not the log.
  */
 private fun copyText(entries: List<LogEntry>, selected: Set<Int>): String = entries
     .filterIndexed { index, _ -> selected.isEmpty() || index in selected }

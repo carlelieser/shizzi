@@ -24,8 +24,8 @@ private val LocalShizziSpacing: ProvidableCompositionLocal<ShizziSpacing> =
     staticCompositionLocalOf { Spacing }
 
 /**
- * Token access for composables: `ShizziTheme.colors.primary` rather than a
- * global import, so a preview or a test can substitute a different set.
+ * `ShizziTheme.colors.primary` rather than a global import, so a preview or a
+ * test can substitute a different set.
  */
 object ShizziTheme {
     val colors: ShizziColors
@@ -39,15 +39,12 @@ object ShizziTheme {
 }
 
 /**
- * Applies the app's tokens, resolving [choice] against the system setting.
- *
  * SYSTEM is the only value that consults the platform; LIGHT and DARK are
  * absolute, which is the point of offering them.
  *
- * MaterialTheme is still supplied underneath because Material components
- * (Switch, RadioButton, ripples) read from it, and leaving it at its defaults
- * would put stock purple inside an otherwise turquoise app. It carries the
- * same palette so those components inherit it.
+ * MaterialTheme is supplied underneath with the same palette, because Material
+ * components read from it and its defaults would put stock purple inside an
+ * otherwise turquoise app.
  */
 @Composable
 fun ShizziTheme(
@@ -74,12 +71,7 @@ fun ShizziTheme(
     }
 }
 
-/**
- * Mirrors the tokens into a Material scheme.
- *
- * Only the roles Material components actually read are mapped; the rest keep
- * their defaults, since nothing in this app renders them.
- */
+/** Only the roles Material components actually read; nothing renders the rest. */
 private fun materialSchemeFrom(colors: ShizziColors, isDark: Boolean) = when {
     isDark -> darkColorScheme(
         primary = colors.primary,

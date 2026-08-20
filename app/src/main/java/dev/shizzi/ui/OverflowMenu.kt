@@ -24,29 +24,17 @@ import dev.shizzi.ui.theme.ShadowOffset
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.brutalSurface
 
-/**
- * Narrow enough to sit under the button, wide enough for the longest label.
- *
- * A minimum rather than a fixed width: a menu that clipped its own text would
- * be worse than one that grows, and these labels are short verbs.
- */
+/** A minimum, not a fixed width: clipping a label would be worse than growing. */
 private val MenuMinWidth = 180.dp
 
 /**
- * Lifts the menu clear of the header rule.
- *
- * Material anchors a dropdown flush against its button, which would put the
- * menu's top border directly on the line under the header — two parallel
- * edges a couple of pixels apart, reading as a rendering fault.
+ * Lifts the menu clear of the header rule. Material anchors flush to the
+ * button, putting the menu's top border a few pixels from the header's line —
+ * two parallel edges that read as a rendering fault.
  */
 private val MenuOffset = DpOffset(x = 0.dp, y = 4.dp)
 
-/**
- * Square, like every other surface here.
- *
- * Material's menu default is a 4dp rounded rectangle; nothing else in this app
- * has a rounded corner.
- */
+/** Material's menu defaults to 4dp rounded; nothing else here has a corner. */
 private val SquareShape = RectangleShape
 
 /** What an unavailable control fades to, matching the settings screen. */
@@ -55,22 +43,13 @@ private const val DisabledAlpha = 0.4f
 /**
  * The header's overflow menu.
  *
- * A menu rather than the actions themselves: Log had one action in its header
- * and room for exactly one more, and a screen that grows a third would have
- * had to become this anyway. Holding the first item behind a tap costs a press
- * and buys somewhere for the rest to go.
+ * Material's [DropdownMenu] for its dismiss and placement behaviour — outside
+ * taps, back press, staying on screen near an edge — with its surface switched
+ * off, since a rounded elevated card would look imported from another app.
  *
- * Built on Material's [DropdownMenu] for its dismiss and placement behaviour —
- * outside taps, back press, and staying on screen near an edge are the parts
- * worth not reimplementing — but with its surface replaced. Material draws a
- * rounded, elevated, tonally shaded card; every other surface in this app is a
- * square bordered box with a hard offset shadow, and a menu that disagreed
- * would look like it came from a different application.
- *
- * Has no disabled state. A menu with nothing worth opening should not be on
- * screen at all — greying it out leaves a control that explains nothing about
- * why it cannot be used, in the one spot a screen has for saying something
- * useful. Callers omit it instead.
+ * Has no disabled state: a menu with nothing worth opening should not be on
+ * screen, and greying it out spends the one spot a screen has for saying
+ * something useful on a control that explains nothing. Callers omit it.
  */
 @Composable
 fun OverflowMenu(
@@ -86,18 +65,14 @@ fun OverflowMenu(
             icon = Icons.Filled.MoreVert,
             contentDescription = "More options",
             onClick = { isOpen = true },
-            // Turquoise when something inside is waiting on the user. A menu
-            // hides its contents by design, so state that used to be legible in
-            // the header — a live selection, say — needs a way to show through
-            // the closed button or it is simply lost.
+            // A menu hides its contents, so state that was legible in the
+            // header — a live selection — needs to show through the button.
             tint = if (isMarked) colors.primary else colors.onSurface,
         )
 
-        // Material's own surface is switched off entirely — transparent, square,
-        // unelevated, unbordered — so the popup is nothing but a positioned,
-        // dismissable container. The look comes from a brutalSurface inside it,
-        // the same call every other bordered element in the app makes, rather
-        // than from a stroke reimplemented here that would drift from it.
+        // Nothing but a positioned, dismissable container; the look comes from
+        // the brutalSurface inside, the same call every other bordered element
+        // makes rather than a stroke reimplemented here that would drift.
         DropdownMenu(
             expanded = isOpen,
             onDismissRequest = { isOpen = false },
@@ -109,10 +84,9 @@ fun OverflowMenu(
             border = null,
         ) {
             Box(
-                // Room for the shadow to land in. The popup sizes itself to this
-                // content, so without the padding the offset shadow would be
-                // drawn outside the window and clipped away — which is exactly
-                // what left the menu looking like a plain bordered box.
+                // Room for the shadow to land in: the popup sizes itself to
+                // this content, so without the padding the offset shadow falls
+                // outside the window and is clipped, leaving a plain box.
                 modifier = Modifier.padding(end = ShadowOffset, bottom = ShadowOffset),
             ) {
                 Column(
@@ -134,15 +108,10 @@ fun OverflowMenu(
 class OverflowScope internal constructor(internal val dismiss: () -> Unit)
 
 /**
- * One line of the menu.
+ * Left-aligned mono like the settings rows, not a Material menu item.
  *
- * Left-aligned mono, like the settings rows rather than like a Material menu
- * item — this app's lists are text against a left margin, and centring a
- * single column of short labels would leave them floating.
- *
- * Closes the menu before acting. Every action here finishes immediately and
- * leaves nothing to look at behind the menu, so holding it open would just
- * mean a second tap to dismiss it.
+ * Closes before acting: every action here finishes immediately and leaves
+ * nothing to look at, so holding the menu open only costs a second tap.
  */
 @Composable
 fun OverflowScope.OverflowItem(

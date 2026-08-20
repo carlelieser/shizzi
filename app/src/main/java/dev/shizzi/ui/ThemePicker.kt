@@ -32,16 +32,12 @@ private val OptionHeight = 44.dp
 private val OptionIconSize = 20.dp
 
 /**
- * The glyph for each choice.
- *
- * A sun and a moon for the two explicit themes, and both at once for the one
- * that follows the device — Brightness4 is the rayed sun with a crescent cut
- * into it, which reads as "either, depending" and puts the three options in one
- * visual family rather than pairing two celestial glyphs with an unrelated
- * third.
+ * Sun, moon, and both at once for the one that follows the device —
+ * Brightness4 is a rayed sun with a crescent cut into it, which reads as
+ * "either, depending" and keeps the three in one visual family.
  *
  * Not BrightnessAuto or SettingsBrightness, which read as automatic
- * *brightness* — a different setting that also exists on this device.
+ * *brightness* — a different setting that also exists on the device.
  */
 private fun glyphFor(choice: ThemeChoice): ImageVector = when (choice) {
     ThemeChoice.SYSTEM -> Icons.Filled.Brightness4
@@ -50,11 +46,9 @@ private fun glyphFor(choice: ThemeChoice): ImageVector = when (choice) {
 }
 
 /**
- * What the option is called, for anything that cannot see the glyph.
- *
  * Written out rather than derived from the enum name: with the text gone this
- * is the only thing naming the option, which makes it real copy rather than a
- * debug string that happens to be readable.
+ * is the only thing naming the option, so it is copy, not a debug string that
+ * happens to be readable.
  */
 private fun labelFor(choice: ThemeChoice): String = when (choice) {
     ThemeChoice.SYSTEM -> "Match system"
@@ -63,12 +57,8 @@ private fun labelFor(choice: ThemeChoice): String = when (choice) {
 }
 
 /**
- * The three theme options, as one row of adjacent surfaces.
- *
- * Not a radio group: this design has no unfilled-circle vocabulary, and
- * inventing one for a single screen would sit oddly beside everything else,
- * which is bordered boxes. A filled box is already how the app says "this one
- * is active" on the connect button.
+ * Not a radio group: this design has no unfilled-circle vocabulary, and a
+ * filled box is already how the app says "this one is active".
  */
 @Composable
 fun ThemePicker(selected: ThemeChoice, onSelect: (ThemeChoice) -> Unit) {
@@ -111,9 +101,7 @@ private fun ThemeOption(
             ),
         contentAlignment = Alignment.Center,
     ) {
-        // The name moves to the description rather than being dropped. It is
-        // the only thing naming this option once the glyph replaces the word,
-        // so a screen reader has nothing else to announce.
+        // With the glyph replacing the word, this is all a screen reader has.
         Icon(
             imageVector = glyphFor(choice),
             contentDescription = labelFor(choice),

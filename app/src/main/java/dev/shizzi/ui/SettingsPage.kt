@@ -24,15 +24,13 @@ private const val ISSUE_URL = "https://github.com/carlelieser/shizzi/issues/new"
 private const val AUTHOR_URL = "https://carlelieser.dev"
 
 /**
- * How far the screen dims while diagnostics run.
- *
- * Enough to read as unavailable, not so far that the user cannot see what they
- * were looking at — the toast reporting the run sits over this, and a screen
- * faded to nothing would make it look like a dialog on an empty page.
+ * Enough to read as unavailable, not so far the user loses their place — the
+ * run's toast sits over this, and a page faded to nothing would make it look
+ * like a dialog on an empty screen.
  */
 private const val BusyAlpha = 0.4f
 
-/** What the settings screen renders, so the page takes state rather than four values. */
+/** Grouped so the page takes state rather than four values. */
 data class SettingsState(
     val shizuku: ShizukuState,
     val theme: ThemeChoice,
@@ -40,10 +38,7 @@ data class SettingsState(
     val isRunningDiagnostics: Boolean,
 )
 
-/**
- * The callbacks the settings screen needs, grouped so it stays within the
- * parameter limit alongside the state it renders.
- */
+/** Likewise, so the page stays within the parameter limit. */
 data class SettingsActions(
     val onSetTheme: (ThemeChoice) -> Unit,
     val onSetLogging: (Boolean) -> Unit,
@@ -54,9 +49,7 @@ data class SettingsActions(
 
 /**
  * Everything configurable, plus the Shizuku detail the home badge cannot hold.
- *
- * Scrolls: four sections already exceed a short screen, and a list that
- * clipped its last row would hide the links entirely.
+ * Scrolls, since four sections already exceed a short screen.
  */
 @Composable
 fun SettingsPage(
@@ -67,10 +60,8 @@ fun SettingsPage(
     val isBusy = state.isRunningDiagnostics
 
     Column(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
-        // Outside the dimmed region: a run takes as long as upstream selection
-        // takes to settle, and stranding the user on this screen for that long
-        // would be a worse bargain than letting them leave it. The run belongs
-        // to the ViewModel, so navigating away does not abandon it.
+        // Outside the dimmed region: a run lasts as long as upstream selection
+        // takes to settle, and the ViewModel owns it, so leaving is free.
         ScreenHeader(title = "Settings", onBack = onBack)
 
         Column(
@@ -101,13 +92,10 @@ fun SettingsPage(
 /**
  * Swallows every pointer event over this subtree while [isBusy].
  *
- * Done here rather than by threading an `isEnabled` through each row: there are
- * three kinds of control on this screen — a switch, tappable rows, and a radio
- * group — and disabling them individually means every future row has to
- * remember to opt in. Consuming at the boundary cannot be forgotten.
- *
- * Consumes in the initial pass, so the events never reach the children rather
- * than being handled and then undone.
+ * At the boundary rather than an `isEnabled` per row: this screen has three
+ * kinds of control, and disabling them individually means every future row has
+ * to remember to opt in. Consumed in the initial pass, so events never reach
+ * the children at all.
  */
 private fun Modifier.inert(isBusy: Boolean): Modifier = when {
     !isBusy -> this
@@ -123,12 +111,8 @@ private fun Modifier.inert(isBusy: Boolean): Modifier = when {
 }
 
 /**
- * Titles only.
- *
- * The three rows name things a developer already knows — a log, a switch that
- * fills it, a probe run — so a description under each restated the title in a
- * longer sentence. The About rows keep theirs, where the subtitle carries the
- * destination rather than a gloss.
+ * Titles only: these name things a developer already knows, so a description
+ * under each just restated the title at greater length.
  */
 @Composable
 private fun DeveloperSection(isLogging: Boolean, actions: SettingsActions) {
@@ -138,8 +122,7 @@ private fun DeveloperSection(isLogging: Boolean, actions: SettingsActions) {
         onCheckedChange = actions.onSetLogging,
     )
 
-    // Directly under the toggle that decides whether it records anything, so
-    // the switch and what it fills sit together.
+    // Under the toggle that decides whether it records anything.
     SettingsAction(
         label = SettingsText(title = "View logs"),
         onClick = actions.onOpenLog,
@@ -152,15 +135,11 @@ private fun DeveloperSection(isLogging: Boolean, actions: SettingsActions) {
 }
 
 /**
- * The three outbound links.
+ * Opened from the context rather than a callback threaded from the ViewModel:
+ * no state changes, so routing it upward adds a hop that forwards an intent.
  *
- * Opened from the context rather than through a callback threaded from the
- * ViewModel: there is no state to change and nothing to decide, so routing it
- * upward would add a hop that only forwards an intent.
- *
- * Only Author keeps a subtitle, because there it names the destination rather
- * than describing the row. The first two said in a sentence what their titles
- * and the external-link glyph already carry.
+ * Only Author keeps a subtitle, where it names the destination rather than
+ * restating what the title and the external-link glyph already carry.
  */
 @Composable
 private fun AboutSection() {

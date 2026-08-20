@@ -23,24 +23,17 @@ val BorderWidth = 2.dp
 val ShadowOffset = 6.dp
 
 /**
- * Draws the app's one surface treatment: a hard offset shadow, a thick border,
- * and a flat fill.
+ * The app's one surface treatment: hard offset shadow, thick border, flat fill.
+ * Material's elevation shadow is blurred and colour-filtered, so the shadow is
+ * a plain displaced rectangle instead. One modifier for every bordered element,
+ * so the treatment cannot drift per component.
  *
- * Material's elevation shadow is blurred and colour-filtered, which is the
- * opposite of what this design needs, so the shadow is drawn as a plain solid
- * rectangle displaced from the element. Routing every bordered element through
- * a single modifier is what keeps the treatment identical everywhere instead
- * of drifting per component.
+ * The border always takes the theme's structural colour, since its job is to
+ * separate surface from page — tinting it to match a turquoise fill drew it in
+ * the colour it sits on and it vanished.
  *
- * The border is always the theme's structural colour — black in light, white in
- * dark — because its job is to separate the surface from the page. Tinting it
- * to match a turquoise fill draws it in the colour it sits on and it disappears,
- * which is what happened when the accent border was applied to the filled
- * button.
- *
- * @param isPressed shifts the element into its shadow. The shadow is
- *   suppressed and the content translated by the same offset, so the surface
- *   appears to depress to meet the page.
+ * @param isPressed shifts the element into its shadow, which is suppressed, so
+ *   the surface appears to depress to meet the page.
  */
 fun Modifier.brutalSurface(
     fill: Color,
@@ -56,8 +49,8 @@ fun Modifier.brutalSurface(
             val stroke = BorderWidth.toPx()
             val shadow = ShadowOffset.toPx()
 
-            // Suppressed while pressed: the element has moved into the space
-            // the shadow occupied, so drawing both would double the mass.
+            // The element has moved into the space the shadow occupied, so
+            // drawing both would double the mass.
             if (!isPressed) {
                 drawRect(
                     color = colors.shadow,
@@ -80,10 +73,8 @@ fun Modifier.brutalSurface(
 }
 
 /**
- * Tracks press state for [brutalSurface].
- *
- * Kept next to the modifier so a caller wiring up a pressable surface does not
- * have to remember which interaction to collect.
+ * Kept beside [brutalSurface] so a caller wiring up a pressable surface does
+ * not have to remember which interaction to collect.
  */
 @Composable
 fun InteractionSource.isPressed(): Boolean = collectIsPressedAsState().value

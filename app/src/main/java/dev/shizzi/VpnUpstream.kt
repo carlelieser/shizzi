@@ -3,16 +3,13 @@ package dev.shizzi
 import android.content.Context
 
 /**
- * Keeps the datapath pinned to a VPN for as long as the session has one.
+ * Keeps the datapath pinned to a VPN for as long as the session has one, so
+ * TetherSession runs the lifecycle without also arbitrating what counts as a
+ * VPN worth binding to.
  *
- * Owns the adoption rule so TetherSession is left running the lifecycle rather
- * than also arbitrating what counts as a VPN worth binding to.
- *
- * Absence is not a failure: a session with no VPN runs unbound and tethers
- * exactly as it did before this existed. Refusing to start without one would
- * make the app useless to anyone not running a VPN, which is not what this is
- * for. What binding buys is that once a VPN *is* adopted, losing it fails the
- * dials instead of quietly falling back to the physical network.
+ * Absence is not a failure — a session with no VPN runs unbound and tethers
+ * normally. What binding buys is that once one *is* adopted, losing it fails
+ * the dials instead of quietly falling back to the physical network.
  */
 class VpnUpstream(
     private val context: Context,
@@ -28,10 +25,8 @@ class VpnUpstream(
     val isBound: Boolean get() = handle != UNBOUND
 
     /**
-     * Binds [group] to whatever VPN is up now, then follows it.
-     *
      * Called before the downstream comes up so nothing can dial unbound: the
-     * datapath exists by this point, and no client can be attached yet.
+     * datapath exists by now, and no client can be attached yet.
      */
     fun follow(group: SessionResources) {
         val watcher = VpnWatchdog(context.connectivityManager()) { binding ->

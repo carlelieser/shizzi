@@ -30,20 +30,15 @@ private val RowIconSize = 20.dp
 private val RowPadding = Spacing.md
 
 /**
- * The height the switch occupies in layout.
- *
- * Roughly a single-line label's, so the toggle row is as tall as the text rows
- * around it. requiredHeight overrides the incoming constraint rather than
- * negotiating within it, which is what lets the control keep drawing at its
- * natural size and stay comfortably touchable while occupying less.
+ * Roughly a single-line label's, so the toggle row matches the text rows.
+ * requiredHeight overrides the incoming constraint rather than negotiating
+ * within it, which is what lets the control draw larger than it occupies.
  */
 private val SwitchLayoutHeight = 24.dp
 
 /**
- * The label pair every settings row carries: name, then what it does.
- *
- * The name sits on `subheading` rather than `label` so it outranks its own
- * description — the two were 13sp over 14sp, which inverted the hierarchy.
+ * `subheading` rather than `label` so the name outranks its own description —
+ * the two were 13sp over 14sp, which inverted the hierarchy.
  */
 @Composable
 fun SettingsLabel(title: String, subtitle: String, modifier: Modifier = Modifier) {
@@ -68,11 +63,8 @@ fun SettingsLabel(title: String, subtitle: String, modifier: Modifier = Modifier
 }
 
 /**
- * Names a group of rows.
- *
- * Uppercase mono, muted, with space above it: the section break is carried by
- * the gap and the change of register rather than by a rule, which would add a
- * second horizontal line to a screen that already has one under the header.
+ * The break is carried by the gap and the change of register rather than a
+ * rule, which would put a second horizontal line under the header's.
  */
 @Composable
 fun SectionLabel(text: String) {
@@ -88,15 +80,12 @@ fun SectionLabel(text: String) {
 }
 
 /**
- * A setting that is on or off.
+ * The switch is 48dp tall against a title's ~22dp, so a row centred on it takes
+ * its height from the control and puts ~13dp of air around the label that the
+ * text-only rows do not have. The row is padded to match [SettingsAction] and
+ * the switch overhangs it instead, keeping the section on one rhythm.
  *
- * The switch is 48dp tall against a title's ~22dp, and a row centred on the
- * taller child would take its height from the control — putting ~13dp of air
- * above and below the label that the text-only rows beside it do not have. So
- * the row is padded to match [SettingsAction] and the switch is allowed to
- * overhang it, keeping every row in the section on the same rhythm.
- *
- * Invisible while the rows carried subtitles: a two-line label came close
+ * Invisible while the rows carried subtitles, where a two-line label came close
  * enough to the switch's height to hide the difference.
  */
 @Composable
@@ -115,11 +104,8 @@ fun SettingsToggle(
             modifier = Modifier.weight(1f),
         )
 
-        // Laid out at the label's height while still drawing and responding to
-        // touch at its natural 48dp. The switch is a fixed-size control — that
-        // size being its own touch target — and a row centred on it takes its
-        // height from the control, putting air around the label that the
-        // text-only rows beside it do not have.
+        // Laid out at the label's height, still drawing and taking touch at its
+        // natural 48dp.
         Switch(
             checked = isChecked,
             onCheckedChange = onCheckedChange,
@@ -134,16 +120,11 @@ fun SettingsToggle(
 }
 
 /**
- * A row that does something when tapped.
+ * The trailing glyph says where the tap goes — onward within the app, or out of
+ * the corner and outside it — which is worth knowing before the browser opens.
  *
- * The trailing glyph says where the tap goes: an arrow onward for work done in
- * the app, an arrow leaving the corner for anything that opens outside it. That
- * distinction is worth drawing before the tap rather than after the browser
- * opens.
- *
- * The outward arrow is not auto-mirrored. It points away rather than forward,
- * so it reads as "leaves the app" rather than as a direction of travel, and
- * flipping it in a right-to-left locale would lose that.
+ * The outward arrow is not auto-mirrored: it means "leaves the app" rather than
+ * a direction of travel, and flipping it in an RTL locale would lose that.
  */
 @Composable
 fun SettingsAction(
@@ -184,8 +165,5 @@ private fun TrailingIcon(icon: ImageVector) {
     )
 }
 
-/**
- * A row's two strings, grouped so a row composable stays inside the three
- * parameter limit once it also takes a control and a callback.
- */
+/** Grouped so a row stays inside the parameter limit with a control and a callback. */
 data class SettingsText(val title: String, val subtitle: String = "")

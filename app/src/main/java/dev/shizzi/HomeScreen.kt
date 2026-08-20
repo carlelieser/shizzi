@@ -68,9 +68,9 @@ fun HomeScreen(
         onRequestPermission = actions.onRequestPermission,
     )
 
-    // Posted here rather than from the settings screen: a run outlives a visit
-    // to it, and a toast owned by that screen would vanish the moment the user
-    // navigated home to wait — taking the export button with it.
+    // Not from the settings screen: a run outlives a visit to it, and that
+    // toast would vanish the moment the user navigated home to wait — taking
+    // the export button with it.
     DiagnosticsToast(
         state = diagnostics,
         toasts = toasts,
@@ -103,10 +103,8 @@ fun HomeScreen(
                 actions = LogActions(
                     onClear = actions.onClearLog,
                     onEnableLogging = { actions.onSetLogging(true) },
-                    // Goes home as well as starting: the session's progress is
-                    // reported by the status glyph and the button, none of
-                    // which is on this screen. Leaving the user on an empty log
-                    // would hide the thing they just asked for.
+                    // Goes home as well as starting: the status glyph and the
+                    // button are what report progress, and neither is here.
                     onStartSession = {
                         goHome()
                         actions.onToggle()
@@ -125,9 +123,9 @@ fun HomeScreen(
             )
         }
 
-        // Last child, so it draws over whichever screen is showing. Toasts are
-        // app-level rather than per-screen: an error raised on Home is still
-        // worth seeing after navigating to the log to investigate it.
+        // Last child, so it draws over whichever screen is showing. App-level
+        // rather than per-screen: an error raised on Home is still worth seeing
+        // after navigating to the log to investigate it.
         ToastHost(
             state = toasts,
             modifier = Modifier.align(Alignment.BottomCenter).systemBarsPadding(),

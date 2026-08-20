@@ -47,24 +47,19 @@ private val SpinnerSize = 18.dp
 private val SpinnerStroke = 2.dp
 
 /**
- * How far across a toast must be dragged to count as dismissed.
- *
- * A fraction of the toast's own width rather than a fixed distance, so the
- * gesture asks for the same proportion of a swipe on any screen. Low enough
- * that a flick clears it, high enough that a thumb brushing sideways during a
- * tap does not.
+ * A fraction of the toast's width, so the gesture asks the same proportion on
+ * any screen. Low enough for a flick, high enough that a thumb brushing
+ * sideways during a tap does not.
  */
 private const val DismissFraction = 0.35f
 
 /**
- * Renders the toast stack above whatever screen is showing.
+ * Bottom-anchored and stacked upward, so the newest sits closest to the thumb
+ * and older ones rise out of the way rather than shifting it under a finger
+ * already moving toward it.
  *
- * Bottom-anchored and stacked upward, so the newest toast sits closest to the
- * thumb and older ones rise out of the way rather than shifting the newest one
- * around under a finger already moving toward it.
- *
- * Callers overlay this in a Box rather than nesting content inside it: toasts
- * float over the screen and must not participate in its layout.
+ * Overlay this in a Box rather than nesting content: toasts float over the
+ * screen and must not join its layout.
  */
 @Composable
 fun ToastHost(state: ToastState, modifier: Modifier = Modifier) {
@@ -88,11 +83,8 @@ fun ToastHost(state: ToastState, modifier: Modifier = Modifier) {
 }
 
 /**
- * One toast, with its own expiry timer.
- *
- * The timer is keyed on the message as well as the key, so replacing a toast in
- * place restarts its dwell rather than letting the replacement inherit the
- * remaining time of the message it replaced.
+ * The timer is keyed on the message as well as the key, so a replacement gets
+ * a full dwell rather than inheriting what was left of the message it replaced.
  */
 @Composable
 private fun ToastRow(toast: Toast, onExpire: () -> Unit) {
@@ -118,21 +110,16 @@ private fun ToastRow(toast: Toast, onExpire: () -> Unit) {
 }
 
 /**
- * Drags the element sideways with a finger, dismissing past [DismissFraction].
+ * Drags sideways, dismissing past [DismissFraction].
  *
- * Written directly rather than with SwipeToDismissBox: that composable frames
- * the gesture as revealing a background — a delete action behind a list row —
- * and wraps the content in its own layout to draw it. A toast has nothing
- * behind it and needs to keep the offset shadow it draws itself, so the
- * machinery would all be spent being suppressed.
+ * Not SwipeToDismissBox: that frames the gesture as revealing a background and
+ * wraps the content in its own layout to draw it, so for a toast — nothing
+ * behind it, and an offset shadow of its own to keep — the machinery would all
+ * be spent being suppressed.
  *
- * Fades with distance, so a partial drag shows the dismissal coming rather
- * than only reporting it once the threshold is crossed. A gesture released
- * short of the threshold springs back, which is what makes the fade readable
- * as progress rather than as a glitch.
- *
- * Disabled while the toast is busy, matching the tap: work in flight should
- * not be swiped away any more than it should be tapped away.
+ * Fades with distance so a partial drag shows the dismissal coming, and springs
+ * back short of the threshold, which is what makes the fade read as progress.
+ * Disabled while busy, matching the tap.
  */
 private fun Modifier.swipeToDismiss(
     isEnabled: Boolean,
@@ -144,9 +131,8 @@ private fun Modifier.swipeToDismiss(
     val offset = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
 
-    // The gesture handler is keyed on `isEnabled` alone, so it is not restarted
-    // per recomposition; without this it would capture the callback from the
-    // composition that installed it and go stale.
+    // The handler is keyed on `isEnabled` alone, so without this it would
+    // capture the callback from the composition that installed it.
     val dismiss by rememberUpdatedState(onDismiss)
 
     var width by remember { mutableIntStateOf(0) }
@@ -183,12 +169,8 @@ private fun ToastSurface(toast: Toast, onDismiss: () -> Unit, modifier: Modifier
         modifier = modifier
             .fillMaxWidth()
             .brutalSurface(fill = ShizziTheme.colors.surface)
-            // Tapping the body dismisses. An indefinite toast has no other way
-            // out, and a timed one is often read before it expires.
-            //
-            // Not while busy: the toast is reporting work that is still
-            // running, and dismissing it would hide the only indication that
-            // anything is happening while leaving the work in flight.
+            // An indefinite toast has no other way out. Not while busy, where
+            // dismissing hides the only sign of work still in flight.
             .clickable(enabled = !toast.isBusy, onClick = onDismiss)
             .padding(ShizziTheme.spacing.lg),
         verticalAlignment = Alignment.CenterVertically,
@@ -205,20 +187,13 @@ private fun ToastSurface(toast: Toast, onDismiss: () -> Unit, modifier: Modifier
 }
 
 /**
- * The message, and under it the detail if there is one.
+ * Mono throughout: a toast reports machine facts — an exception, a path, a
+ * refusal from the framework — which this app sets in mono everywhere else.
+ * `log` rather than `caption`, which is tracked and uppercase wherever it is
+ * used and wrong for a path.
  *
- * Mono throughout. A toast reports machine facts — an exception, a path, a
- * refusal from the framework — and those are the strings this app sets in mono
- * everywhere else it shows them. `body` is Inter, which put the same text in
- * prose type here and in mono on the log screen.
- *
- * The detail takes `log` rather than `caption`: both are mono, but caption is
- * tracked and uppercase wherever it is used, which is the wrong treatment for a
- * path. `log` is what the log screen already renders these in.
- *
- * The two lines separate by weight rather than by size. A second size in a
- * surface this small would read as two unrelated things stacked; one step of
- * weight says the first line names what happened and the second qualifies it.
+ * The two lines separate by weight, not size. A second size in a surface this
+ * small reads as two unrelated things stacked.
  */
 @Composable
 private fun ToastText(toast: Toast, modifier: Modifier = Modifier) {
@@ -226,10 +201,8 @@ private fun ToastText(toast: Toast, modifier: Modifier = Modifier) {
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(ShizziTheme.spacing.xs),
     ) {
-        // W500, the weight a settings row's name carries. The message is the
-        // toast's title and the detail under it is its description, which is
-        // the same relationship — so it takes the same step up from the line
-        // below it rather than sitting at the log's reading weight.
+        // W500, the weight a settings row's name carries: message-to-detail is
+        // the same relationship as name-to-description.
         Text(
             text = toast.message,
             style = ShizziTheme.typography.log.copy(fontWeight = FontWeight.W500),
@@ -247,16 +220,11 @@ private fun ToastText(toast: Toast, modifier: Modifier = Modifier) {
 }
 
 /**
- * Muted, matching the connect button's spinner.
+ * Muted, matching the connect button's spinner: turquoise means a session is
+ * up, and a spinner is the wait before anyone knows whether it will be.
  *
- * Work in progress is not the accent's job. Turquoise means a session is up,
- * and a spinner is the state before anyone knows whether that will be true —
- * colouring it the same makes the palette say "connected" during the wait that
- * might yet fail.
- *
- * A determinate bar would be the better shape if the work reported progress,
- * but a probe sequence has no measurable fraction complete — it waits on
- * upstream selection, which either settles or times out.
+ * Indeterminate because a probe sequence has no measurable fraction complete —
+ * it waits on upstream selection, which either settles or times out.
  */
 @Composable
 private fun ToastSpinner() {
@@ -268,17 +236,11 @@ private fun ToastSpinner() {
 }
 
 /**
- * The action label, styled as text rather than as a second bordered box.
+ * Text, not a second bordered box, which inside a bordered surface would read
+ * as a box in a box — so weight carries the affordance instead.
  *
- * A button inside a bordered surface would nest two of the same treatment and
- * read as a box in a box, so weight carries the affordance instead: heavier
- * than the message beside it, in the same colour.
- *
- * Not turquoise. The accent means a session is up — it belongs to the connect
- * button and the connected status glyph — and spending it on every toast that
- * happens to carry a button dilutes the one thing it is for. A toast is already
- * the most prominent thing on screen while it is up; its action does not also
- * need the loudest colour in the app.
+ * Not turquoise: the accent means a session is up, and a toast is already the
+ * most prominent thing on screen without also taking the loudest colour.
  */
 @Composable
 private fun ToastActionButton(action: ToastAction, onDismiss: () -> Unit) {

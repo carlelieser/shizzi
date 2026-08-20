@@ -17,34 +17,22 @@ sealed interface ToastDuration {
 /** The default dwell for informational toasts. */
 val ToastShort = ToastDuration.Timed(4.seconds)
 
-/**
- * An optional button on the right edge of a toast.
- *
- * Present when the toast describes something the user can do about it — a
- * missing Shizuku permission is worth a GRANT button; a completed teardown is
- * not worth anything.
- */
+/** For a toast the user can act on — a missing permission is worth a GRANT. */
 @Immutable
 data class ToastAction(val label: String, val onClick: () -> Unit)
 
 /**
  * A message on screen.
  *
- * @param key identity for replacement. Posting a toast whose key matches one
- *   already showing updates it in place rather than stacking a second copy, so
- *   a state that changes repeatedly (the session going up, then down, then
- *   failing) occupies one slot rather than three.
- * @param detail a second line under the message, muted. For the specifics a
- *   headline should not carry — a file path, an interface name — which are
- *   worth stating exactly but not worth the weight of the first line.
- * @param isBusy draws a spinner in the leading position. Pairs with
- *   [ToastDuration.Indefinite]: a toast reporting work in progress is dismissed
- *   by the work finishing, not by a timer.
- * @param onDismiss run when the toast leaves the screen, however it leaves —
- *   tapped away, expired, or replaced by its action. For a toast whose content
- *   is owned elsewhere: without it, clearing the host would leave the state
- *   that produced the toast still set, and revisiting the screen would post the
- *   same stale result again.
+ * @param key identity for replacement: a repeatedly changing state (session up,
+ *   then down, then failed) occupies one slot rather than three.
+ * @param detail a muted second line, for specifics a headline should not carry
+ *   — a file path, an interface name.
+ * @param isBusy draws a leading spinner. Pairs with [ToastDuration.Indefinite],
+ *   since work in progress is ended by the work, not a timer.
+ * @param onDismiss run however the toast leaves — tapped away, expired, or
+ *   replaced by its action. For content owned elsewhere: without it the state
+ *   that produced the toast stays set and posts the same stale result again.
  */
 @Immutable
 data class Toast(
@@ -73,11 +61,9 @@ object ToastKeys {
 }
 
 /**
- * Holds the toasts currently on screen.
- *
- * A list rather than a single slot because an error and a permission prompt are
- * independent facts, and hiding one behind the other loses information. Keyed
- * replacement is what keeps that list from growing without bound.
+ * A list rather than one slot: an error and a permission prompt are independent
+ * facts, and hiding one behind the other loses information. Keyed replacement
+ * is what bounds the list.
  */
 class ToastState {
     private val entries = mutableStateListOf<Toast>()

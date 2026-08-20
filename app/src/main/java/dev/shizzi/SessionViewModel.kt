@@ -18,10 +18,9 @@ import kotlinx.coroutines.withContext
 /**
  * Renders whatever the session service is doing, and asks it to start or stop.
  *
- * The session deliberately does not live here. An Activity's ViewModel dies
- * when the user swipes the app away, and with it the death recipient that
- * drops an orphaned hotspot — so the session belongs to [SessionService],
- * which outlives the UI. This holds only what the screen needs.
+ * Holds no session: a ViewModel dies when the user swipes the app away, taking
+ * the death recipient that drops an orphaned hotspot with it, so the session
+ * belongs to [SessionService].
  */
 class SessionViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -31,11 +30,9 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
     private val settingsStore = getApplication<App>().settingsStore
 
     /**
-     * Persisted settings, null until the first read completes.
-     *
-     * Null rather than a default: the theme has to be known before the first
-     * frame, and rendering under SYSTEM while the stored choice loads flashes
-     * the wrong theme. The activity holds the frame until this is non-null.
+     * Null rather than a default until the first read lands: rendering under
+     * SYSTEM while the stored choice loads flashes the wrong theme, so the
+     * activity holds the frame until this is non-null.
      */
     val settings: StateFlow<Settings?> = settingsStore.settings.stateIn(
         scope = viewModelScope,
@@ -49,12 +46,7 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
     private val localDiagnostics = MutableStateFlow<DiagnosticsState>(DiagnosticsState.Idle)
     val diagnosticsState: StateFlow<DiagnosticsState> = localDiagnostics.asStateFlow()
 
-    /**
-     * The collector mirroring the service's state, if one is running.
-     *
-     * refreshShizukuState runs on every onResume, so without this a second
-     * collector would be launched each time the user returns to the screen.
-     */
+    /** Guards against a second collector per onResume. */
     private var sessionCollector: Job? = null
 
     init {
@@ -63,12 +55,9 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
     }
 
     /**
-     * Mirrors the service's state into the screen while a session is running.
-     *
-     * The service publishes its own StateFlow; when none is running the local
-     * state stands alone, which renders as idle. Shizuku availability is
-     * tracked here either way, since it gates the button before any session
-     * exists.
+     * With no service running the local state stands alone and renders as idle.
+     * Shizuku availability is tracked here either way — it gates the button
+     * before any session exists.
      */
     private fun observeSession() {
         if (sessionCollector?.isActive == true) return
@@ -89,12 +78,8 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
     }
 
     /**
-     * Applies the logging setting to both processes that write entries.
-     *
-     * The app process is set directly and the shell process through the
-     * binder: a running session writes most of its entries from the shell, so
-     * persisting alone would leave the toggle without effect until the next
-     * start.
+     * Both processes, because a running session writes most of its entries from
+     * the shell — persisting alone leaves the toggle inert until the next start.
      */
     fun setLogging(enabled: Boolean) {
         SessionLog.setEnabled(enabled)
@@ -117,18 +102,12 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
     }
 
     /**
-     * Abandons a start that is still in progress.
+     * Routed to stop, not toggle: a cancel arrives while the status is LOADING,
+     * which toggle would read as idle and answer with a second session. The
+     * same teardown dismantles a half-built session and a whole one.
      *
-     * Routed to stop rather than to toggle: toggle reads the status, and a
-     * cancel arrives while that status is LOADING, which would fall through to
-     * its start branch and ask for a second session. Teardown is the same path
-     * a finished session takes, so a half-built one is dismantled by the code
-     * that knows how to dismantle a whole one.
-     *
-     * The screen resets here rather than waiting for the service to publish it.
-     * Cancelling is not a request that can fail, so the only thing waiting
-     * would communicate is that the app is still thinking about it. The
-     * teardown drains behind the reset.
+     * Resets the screen here rather than awaiting the service — cancelling
+     * cannot fail, so waiting would only show the app thinking about it.
      */
     fun cancel() {
         localState.update {
@@ -138,16 +117,13 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
     }
 
     /**
-     * Runs the probe sequence directly rather than through the service.
+     * Direct rather than through the service: diagnostics tear down what they
+     * create and hold no session for it to outlive.
      *
-     * Diagnostics tear down everything they create and hold no session, so
-     * there is nothing for the service to outlive.
-     *
-     * The result lands in [diagnosticsState] rather than in the session state.
-     * It used to be folded through applyOutcome, which reads a *session status*
-     * — so a probe report, whose JSON carries no "state" field, was read as a
-     * session that had gone READY, and a run silently reset the home screen's
-     * status, interface, and byte counters while discarding the report itself.
+     * The result lands in [diagnosticsState], not session state. Folding it
+     * through applyOutcome — which reads a *session status* — parsed a report
+     * carrying no "state" field as a session gone READY, resetting the home
+     * screen's status, interface, and counters while discarding the report.
      */
     fun runProbes() {
         if (localDiagnostics.value is DiagnosticsState.Running) return
@@ -176,18 +152,14 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
     }
 
     /**
-     * Empties both halves of the log.
+     * Empties both halves, since neither process can write the other's. The
+     * shell half is attempted even unbound, at the cost of a bind: that file
+     * holds most of the history, and skipping it shows a "cleared" log with
+     * entries still in it.
      *
-     * The app's file is cleared here and the shell's across the binder, because
-     * neither process can write the other's. The shell half is attempted even
-     * when nothing is bound, which costs a bind — worth it, since that file
-     * holds most of the history and leaving it would show a "cleared" log that
-     * still had entries in it.
-     *
-     * @param onCleared runs on the main thread once both halves are done,
-     *   carrying null on success or why the shell's half survived. The screen
-     *   needs it to reload: the list is read once per visit, so a clear that
-     *   did not re-read would leave the entries on screen.
+     * @param onCleared runs on the main thread with null on success, else why
+     *   the shell's half survived. The screen needs it to reload — the list is
+     *   read once per visit.
      */
     fun clearLog(onCleared: (String?) -> Unit) {
         viewModelScope.launch {

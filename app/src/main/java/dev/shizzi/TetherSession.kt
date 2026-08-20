@@ -9,20 +9,11 @@ import org.json.JSONObject
 enum class SessionState { IDLE, STARTING, ACTIVE, ERROR }
 
 /**
- * Owns a long-lived protected-tethering session inside the shell process.
+ * Owns a long-lived protected-tethering session inside the shell process. The
+ * probe runner answers questions and tears down immediately; this holds the
+ * session up until asked to stop.
  *
- * The probe runner answers questions and tears down immediately; this holds the
- * session up until asked to stop, which is what a client needs in order to
- * connect and pass traffic.
- *
- * The start ordering is not arbitrary and must not be rearranged: the
- * downstream restarts *before* the TUN is created. startTethering runs
- * UpstreamNetworkMonitor.startObserveUpstreamNetworks, which clears
- * mNetworkMap and registers a fresh callback, so a TUN created earlier has
- * already fired onAvailable and is dropped by that wipe. Meanwhile
- * setPreferTestNetworks only writes a flag — it never re-runs selection — so
- * the flag has to be true before the TUN arrives. Restarting first is the only
- * order satisfying both.
+ * The start ordering in [bringUp] is load-bearing — see the notes there.
  */
 class TetherSession(private val context: Context) {
 
@@ -53,9 +44,7 @@ class TetherSession(private val context: Context) {
 
         state = SessionState.STARTING
         SessionLog.info("session start requested")
-        // The first thing worth knowing about a log someone sends in: which
-        // device and build produced it, and whether the shell process matches
-        // the app that is talking to it.
+        // The first thing worth knowing about a log someone sends in.
         SessionLog.info(
             "device: ${Build.MANUFACTURER} ${Build.MODEL}, " +
                 "android ${Build.VERSION.RELEASE} (sdk ${Build.VERSION.SDK_INT}), " +
@@ -76,16 +65,15 @@ class TetherSession(private val context: Context) {
     }
 
     /**
-     * Establishes the session in the order upstream selection requires.
+     * Establishes the session in the order upstream selection requires: TUN,
+     * then preference, then downstream. A live test network has to exist when
+     * tethering goes looking, or it selects from what it already knows — on a
+     * device carrying a stale entry from a previous boot, that is a dead
+     * interface holding the slot the real TUN needs.
      *
      * @throws IllegalStateException naming the step that failed.
      */
     private fun bringUp(): String {
-        // The TUN is built before the downstream, so a live test network exists
-        // at the moment tethering goes looking for an upstream. Starting the
-        // hotspot first makes it select from whatever test networks it already
-        // knows about — on a device carrying a stale entry from a previous boot
-        // that is the dead interface, and it holds the slot the real TUN needs.
         val group = SessionResources(testNetworkApi, context.connectivityManager())
         resources = group
 
@@ -123,14 +111,9 @@ class TetherSession(private val context: Context) {
     }
 
     /**
-     * Stops the session because something it depends on went away.
-     *
-     * A teardown failure is kept alongside [problem] rather than overwritten by
-     * it: "the hotspot is still up" is the more dangerous of the two, and it is
-     * the one the plain message would hide.
-     *
-     * The caller logs its own cause — upstream drift and VPN loss are different
-     * failures and each names itself before handing over.
+     * A teardown failure is kept alongside [problem], not overwritten by it:
+     * "the hotspot is still up" is the more dangerous of the two and the one
+     * the plain message hides. The caller logs its own cause.
      */
     private fun tearDownAfter(problem: String) {
         stop()
@@ -144,18 +127,12 @@ class TetherSession(private val context: Context) {
     }
 
     /**
-     * Asks tethering to prefer test networks, forcing a real state transition.
+     * Driven false-then-true, because the framework acts on the *change*: an
+     * already-true preference set true again is a no-op, and the new TUN then
+     * appears with nothing prompting tethering to look at it.
      *
-     * Set after the TUN exists, and driven false-then-true rather than straight
-     * to true. The framework acts on the *change*: if the preference is already
-     * true — which it is on the first start after a stop, since teardown clears
-     * it but a start that never ran teardown does not — setting it to true again
-     * is a no-op and no reselection happens. The new TUN then appears with
-     * nothing prompting tethering to look at it, and it keeps whatever it had
-     * cached.
-     *
-     * That was the intermittent failure: stop, start, and the upstream never
-     * moves off the previous selection for the full verify window, while the
+     * That was the intermittent failure — stop, start, and the upstream never
+     * moves off the previous selection for the whole verify window, while the
      * next start works because its teardown had just cleared the preference.
      */
     private fun preferTestNetworks() {
@@ -166,12 +143,9 @@ class TetherSession(private val context: Context) {
     }
 
     /**
-     * Brings the hotspot up, cycling it first if one is already running.
-     *
-     * The user does not have to have enabled tethering beforehand: a session is
-     * a request to share this connection, and requiring them to turn the
-     * hotspot on first — then failing with an upstream error if they did not —
-     * makes the app's internal sequencing their problem.
+     * Cycles the hotspot if one is already running, so the user does not have
+     * to have enabled tethering first — failing them with an upstream error
+     * would make the app's internal sequencing their problem.
      */
     private fun restartDownstream() {
         val control = DownstreamControl(context)
@@ -184,18 +158,13 @@ class TetherSession(private val context: Context) {
     }
 
     /**
-     * Waits for the hotspot to actually be tethered, not merely requested.
-     *
-     * startWifiTethering returns once the request is accepted, which is well
-     * before the downstream is up. Proceeding on the acceptance alone builds
-     * the TUN while tethering has no downstream to serve — it never starts
-     * looking for an upstream, so `Upstream wanted` stays false and
+     * Tethered, not merely requested: startWifiTethering returns on acceptance,
+     * well before the downstream is up, and tethering with nothing to serve
+     * never looks for an upstream — `Upstream wanted` stays false and
      * verifyUpstream times out against an empty list. That was every "tethering
      * reports []" failure on the device.
      *
-     * Bounded, and a timeout is not fatal here: verifyUpstream is the real
-     * gate, and it reports the upstream truthfully whether or not this settled
-     * in time.
+     * A timeout here is not fatal; verifyUpstream is the real gate.
      */
     private fun awaitDownstreamTethered() {
         val deadline = System.currentTimeMillis() + DOWNSTREAM_SETTLE_MS
@@ -249,10 +218,8 @@ class TetherSession(private val context: Context) {
         vpn.stop()
         teardown.removeShutdownHook()
 
-        // Read before anything is released: the counters come from
-        // /proc/net/dev, which stops knowing the interface once it is gone.
-        // Null when the session never went active, whose summary would be all
-        // zeroes on top of the failure the user is actually reading.
+        // Before anything is released: /proc/net/dev stops knowing the
+        // interface once it is gone. Null if the session never went active.
         val summary = if (activeSince == 0L) null else sessionSummary()
 
         val downstreamProblem = teardown.releaseDownstream()
@@ -281,11 +248,8 @@ class TetherSession(private val context: Context) {
     }
 
     /**
-     * What the session did, in one line, for the log.
-     *
-     * Only for a session that reached ACTIVE. A failed start tears down through
-     * the same path, and summarising it would report all zeroes over the error
-     * that is the actual finding.
+     * Only for a session that reached ACTIVE: a failed start tears down through
+     * the same path, and summarising it reports zeroes over the real finding.
      */
     private fun sessionSummary(): String {
         val traffic = interfaceName?.let(InterfaceCounters::read) ?: Traffic()
@@ -320,9 +284,8 @@ class TetherSession(private val context: Context) {
         // token, and nothing on the far side of the binder should render it.
         put("isVpnBound", vpn.isBound)
 
-        // Both only while active, and from deliberately different sources: the
-        // byte counters are read from /proc in process on every call, while the
-        // device count comes from dumpsys behind its own rate limit. That split
+        // Different sources on purpose: bytes from /proc in process every call,
+        // the device count from dumpsys behind its own rate limit. That split
         // is what keeps a fast poll affordable.
         val traffic = interfaceName?.let(InterfaceCounters::read) ?: Traffic()
         put("bytesUp", traffic.up)

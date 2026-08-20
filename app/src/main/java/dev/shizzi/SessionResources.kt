@@ -10,11 +10,10 @@ import datapath.Session as DatapathSession
 
 /**
  * The atomic resource group of R3.5: TUN fd, framework interface, network
- * handle, and callback registration are acquired and released together.
+ * handle, and callback registration, acquired and released together.
  *
- * The invariant is that nothing outside this class holds any of the four. The
- * spec's T-2 failure (orphaned testtun, leaked fd) is what happens when those
- * lifetimes drift apart, so they are deliberately not independently settable.
+ * Nothing outside this class holds any of the four — T-2 (orphaned testtun,
+ * leaked fd) is what happens when those lifetimes drift apart.
  */
 class SessionResources(
     private val testNetworkApi: TestNetworkApi,
@@ -37,9 +36,8 @@ class SessionResources(
      * Creates the TUN, registers it as a test network, and blocks until
      * ConnectivityManager reports it available.
      *
-     * @throws IllegalStateException with the failing operation named, per the
-     *   engineering guideline on error messages. Callers must call [release] on
-     *   failure; partial state is never left implicitly owned.
+     * @throws IllegalStateException naming the failing operation. Callers must
+     *   [release] on failure; partial state is never implicitly owned.
      */
     fun acquire(
         addresses: List<android.net.LinkAddress>,
@@ -59,16 +57,13 @@ class SessionResources(
     }
 
     /**
-     * Holds a NetworkRequest so the framework does not linger the network away.
+     * Tethering consuming a network as its upstream is not a NetworkRequest, so
+     * with nothing requesting it ConnectivityService lingers the test network
+     * the moment it connects — "handleLingerComplete for [N TEST]" about four
+     * seconds after start, with the upstream reverting to cellular.
      *
-     * Tethering consuming a network as its upstream is not a NetworkRequest.
-     * With nothing requesting it, ConnectivityService lingers the test network
-     * as soon as it connects and destroys it when the timer expires — observed
-     * as "handleLingerComplete for [N TEST]" about four seconds after start,
-     * with the upstream reverting to cellular.
-     *
-     * requestNetwork rather than registerNetworkCallback: only a request keeps
-     * a network alive; a listen callback observes without holding it.
+     * requestNetwork, not registerNetworkCallback: only a request holds a
+     * network; a listen callback observes it.
      */
     private fun requestKeepAlive() {
         val request = NetworkRequest.Builder()
@@ -91,15 +86,12 @@ class SessionResources(
     }
 
     /**
-     * Starts the userspace stack that consumes the TUN.
-     *
      * Nothing in the kernel forwards packets out of a test network's TUN, so
      * without this tethered clients get a DHCP lease and no connectivity. The
-     * datapath joins the same atomic group as the fd it reads: [release] stops
-     * it before the fd it is reading from is closed.
+     * datapath joins the same atomic group as the fd it reads.
      *
-     * @throws IllegalStateException naming the fd, so a failure here is
-     *   distinguishable from a TUN or test-network failure.
+     * @throws IllegalStateException naming the fd, so this is distinguishable
+     *   from a TUN or test-network failure.
      */
     fun startDatapath(mtu: Int) {
         val descriptor = fileDescriptor
@@ -118,11 +110,8 @@ class SessionResources(
     /**
      * Pins the datapath's upstream sockets to [handle], or unbinds at 0.
      *
-     * Lives here because the datapath session is one of the four things this
-     * class owns and nothing outside it holds a reference.
-     *
-     * @throws IllegalStateException if there is no datapath to bind, which
-     *   means acquire and startDatapath have not both succeeded.
+     * @throws IllegalStateException when acquire and startDatapath have not
+     *   both succeeded.
      */
     fun bindDatapathTo(handle: Long) {
         val session = datapathSession
@@ -132,11 +121,9 @@ class SessionResources(
     }
 
     /**
-     * Waits for the test network matching [interfaceName] to become available.
-     *
-     * R3.3 makes the timeout a hard failure: returning without a Network would
-     * let tethering start against an upstream that does not exist yet, which is
-     * exactly the R4.3 race.
+     * R3.3 makes the timeout a hard failure: returning without a Network lets
+     * tethering start against an upstream that does not exist yet — the R4.3
+     * race.
      */
     private fun awaitAvailability(interfaceName: String, timeoutMs: Int): Network {
         val deadline = System.currentTimeMillis() + timeoutMs
@@ -149,12 +136,9 @@ class SessionResources(
     }
 
     /**
-     * Locates the framework Network bound to [interfaceName].
-     *
-     * Polling rather than registerNetworkCallback: from the shell UID that call
-     * is rejected with "Package android does not belong to 2000" even when the
-     * context is rebased onto com.android.shell, while the network itself
-     * registers fine. getAllNetworks/getLinkProperties carry no such check.
+     * Polling rather than registerNetworkCallback, which from the shell UID is
+     * rejected with "Package android does not belong to 2000" even with the
+     * context rebased. getAllNetworks/getLinkProperties carry no such check.
      */
     private fun findNetworkOn(interfaceName: String): Network? =
         connectivityManager.allNetworks.firstOrNull { candidate ->
@@ -162,17 +146,14 @@ class SessionResources(
         }
 
     /**
-     * Releases every held resource, continuing past individual failures.
-     *
-     * Teardown is the one place where continuing after an error is correct: a
-     * failed teardownTestNetwork must not prevent closing the fd. Each failure
-     * is still surfaced in the returned summary rather than swallowed.
+     * Continues past individual failures — a failed teardownTestNetwork must
+     * not prevent closing the fd — and returns them rather than swallowing them.
      */
     fun release(): List<String> {
         val problems = mutableListOf<String>()
 
-        // Releasing the request first lets the framework linger the network
-        // normally rather than racing our explicit teardown.
+        // First, so the framework lingers the network normally rather than
+        // racing our explicit teardown.
         keepAliveCallback?.let { callback ->
             runCatching { connectivityManager.unregisterNetworkCallback(callback) }
                 .onFailure { problems += "unregisterNetworkCallback: ${it.message}" }
@@ -200,9 +181,8 @@ class SessionResources(
         fileDescriptor = null
         tun = null
 
-        // To the session log, not only logcat: a leaked TUN, fd, or test
-        // network is what the next start trips over, and the user reading the
-        // log after a bad session is the one who needs to see it.
+        // To the session log, not only logcat: a leak here is what the next
+        // start trips over, and the log is where that gets diagnosed.
         problems.forEach { SessionLog.warn("teardown problem: $it") }
         return problems
     }

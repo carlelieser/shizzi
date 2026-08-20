@@ -34,14 +34,11 @@ import dev.shizzi.ui.theme.brutalSurface
 private val StatusIconSize = 96.dp
 
 /**
- * The screen's one large element: what the session is doing, as a glyph.
+ * No label under it: the button already reads START or STOP, and a word between
+ * the two would state the same fact a third time.
  *
- * No label under it. The button below already reads START or STOP, and a word
- * between the two would be a third statement of the same fact.
- *
- * Turquoise only when connected. The other three states are neutral, so the
- * screen has exactly one saturated element at a time and that element always
- * means the tunnel is up.
+ * Turquoise only when connected, so the screen has exactly one saturated
+ * element at a time and it always means the tunnel is up.
  */
 @Composable
 fun StatusIcon(status: UiStatus) {
@@ -63,18 +60,13 @@ fun StatusIcon(status: UiStatus) {
 }
 
 /**
- * Sweeps a highlight across the glyph, left to right, while [isActive].
+ * Sweeps a highlight across the glyph while [isActive]. A pulse would read as a
+ * heartbeat — a rate the user is invited to judge — where a sweep has direction
+ * and no rate to read into.
  *
- * The alternative for "working on it" is a pulse, which reads as a heartbeat —
- * a thing with a rate, which invites the user to judge whether it is going
- * well. A sweep has a direction and no rate to read into.
- *
- * The highlight is composited with SrcATop: clipped to the glyph's own pixels,
- * so the band never paints the empty box around it, but leaving the glyph
- * intact wherever the gradient is transparent. SrcIn does the clipping too and
- * looks correct in a still frame, but it *replaces* the destination — the
- * transparent ends of the sweep erase the icon, so only the lit band is
- * visible and the glyph appears to be eaten as the band travels.
+ * SrcATop, not SrcIn: both clip to the glyph's pixels, but SrcIn *replaces* the
+ * destination, so the transparent ends of the sweep erase the icon and it
+ * appears to be eaten as the band travels.
  *
  * Inactive returns the receiver untouched, leaving no animation running behind
  * an idle screen.
@@ -98,10 +90,9 @@ private fun Modifier.shimmer(isActive: Boolean): Modifier = composed {
         .drawWithContent {
             drawContent()
 
-            // Travels from fully off one edge to fully off the other, so the
-            // band enters and leaves rather than appearing mid-glyph. The band
-            // is narrower than the glyph so it reads as a glint crossing it
-            // rather than the whole icon changing brightness at once.
+            // Off one edge to off the other, so the band enters and leaves
+            // rather than appearing mid-glyph. Narrower than the glyph, so it
+            // reads as a glint crossing rather than the icon brightening.
             val band = size.width * 0.6f
             val head = progress * (size.width + band * 2f) - band
 
@@ -121,12 +112,9 @@ private fun Modifier.shimmer(isActive: Boolean): Modifier = composed {
 }
 
 /**
- * One family across every state, so the glyph reads as the same object
- * changing rather than four unrelated pictures.
- *
- * Ready and loading share the plain mark: what distinguishes them is the
- * shimmer and the button, not a different icon, and swapping the glyph mid-
- * animation would make the shimmer look like a transition to something else.
+ * One family throughout, so the glyph reads as one object changing rather than
+ * four pictures. Ready and loading share a mark — the shimmer distinguishes
+ * them, and swapping glyphs mid-animation would read as a transition.
  */
 private fun glyphFor(status: UiStatus): ImageVector = when (status) {
     UiStatus.READY -> Icons.Filled.WifiTethering
@@ -144,11 +132,8 @@ private fun descriptionFor(status: UiStatus): String = when (status) {
 }
 
 /**
- * States Shizuku availability in the header, and nothing more.
- *
- * Absent when Shizuku is ready, because a badge confirming that the thing which
- * is supposed to work does work is noise on every launch. What to do about a
- * problem is the toast's job; this only says one exists.
+ * Absent when Shizuku is ready: a badge confirming the expected is noise on
+ * every launch. What to do about a problem is the toast's job.
  */
 @Composable
 fun ShizukuBadge(state: ShizukuState) {

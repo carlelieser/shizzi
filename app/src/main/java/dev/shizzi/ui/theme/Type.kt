@@ -12,22 +12,16 @@ import androidx.compose.ui.unit.sp
 import dev.shizzi.R
 
 /**
- * Declares one weight of a variable font.
+ * Declares one weight of a variable font. All three faces ship as single
+ * variable files — three static JetBrains Mono weights measured 808 KB against
+ * 296 KB.
  *
- * All three faces ship as single variable files: three static JetBrains Mono
- * weights measured 808 KB against 296 KB for the variable file.
- *
- * The catch is that the variation axis never reaches the typeface. Compose's
- * resource [Font] loads through `ResourcesCompat.getFont(context, resId)`,
- * which takes an ID and nothing else, and caches on it — so every entry
- * pointing at one file resolves to the same typeface at that file's *default*
- * weight, whatever weight was requested. The settings below are kept because
- * they cost nothing and record intent, but a family renders at one weight and
- * it is the file's, not this one's. That is why the bundled Space Grotesk is
- * rebased to default to Medium (see [Display]).
- *
- * The declared [FontWeight] still matters: it is how a family matches a
- * requested weight to an entry.
+ * The variation axis never reaches the typeface: Compose's resource [Font]
+ * loads through `ResourcesCompat.getFont(context, resId)`, which takes an ID
+ * and caches on it, so every entry pointing at one file resolves to that file's
+ * *default* weight whatever was requested. Hence [Display] being rebased. The
+ * settings below record intent and cost nothing; the declared [FontWeight] does
+ * still matter, as how a family matches a request to an entry.
  */
 @OptIn(ExperimentalTextApi::class)
 private fun variableWeight(resource: Int, weight: Int) = Font(
@@ -43,13 +37,9 @@ private val Mono = FontFamily(
 )
 
 /**
- * Space Grotesk, rebased to default to Medium.
- *
- * Upstream the weight axis is 300-700 defaulting to 300, and since a family
- * renders at its file's default (see [variableWeight]) every heading came out
- * Light. The bundled file is a partial instance limited to `wght=500:500:700`,
- * which moves the default onto Medium and keeps the axis, so the family renders
- * Medium without shipping a second file.
+ * Rebased to default to Medium: upstream the axis is 300-700 defaulting to 300,
+ * which rendered every heading Light. The bundled file is a partial instance
+ * limited to `wght=500:500:700`.
  */
 private val Display = FontFamily(
     variableWeight(R.font.space_grotesk, 500),
@@ -63,21 +53,13 @@ private val Sans = FontFamily(
 )
 
 /**
- * The type scale, split three ways by role.
+ * Split three ways by role: Space Grotesk for headings, where letterforms are
+ * visible and a neutral face says nothing; Inter for strings long enough that
+ * reading them is the point; JetBrains Mono for labels, badges, and log lines,
+ * which name a thing rather than being read as a sentence.
  *
- * Headings are Space Grotesk: it carries the geometric, slightly odd character
- * this design wants at the sizes where letterforms are actually visible, which
- * is exactly where a neutral face says nothing.
- *
- * Prose is Inter, on the strings long enough that reading them is the point.
- *
- * Labels are JetBrains Mono — button text, badges, captions, log lines. These
- * name a thing rather than being read as a sentence, and mono is what makes
- * uppercase tracked text read as deliberate rather than shouted.
- *
- * The split keeps mono off continuous prose, where uniform advance widths
- * flatten the word shapes readers recognise: irrelevant for a two-word label,
- * real for a paragraph.
+ * The split is what keeps mono off prose, where uniform advance widths flatten
+ * the word shapes readers recognise.
  */
 @Immutable
 data class ShizziTypography(
@@ -110,11 +92,9 @@ val Typography = ShizziTypography(
     ),
 
     /**
-     * Names a row within a screen: a settings item, a section.
-     *
-     * Sits above [body] so a row's name outranks its own description. Borrowing
-     * `label` here put the name at 13sp over a 14sp subtitle, which inverted the
-     * hierarchy and read as small rather than as a heading.
+     * Names a row: a settings item, a section. Above [body] so a name outranks
+     * its own description — borrowing `label` put a 13sp name over a 14sp
+     * subtitle and inverted the hierarchy.
      */
     subheading = TextStyle(
         fontFamily = Display,

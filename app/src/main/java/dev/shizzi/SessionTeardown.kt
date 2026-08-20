@@ -3,12 +3,9 @@ package dev.shizzi
 import android.content.Context
 
 /**
- * Releases what a session holds outside its own resource group.
- *
- * Split from TetherSession so that class stays about the lifecycle it runs;
- * this is the ordering-sensitive release of things the framework owns — the
- * upstream selection, the downstream, and the shutdown hook that covers an
- * abrupt process exit.
+ * The ordering-sensitive release of what the framework owns — upstream
+ * selection, downstream, and the shutdown hook for an abrupt exit. Split from
+ * TetherSession so that class stays about the lifecycle it runs.
  */
 class SessionTeardown(private val context: Context) {
 
@@ -16,17 +13,13 @@ class SessionTeardown(private val context: Context) {
     private var shutdownHook: Thread? = null
 
     /**
-     * Drops the downstream if this process exits through System.exit.
-     *
      * Covers exactly one path: ShizukuServiceStarter calling System.exit when
-     * the server it depends on goes away. That is a real path — it is how the
-     * 13.5.4 crash took this process down — but it is the only one.
+     * its server goes away, which is how the 13.5.4 crash took this process
+     * down.
      *
-     * ART does not unwind shutdown hooks on signal death, so SIGTERM and
-     * SIGKILL both bypass this entirely; a device test confirmed SIGTERM
-     * leaves the hotspot tethered with no hook output. Recovery for those
-     * cases lives in the app process, which outlives this one (see
-     * SessionViewModel's session-lost handling).
+     * ART does not unwind hooks on signal death, so SIGTERM and SIGKILL bypass
+     * this — a device test left the hotspot tethered with no hook output.
+     * Recovery for those lives in the app process, which outlives this one.
      */
     fun installShutdownHook() {
         val hook = Thread {
@@ -49,26 +42,20 @@ class SessionTeardown(private val context: Context) {
     }
 
     /**
-     * Hands the upstream back to the framework *before* the TUN is destroyed.
-     *
-     * This ordering is load-bearing. Destroying the interface first leaves
-     * tethering holding a reference it can no longer act on: its own teardown
-     * needs the interface to exist, so it logs
+     * Hands the upstream back *before* the TUN is destroyed. This ordering is
+     * load-bearing: tethering's own teardown needs the interface to exist, so
+     * destroying it first leaves the framework logging
      *
      *     [BpfCoordinator] Could not detach program: Fail to get interface
      *     params for interface testtunNN
      *
-     * and keeps naming that dead interface as the current upstream. Every
-     * subsequent start then fails verifyUpstream against a ghost, permanently,
-     * with nothing the app can do about it afterward and no way for a user to
-     * clear it short of a reboot. A device test wedged a phone exactly this way
-     * for eleven consecutive sessions.
+     * and still naming that dead interface as the upstream. Every later start
+     * then fails verifyUpstream against a ghost — permanently, unclearable
+     * short of a reboot. A device test wedged a phone this way for eleven
+     * consecutive sessions.
      *
-     * So the preference is cleared while the TUN is still up, and this waits
-     * for tethering to actually move off it. The wait is bounded and best
-     * effort: if the framework has not let go by the deadline, destroying the
-     * interface is still better than leaking it, and the next start reselects
-     * from whatever remains.
+     * The wait is bounded and best effort: past the deadline, destroying the
+     * interface still beats leaking it.
      */
     fun releaseUpstreamSelection(interfaceName: String?) {
         val cleared = runCatching { TetheringPreferenceApi(context).setPreferTestNetworks(false) }
@@ -119,12 +106,8 @@ class SessionTeardown(private val context: Context) {
         const val UPSTREAM_POLL_MS = 500L
 
         /**
-         * How long teardown waits for tethering to release the owned TUN.
-         *
-         * Shorter than the settle deadline: this is the framework letting go of
-         * an interface rather than selecting and validating a new one, and the
-         * session is already on its way out. Exceeding it is logged and the
-         * interface destroyed regardless — leaking the TUN would be worse.
+         * Shorter than the settle deadline: letting go of an interface is not
+         * selecting and validating a new one, and the session is on its way out.
          */
         const val UPSTREAM_RELEASE_MS = 4_000L
     }

@@ -18,21 +18,17 @@ import dev.shizzi.ui.theme.HeaderHeight
 import dev.shizzi.ui.theme.ShizziTheme
 
 /**
- * The rule under the header.
- *
- * 1dp rather than Dp.Hairline: a hairline is one physical pixel, which on a
- * ~3x density screen is a third of the thinnest line the rest of the app draws
- * and reads as a rendering artefact next to the 2dp borders elsewhere.
+ * 1dp rather than Dp.Hairline, which is one physical pixel — a third of the
+ * thinnest line elsewhere on a ~3x screen, reading as an artefact beside 2dp
+ * borders.
  */
 private val HeaderRule = 1.dp
 
 /**
- * The header shared by the two child screens: back button, left-aligned
- * title, and an optional action on the right edge.
+ * Back button, left-aligned title, optional action on the right edge.
  *
- * Home does not use this — it carries a status badge where the title would be,
- * and has no back button. It also goes without the rule below: Home's content
- * is centred in open space, so a line under its header would divide nothing.
+ * Home does not use this: it has a badge where the title would be, no back
+ * button, and content centred in open space that a rule would divide nothing of.
  */
 @Composable
 fun ScreenHeader(
@@ -46,9 +42,8 @@ fun ScreenHeader(
         modifier = Modifier
             .fillMaxWidth()
             .height(HeaderHeight)
-            // Drawn before the horizontal padding so the rule runs edge to
-            // edge; inside it the line would stop short of both margins and
-            // read as an underline on the title rather than as structure.
+            // Before the horizontal padding, so the rule runs edge to edge
+            // rather than reading as an underline on the title.
             .drawBehind {
                 val thickness = HeaderRule.toPx()
                 drawLine(

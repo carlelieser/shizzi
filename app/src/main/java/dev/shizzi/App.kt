@@ -9,12 +9,11 @@ import kotlinx.coroutines.launch
 import org.lsposed.hiddenapibypass.HiddenApiBypass
 
 /**
- * Holds the app Context for [ShizukuGate] and lifts hidden-API restrictions in
- * the app process.
+ * Holds the app Context for [ShizukuGate] and lifts hidden-API restrictions.
  *
- * The bypass matters for the app process only; the Shizuku shell process is not
- * subject to the same enforcement, but the app still reflects over
- * TetheringManager when reporting state.
+ * The bypass is for this process only — the shell process is not subject to the
+ * same enforcement — but the app still reflects over TetheringManager to report
+ * state.
  */
 class App : Application() {
 
@@ -37,11 +36,9 @@ class App : Application() {
     }
 
     /**
-     * Applies the stored logging setting to this process on launch.
-     *
      * The store is read asynchronously, so entries written before it arrives
-     * follow the default. That window is short and the default is on, which
-     * errs toward recording rather than silently dropping a launch failure.
+     * follow the default. The window is short and the default is on, erring
+     * toward recording rather than dropping a launch failure.
      */
     private fun applyLoggingSetting() {
         CoroutineScope(Dispatchers.IO).launch {

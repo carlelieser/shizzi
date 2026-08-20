@@ -11,12 +11,7 @@ sealed interface ShizukuState {
     data class Ready(val uid: Int, val isRoot: Boolean) : ShizukuState
 }
 
-/**
- * Resolves current Shizuku availability.
- *
- * Never requests permission — R1.3 forbids auto-requesting on launch, so the
- * request is a separate explicit call driven by a user action.
- */
+/** Never requests permission: R1.3 forbids auto-requesting on launch. */
 object ShizukuGate {
 
     const val PERMISSION_REQUEST_CODE = 4001
@@ -34,10 +29,9 @@ object ShizukuGate {
     }
 
     /**
-     * pingBinder() alone reports false until the sticky binder-received callback
-     * has been delivered, which made the UI claim Shizuku was stopped while a
-     * probe run against it was succeeding. getUid() throws only when there is
-     * genuinely no binder, so it settles the question directly.
+     * pingBinder() reports false until the sticky binder-received callback
+     * lands, which had the UI claiming Shizuku was stopped while a probe run
+     * against it succeeded. getUid() throws only when there is truly no binder.
      */
     private fun isBinderLive(): Boolean {
         if (Shizuku.pingBinder()) return true
@@ -45,9 +39,8 @@ object ShizukuGate {
     }
 
     /**
-     * A dead binder means either Shizuku is absent or merely stopped. The
-     * distinction drives different UI guidance (P-1 vs P-2), so it is resolved
-     * from the package manager rather than guessed.
+     * Absent or merely stopped drives different UI guidance (P-1 vs P-2), so
+     * the package manager settles it rather than a guess.
      */
     private fun resolveAbsentBinder(): ShizukuState = when {
         isShizukuInstalled() -> ShizukuState.NotRunning
@@ -78,11 +71,8 @@ object ShizukuGate {
     }
 
     /**
-     * The same identity, without the diagnostic annotations.
-     *
-     * [describeUid] explains a uid to someone reading a diagnostic report;
-     * this names it for someone reading a settings row, where "the path under
-     * test" would be commentary on the app rather than information.
+     * The same identity for a settings row, where [describeUid]'s "the path
+     * under test" would be commentary on the app rather than information.
      */
     fun shortUid(uid: Int): String = when (uid) {
         SHELL_UID -> "2000 (shell)"
@@ -91,15 +81,11 @@ object ShizukuGate {
     }
 
     /**
-     * The installed Shizuku's version name, or null when it is absent.
+     * From the package manager, not Shizuku.getVersion(), which returns the API
+     * level (13) rather than the release (13.6.0) — and the release is what
+     * matters, since 13.5.4 on Android 16 crashes within minutes.
      *
-     * Read from the package manager rather than from Shizuku.getVersion(),
-     * which returns the API level (13) rather than the release (13.6.0). The
-     * release is what matters here: 13.5.4 on Android 16 crashes within
-     * minutes, and this is the surface where that is visible.
-     *
-     * Available whether or not the service is running, since it does not go
-     * through the binder.
+     * Works whether or not the service is running; no binder involved.
      */
     fun installedVersion(): String? {
         val packageManager = App.instance.packageManager
