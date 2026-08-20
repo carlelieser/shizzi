@@ -11,17 +11,17 @@
 Creates a test TUN interface, sets it as the preferred tethering upstream, and
 forwards hotspot traffic through a Go datapath. Supports IPv4 and IPv6.
 
-## 📋 Requirements
+## Requirements
 
 - Android 13 (API 33+), arm64
 - [Shizuku](https://shizuku.rikka.app/) 13.6.0+
 
-## 📲 Install
+## Install
 
 Download the APK from the
 [latest release](https://github.com/carlelieser/shizzi/releases/latest).
 
-## ✨ Features
+## Features
 
 - 🚀 **Unlimited hotspot.** Sharing draws on your regular data instead of your
   hotspot allowance.
@@ -29,7 +29,7 @@ Download the APK from the
 - ⚙️ **Uses your existing hotspot.** No extra configuration required.
 - 🙌 **No root.** Shizuku is all it needs.
 
-## 🔨 Build
+## Build
 
 Needs the Android SDK with NDK, Go, and gomobile:
 
