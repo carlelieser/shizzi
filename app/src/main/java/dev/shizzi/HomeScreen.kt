@@ -51,7 +51,13 @@ fun HomeScreen(
 ) {
     val current = rememberNavigator()
     val goHome = { current.value = Screen.HOME }
-    HandleBack(current.value, goHome)
+
+    // Back from the log returns to settings, which is now the only way into it
+    // — sending it to Home would drop the user two levels from one gesture.
+    val goBack = {
+        current.value = if (current.value == Screen.LOG) Screen.SETTINGS else Screen.HOME
+    }
+    HandleBack(current.value, goBack)
 
     val toasts = rememberToastState()
     SessionToasts(
@@ -81,20 +87,20 @@ fun HomeScreen(
                 actions = SettingsActions(
                     onSetTheme = actions.onSetTheme,
                     onSetLogging = actions.onSetLogging,
+                    onOpenLog = { current.value = Screen.LOG },
                     onRunProbes = actions.onRunProbes,
                     onRequestPermission = actions.onRequestPermission,
                 ),
                 onBack = goHome,
             )
 
-            Screen.LOG -> LogPage(entries = rememberLogEntries(), onBack = goHome)
+            Screen.LOG -> LogPage(entries = rememberLogEntries(), onBack = goBack)
 
             Screen.HOME -> HomePage(
                 state = state,
                 actions = HomeActions(
                     onToggle = actions.onToggle,
                     onCancel = actions.onCancel,
-                    onOpenLog = { current.value = Screen.LOG },
                     onOpenSettings = { current.value = Screen.SETTINGS },
                 ),
             )

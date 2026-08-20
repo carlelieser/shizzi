@@ -8,11 +8,12 @@ import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 
 /**
- * The three screens, which form a two-level stack rather than a graph.
+ * The three screens, which form a stack rather than a graph.
  *
- * Home is the root; Log and Settings are its children and return to it. A
- * navigation library would add a dependency and a graph declaration to express
- * exactly this, so the app keeps its own.
+ * Home is the root, Settings its child, and Log a child of Settings — the only
+ * way into the log is the row under Developer. A navigation library would add a
+ * dependency and a graph declaration to express exactly this, so the app keeps
+ * its own.
  */
 enum class Screen { HOME, LOG, SETTINGS }
 

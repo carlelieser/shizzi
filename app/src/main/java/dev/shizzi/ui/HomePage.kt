@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.TextSnippet
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -59,7 +58,6 @@ fun HomePage(
     ) {
         HomeHeader(
             state = state,
-            onOpenLog = actions.onOpenLog,
             onOpenSettings = actions.onOpenSettings,
         )
 
@@ -98,7 +96,6 @@ fun HomePage(
 data class HomeActions(
     val onToggle: () -> Unit,
     val onCancel: () -> Unit,
-    val onOpenLog: () -> Unit,
     val onOpenSettings: () -> Unit,
 )
 
@@ -107,11 +104,15 @@ data class HomeActions(
  *
  * No title: the app has one home screen and naming it would state the obvious
  * at the largest type size on the page.
+ *
+ * One destination. The log used to sit beside settings, which gave the header
+ * two icons for a screen that is read occasionally and one that is opened
+ * rarely; it now lives under Developer in settings, alongside the toggle that
+ * decides whether it records anything.
  */
 @Composable
 private fun HomeHeader(
     state: SessionUiState,
-    onOpenLog: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
     Row(
@@ -127,11 +128,6 @@ private fun HomeHeader(
 
         Spacer(Modifier.weight(1f))
 
-        ShizziIconButton(
-            icon = Icons.AutoMirrored.Filled.TextSnippet,
-            contentDescription = "Log",
-            onClick = onOpenLog,
-        )
         ShizziIconButton(
             icon = Icons.Filled.Settings,
             contentDescription = "Settings",

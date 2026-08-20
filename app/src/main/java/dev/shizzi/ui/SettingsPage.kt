@@ -47,6 +47,7 @@ data class SettingsState(
 data class SettingsActions(
     val onSetTheme: (ThemeChoice) -> Unit,
     val onSetLogging: (Boolean) -> Unit,
+    val onOpenLog: () -> Unit,
     val onRunProbes: () -> Unit,
     val onRequestPermission: () -> Unit,
 )
@@ -130,6 +131,16 @@ private fun DeveloperSection(isLogging: Boolean, actions: SettingsActions) {
         ),
         isChecked = isLogging,
         onCheckedChange = actions.onSetLogging,
+    )
+
+    // Directly under the toggle that decides whether it records anything, so
+    // the switch and what it fills sit together.
+    SettingsAction(
+        label = SettingsText(
+            title = "View logs",
+            subtitle = "Everything this session recorded",
+        ),
+        onClick = actions.onOpenLog,
     )
 
     SettingsAction(
