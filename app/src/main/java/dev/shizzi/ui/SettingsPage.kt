@@ -157,19 +157,23 @@ private fun DeveloperSection(isLogging: Boolean, actions: SettingsActions) {
  * Opened from the context rather than through a callback threaded from the
  * ViewModel: there is no state to change and nothing to decide, so routing it
  * upward would add a hop that only forwards an intent.
+ *
+ * Only Author keeps a subtitle, because there it names the destination rather
+ * than describing the row. The first two said in a sentence what their titles
+ * and the external-link glyph already carry.
  */
 @Composable
 private fun AboutSection() {
     val context = LocalContext.current
 
     SettingsAction(
-        label = SettingsText(title = "Source", subtitle = "View the code on GitHub"),
+        label = SettingsText(title = "GitHub"),
         isExternal = true,
         onClick = { context.openUrl(SOURCE_URL) },
     )
 
     SettingsAction(
-        label = SettingsText(title = "Report a bug", subtitle = "Open an issue"),
+        label = SettingsText(title = "Report a bug"),
         isExternal = true,
         onClick = { context.openUrl(ISSUE_URL) },
     )

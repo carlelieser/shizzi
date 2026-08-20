@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.ArrowOutward
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -104,9 +104,14 @@ fun SettingsToggle(
 /**
  * A row that does something when tapped.
  *
- * The trailing glyph says where the tap goes: an arrow for work done in the
- * app, the external-link mark for anything that leaves it. That distinction is
- * worth drawing before the tap rather than after the browser opens.
+ * The trailing glyph says where the tap goes: an arrow onward for work done in
+ * the app, an arrow leaving the corner for anything that opens outside it. That
+ * distinction is worth drawing before the tap rather than after the browser
+ * opens.
+ *
+ * The outward arrow is not auto-mirrored. It points away rather than forward,
+ * so it reads as "leaves the app" rather than as a direction of travel, and
+ * flipping it in a right-to-left locale would lose that.
  */
 @Composable
 fun SettingsAction(
@@ -129,7 +134,7 @@ fun SettingsAction(
 
         TrailingIcon(
             icon = if (isExternal) {
-                Icons.AutoMirrored.Filled.OpenInNew
+                Icons.Filled.ArrowOutward
             } else {
                 Icons.AutoMirrored.Filled.ArrowForward
             },
