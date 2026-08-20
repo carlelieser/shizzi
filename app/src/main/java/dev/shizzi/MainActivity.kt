@@ -80,6 +80,7 @@ class MainActivity : ComponentActivity() {
                             onSetLogging = viewModel::setLogging,
                             onRunProbes = viewModel::runProbes,
                             onDismissDiagnostics = viewModel::dismissDiagnostics,
+                            onClearLog = viewModel::clearLog,
                         ),
                     )
                 }

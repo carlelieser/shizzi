@@ -10,6 +10,7 @@ import dev.shizzi.ui.DiagnosticsToast
 import dev.shizzi.ui.HandleBack
 import dev.shizzi.ui.HomeActions
 import dev.shizzi.ui.HomePage
+import dev.shizzi.ui.LogActions
 import dev.shizzi.ui.LogPage
 import dev.shizzi.ui.Screen
 import dev.shizzi.ui.SessionToasts
@@ -34,6 +35,7 @@ data class AppActions(
     val onSetLogging: (Boolean) -> Unit,
     val onRunProbes: () -> Unit,
     val onDismissDiagnostics: () -> Unit,
+    val onClearLog: (onCleared: (String?) -> Unit) -> Unit,
 )
 
 /**
@@ -94,7 +96,24 @@ fun HomeScreen(
                 onBack = goHome,
             )
 
-            Screen.LOG -> LogPage(entries = rememberLogEntries(), onBack = goBack)
+            Screen.LOG -> LogPage(
+                log = rememberLogEntries(),
+                toasts = toasts,
+                isLogging = settings.isLogging,
+                actions = LogActions(
+                    onClear = actions.onClearLog,
+                    onEnableLogging = { actions.onSetLogging(true) },
+                    // Goes home as well as starting: the session's progress is
+                    // reported by the status glyph and the button, none of
+                    // which is on this screen. Leaving the user on an empty log
+                    // would hide the thing they just asked for.
+                    onStartSession = {
+                        goHome()
+                        actions.onToggle()
+                    },
+                    onBack = goBack,
+                ),
+            )
 
             Screen.HOME -> HomePage(
                 state = state,

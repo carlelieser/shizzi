@@ -67,6 +67,9 @@ object ToastKeys {
 
     /** A diagnostics run: in progress, then its outcome. */
     const val DIAGNOSTICS = "diagnostics"
+
+    /** Clearing the log: the confirmation, then what it managed to clear. */
+    const val CLEAR_LOG = "clear-log"
 }
 
 /**
