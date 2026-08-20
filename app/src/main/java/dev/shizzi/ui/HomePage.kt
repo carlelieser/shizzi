@@ -109,6 +109,9 @@ data class HomeActions(
  * two icons for a screen that is read occasionally and one that is opened
  * rarely; it now lives under Developer in settings, alongside the toggle that
  * decides whether it records anything.
+ *
+ * Settings is secondary here — the connect button is the screen's purpose, and
+ * the header is where you go when you are not doing that.
  */
 @Composable
 private fun HomeHeader(
@@ -128,10 +131,14 @@ private fun HomeHeader(
 
         Spacer(Modifier.weight(1f))
 
+        // Muted rather than full strength. The connect button is what the
+        // screen is for, and a header glyph at the same weight as the status
+        // text reads as an equal peer of it.
         ShizziIconButton(
             icon = Icons.Filled.Settings,
             contentDescription = "Settings",
             onClick = onOpenSettings,
+            tint = ShizziTheme.colors.onSurfaceMuted,
         )
     }
 }
