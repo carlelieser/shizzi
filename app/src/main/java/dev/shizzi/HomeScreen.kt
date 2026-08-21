@@ -36,6 +36,7 @@ data class AppActions(
     val onRunProbes: () -> Unit,
     val onDismissDiagnostics: () -> Unit,
     val onClearLog: (onCleared: (String?) -> Unit) -> Unit,
+    val onRestartOnboarding: () -> Unit,
 )
 
 /**
@@ -92,6 +93,7 @@ fun HomeScreen(
                     onOpenLog = { current.value = Screen.LOG },
                     onRunProbes = actions.onRunProbes,
                     onRequestPermission = actions.onRequestPermission,
+                    onRestartOnboarding = actions.onRestartOnboarding,
                 ),
                 onBack = goHome,
             )

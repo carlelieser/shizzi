@@ -45,6 +45,7 @@ data class SettingsActions(
     val onOpenLog: () -> Unit,
     val onRunProbes: () -> Unit,
     val onRequestPermission: () -> Unit,
+    val onRestartOnboarding: () -> Unit,
 )
 
 /**
@@ -131,6 +132,14 @@ private fun DeveloperSection(isLogging: Boolean, actions: SettingsActions) {
     SettingsAction(
         label = SettingsText(title = "Run diagnostics"),
         onClick = actions.onRunProbes,
+    )
+
+    // Navigates rather than resetting anything else: the wizard reads the same
+    // Shizuku state and re-runs its own check, so there is nothing to clear
+    // beyond the flag that decides which tree renders.
+    SettingsAction(
+        label = SettingsText(title = "Restart onboarding"),
+        onClick = actions.onRestartOnboarding,
     )
 }
 

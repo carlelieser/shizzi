@@ -174,7 +174,19 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
 
     /** Persisted, so the wizard is a first run rather than a launch screen. */
     fun completeOnboarding() {
-        viewModelScope.launch { settingsStore.completeOnboarding() }
+        viewModelScope.launch { settingsStore.setOnboardingComplete(true) }
+    }
+
+    /**
+     * Sends the app back to the wizard.
+     *
+     * The compatibility result is dropped with it: the step re-runs its check
+     * on arrival, and keeping the old verdict would show a stale COMPATIBLE
+     * badge for the moment before the new run reports.
+     */
+    fun restartOnboarding() {
+        localCompatibility.value = CompatibilityState.Idle
+        viewModelScope.launch { settingsStore.setOnboardingComplete(false) }
     }
 
     /** Drops a finished run's result, so its toast leaves the screen. */

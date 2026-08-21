@@ -84,6 +84,7 @@ class MainActivity : ComponentActivity() {
                             onRunProbes = viewModel::runProbes,
                             onDismissDiagnostics = viewModel::dismissDiagnostics,
                             onClearLog = viewModel::clearLog,
+                            onRestartOnboarding = viewModel::restartOnboarding,
                         ),
                     )
                 }

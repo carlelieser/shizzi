@@ -38,11 +38,12 @@ class SettingsStore(private val context: Context) {
     }
 
     /**
-     * One-way: onboarding is a first-run introduction, and nothing in the app
-     * asks to see it again. Reinstalling is what replays it.
+     * @param hasCompleted false replays the wizard on the next composition,
+     *   which is what the developer section's restart offers — the flow is
+     *   otherwise reachable only by clearing app data.
      */
-    suspend fun completeOnboarding() {
-        context.dataStore.edit { it[ONBOARDED] = true }
+    suspend fun setOnboardingComplete(hasCompleted: Boolean) {
+        context.dataStore.edit { it[ONBOARDED] = hasCompleted }
     }
 
     /**
