@@ -180,7 +180,7 @@ dependencies {
     // and observed as a flow thereafter.
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 
-    val composeBom = platform("androidx.compose:compose-bom:2024.10.01")
+    val composeBom = platform("androidx.compose:compose-bom:2025.08.00")
     implementation(composeBom)
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material3:material3")

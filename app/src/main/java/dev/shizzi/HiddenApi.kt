@@ -357,6 +357,18 @@ class TetheringPreferenceApi(private val context: Context) {
     fun setPreferTestNetworks(prefer: Boolean) {
         resolveMethod().invoke(tetheringManager(), prefer)
     }
+
+    /**
+     * Whether the method is reachable here, without calling it.
+     *
+     * @return null when it resolves, else why it did not — the class being
+     *   absent and the method being absent from it are different builds, and
+     *   collapsing them to a boolean loses which.
+     */
+    fun resolutionFailure(): String? = runCatching { resolveMethod() }.fold(
+        onSuccess = { null },
+        onFailure = { failure -> "${failure.javaClass.simpleName}: ${failure.message}" },
+    )
 }
 
 /** ConnectivityManager is public API; kept here so the probe reads in one place. */

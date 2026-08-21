@@ -62,11 +62,19 @@ class MainActivity : ComponentActivity() {
                 Surface(color = colors.background) {
                     val state by viewModel.state.collectAsState()
                     val diagnostics by viewModel.diagnosticsState.collectAsState()
+                    val compatibility by viewModel.compatibilityState.collectAsState()
 
-                    HomeScreen(
-                        state = state,
-                        settings = loaded,
-                        diagnostics = diagnostics,
+                    ShizziApp(
+                        state = AppState(
+                            session = state,
+                            settings = loaded,
+                            diagnostics = diagnostics,
+                        ),
+                        onboarding = OnboardingEntry(
+                            compatibility = compatibility,
+                            onCheckCompatibility = viewModel::checkCompatibility,
+                            onComplete = viewModel::completeOnboarding,
+                        ),
                         actions = AppActions(
                             onToggle = viewModel::toggle,
                             onCancel = viewModel::cancel,
@@ -76,6 +84,7 @@ class MainActivity : ComponentActivity() {
                             onRunProbes = viewModel::runProbes,
                             onDismissDiagnostics = viewModel::dismissDiagnostics,
                             onClearLog = viewModel::clearLog,
+                            onRestartOnboarding = viewModel::restartOnboarding,
                         ),
                     )
                 }

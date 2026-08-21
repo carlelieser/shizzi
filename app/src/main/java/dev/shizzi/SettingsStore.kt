@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.map
 data class Settings(
     val theme: ThemeChoice = ThemeChoice.SYSTEM,
     val isLogging: Boolean = true,
+    /** False until the wizard has been seen through to its last step. */
+    val hasCompletedOnboarding: Boolean = false,
 )
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore("settings")
@@ -36,6 +38,15 @@ class SettingsStore(private val context: Context) {
     }
 
     /**
+     * @param hasCompleted false replays the wizard on the next composition,
+     *   which is what the developer section's restart offers — the flow is
+     *   otherwise reachable only by clearing app data.
+     */
+    suspend fun setOnboardingComplete(hasCompleted: Boolean) {
+        context.dataStore.edit { it[ONBOARDED] = hasCompleted }
+    }
+
+    /**
      * An unrecognised theme falls back rather than throwing: a downgrade, or a
      * value from a future build, should not crash the app over a preference.
      */
@@ -43,10 +54,12 @@ class SettingsStore(private val context: Context) {
         theme = runCatching { ThemeChoice.valueOf(preferences[THEME].orEmpty()) }
             .getOrDefault(ThemeChoice.SYSTEM),
         isLogging = preferences[LOGGING] ?: true,
+        hasCompletedOnboarding = preferences[ONBOARDED] ?: false,
     )
 
     private companion object {
         val THEME = stringPreferencesKey("theme")
         val LOGGING = booleanPreferencesKey("logging")
+        val ONBOARDED = booleanPreferencesKey("onboarded")
     }
 }
