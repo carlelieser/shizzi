@@ -135,7 +135,14 @@ private fun HomeBody(state: SessionUiState, actions: HomeActions) {
     val isStarting = state.status == UiStatus.LOADING
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(ScreenPadding),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(ScreenPadding)
+            // Pushes the pair below the optical centre. Centred on the full
+            // height they sat high, because the status row and its reserved VPN
+            // band occupy the bottom edge and the eye reads the gap above them
+            // as the page's middle.
+            .padding(top = ShizziTheme.spacing.xxxl * 2),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {

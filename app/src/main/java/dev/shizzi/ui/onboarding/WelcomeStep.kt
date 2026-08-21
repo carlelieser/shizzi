@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import dev.shizzi.ui.shimmer
 import dev.shizzi.ui.theme.ShizziTheme
@@ -25,8 +26,9 @@ private val WelcomeIconSize = 280.dp
  * The icon centres itself in the space above the title, which stays on the
  * left margin every following step's title uses.
  *
- * No paragraph under it: the two steps that follow are the explanation, and a
- * summary here would be read once and then repeated.
+ * One line under the title says what the app is. The steps that follow explain
+ * what it needs rather than what it does, so without this the first screen
+ * names the app and nothing else.
  */
 @Composable
 fun WelcomeStep() {
@@ -52,6 +54,14 @@ fun WelcomeStep() {
             text = "Welcome",
             style = StepTitleStyle,
             color = ShizziTheme.colors.onSurface,
+        )
+
+        Text(
+            text = "Rootless wifi-tethering with Shizuku.",
+            style = ShizziTheme.typography.body,
+            color = ShizziTheme.colors.onSurfaceMuted,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = ShizziTheme.spacing.sm),
         )
     }
 }

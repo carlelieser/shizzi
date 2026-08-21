@@ -22,18 +22,26 @@ import dev.shizzi.ui.theme.brutalSurface
 private val StatusIconSize = 280.dp
 
 /**
+ * Held back from full strength while the tunnel is down, so the mark reads as
+ * dormant rather than as a second piece of chrome competing with the button.
+ */
+private const val InactiveAlpha = 0.10f
+
+/**
  * No label under it: the button already reads START or STOP, and a word between
  * the two would state the same fact a third time.
  *
  * Turquoise only when connected, so the screen has exactly one saturated
- * element at a time and it always means the tunnel is up.
+ * element at a time and it always means the tunnel is up. Everything else is
+ * both muted and faded — the colour alone left the glyph as heavy on screen as
+ * the connected one.
  */
 @Composable
 fun StatusIcon(status: UiStatus) {
     val isConnected = status == UiStatus.CONNECTED
     val target = when {
         isConnected -> ShizziTheme.colors.primary
-        else -> ShizziTheme.colors.onSurfaceMuted
+        else -> ShizziTheme.colors.onSurfaceMuted.copy(alpha = InactiveAlpha)
     }
     val tint by animateColorAsState(target, label = "statusTint")
 
