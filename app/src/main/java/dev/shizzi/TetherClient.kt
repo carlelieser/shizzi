@@ -331,10 +331,16 @@ class TetherClient {
         private const val SERVICE_TAG = "shizzi-session"
 
         /**
-         * Covers only the bind, which is fast. The probe run is not: Q5 waits
+         * Deliberately longer than the 30s Shizuku gives a user service to
+         * start (UserServiceRecord.setStartingTimeout), so the server's own
+         * deadline is the one that decides. At 10s this expired while the shell
+         * process was still legitimately starting, and reported a failure for a
+         * bind that had not failed.
+         *
+         * Covers only the bind. The probe run is not bounded by this: Q5 waits
          * up to 45s for upstream selection to settle.
          */
-        const val BIND_TIMEOUT_MS = 10_000L
+        const val BIND_TIMEOUT_MS = 35_000L
 
         /** R3.3 suggests a 10s bound on test-network availability. */
         const val AVAILABILITY_TIMEOUT_MS = 10_000
