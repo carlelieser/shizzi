@@ -1,11 +1,6 @@
 package dev.shizzi.ui
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -16,14 +11,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.CompositingStrategy
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import dev.shizzi.ShizukuState
@@ -31,7 +18,8 @@ import dev.shizzi.UiStatus
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.brutalSurface
 
-private val StatusIconSize = 96.dp
+/** Matches the welcome mark, so the same glyph is the same size across the app. */
+private val StatusIconSize = 280.dp
 
 /**
  * No label under it: the button already reads START or STOP, and a word between
@@ -57,58 +45,6 @@ fun StatusIcon(status: UiStatus) {
             .size(StatusIconSize)
             .shimmer(isActive = status == UiStatus.LOADING),
     )
-}
-
-/**
- * Sweeps a highlight across the glyph while [isActive]. A pulse would read as a
- * heartbeat — a rate the user is invited to judge — where a sweep has direction
- * and no rate to read into.
- *
- * SrcATop, not SrcIn: both clip to the glyph's pixels, but SrcIn *replaces* the
- * destination, so the transparent ends of the sweep erase the icon and it
- * appears to be eaten as the band travels.
- *
- * Inactive returns the receiver untouched, leaving no animation running behind
- * an idle screen.
- */
-private fun Modifier.shimmer(isActive: Boolean): Modifier = composed {
-    if (!isActive) return@composed this
-
-    val transition = rememberInfiniteTransition(label = "shimmer")
-    val progress by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1400, easing = LinearEasing),
-        ),
-        label = "shimmerSweep",
-    )
-    val highlight = ShizziTheme.colors.onSurface
-
-    this
-        .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
-        .drawWithContent {
-            drawContent()
-
-            // Off one edge to off the other, so the band enters and leaves
-            // rather than appearing mid-glyph. Narrower than the glyph, so it
-            // reads as a glint crossing rather than the icon brightening.
-            val band = size.width * 0.6f
-            val head = progress * (size.width + band * 2f) - band
-
-            drawRect(
-                brush = Brush.linearGradient(
-                    colorStops = arrayOf(
-                        0f to Color.Transparent,
-                        0.5f to highlight,
-                        1f to Color.Transparent,
-                    ),
-                    start = Offset(head, 0f),
-                    end = Offset(head + band, 0f),
-                ),
-                blendMode = BlendMode.SrcAtop,
-            )
-        }
 }
 
 /**
