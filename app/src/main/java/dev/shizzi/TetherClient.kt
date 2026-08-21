@@ -5,6 +5,7 @@ import android.content.ServiceConnection
 import android.os.IBinder
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import org.json.JSONObject
@@ -175,10 +176,36 @@ class TetherClient {
         pendingBind = deferred
         Shizuku.bindUserService(userServiceArgs, connection)
 
-        val bound = withTimeout(BIND_TIMEOUT_MS) { deferred.await() }
+        val bound = awaitBind(deferred)
         observeDeath(bound)
         return bound
     }
+
+    /**
+     * Restates a timeout as what actually went wrong.
+     *
+     * R8 renames TimeoutCancellationException, so the class name the UI shows
+     * is a letter and a digit and the message is kotlinx's, which knows nothing
+     * about what was being awaited. Every distinct way the shell process can
+     * fail to appear -- never started, started and exited, still starting --
+     * reached the user as the same uninformative string.
+     *
+     * IllegalStateException survives minification with its name intact, being
+     * a platform class.
+     */
+    private suspend fun awaitBind(deferred: CompletableDeferred<ITetherService>): ITetherService =
+        try {
+            withTimeout(BIND_TIMEOUT_MS) { deferred.await() }
+        } catch (timeout: TimeoutCancellationException) {
+            pendingBind = null
+            throw IllegalStateException(
+                "bindUserService: Shizuku returned no binder for the privileged " +
+                    "helper within ${BIND_TIMEOUT_MS}ms. The shell process either " +
+                    "never started or exited before handing one back; " +
+                    "`adb logcat -s ShizukuServiceStarter:*` carries the reason.",
+                timeout,
+            )
+        }
 
     /**
      * onServiceDisconnected does not cover this: the shell process is a child

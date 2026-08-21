@@ -124,6 +124,18 @@ class SessionService : Service() {
             }
             if (attempt != generation) return@launch
 
+            // The shell process logs its own start failures. This covers the
+            // ones it never hears about -- a bind that never completed, a
+            // contract check that rejected the daemon -- which otherwise
+            // appeared on screen and nowhere else, leaving the log a user sends
+            // in with no record of the failure they are reporting.
+            outcome.exceptionOrNull()?.let { failure ->
+                SessionLog.error(
+                    "start failed in the app process: " +
+                        "${failure.javaClass.name}: ${failure.message}",
+                )
+            }
+
             internalState.update { current -> current.applyOutcome(outcome) }
             publishState()
             followStatus()
