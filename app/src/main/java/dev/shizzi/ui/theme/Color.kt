@@ -13,6 +13,8 @@ import androidx.compose.ui.graphics.Color
 data class ShizziColors(
     val primary: Color,
     val onPrimary: Color,
+    /** A lighter [primary], for a highlight that crosses a turquoise mark. */
+    val primaryBright: Color,
     val background: Color,
     val surface: Color,
     val onSurface: Color,
@@ -28,6 +30,7 @@ private val OnPrimary = Color(0xFF000000)
 val LightColors = ShizziColors(
     primary = Color(0xFF14B8A6),
     onPrimary = OnPrimary,
+    primaryBright = Color(0xFF5EEAD4),
     background = Color(0xFFFAFAF9),
     surface = Color(0xFFFFFFFF),
     onSurface = Color(0xFF0C0A09),
@@ -45,6 +48,9 @@ val LightColors = ShizziColors(
 val DarkColors = ShizziColors(
     primary = Color(0xFF2DD4BF),
     onPrimary = OnPrimary,
+    // A step further up the ramp than light's, so the sweep still reads as
+    // brighter than the already-lighter dark-theme primary it crosses.
+    primaryBright = Color(0xFF99F6E4),
     background = Color(0xFF0C0A09),
     surface = Color(0xFF1C1917),
     onSurface = Color(0xFFFAFAF9),
