@@ -82,12 +82,24 @@ fun CapabilityCard(capability: Capability, status: CapabilityStatus, detail: Str
 @Composable
 private fun CapabilityDetail(detail: String) {
     Text(
-        text = detail,
+        text = breakableIdentifiers(detail),
         style = ShizziTheme.typography.log,
         color = ShizziTheme.colors.onSurfaceMuted,
         modifier = Modifier.padding(top = ShizziTheme.spacing.xs),
     )
 }
+
+/**
+ * Offers a break after each dot in a dotted name.
+ *
+ * These lines are exception text, whose class and method names carry no spaces
+ * — so the layout has no legal break and splits mid-identifier. A zero-width
+ * space is a break opportunity that renders as nothing, leaving the text
+ * exactly as the platform reported it while letting it wrap where a reader
+ * would expect.
+ */
+private fun breakableIdentifiers(detail: String): String =
+    detail.replace(".", ".\u200B")
 
 /**
  * Reserved at the mark's size in every state, so a row does not resize as its
@@ -137,8 +149,10 @@ private fun titleFor(capability: Capability): String = when (capability) {
  */
 private fun descriptionFor(capability: Capability): String = when (capability) {
     Capability.TEST_NETWORK ->
-        "Lets the app create the tunnel your hotspot traffic travels through."
+        "Lets the app create the test network tunnel your hotspot traffic " +
+            "travels through."
 
     Capability.PREFER_TEST_NETWORKS ->
-        "Lets the app route the hotspot through that tunnel. Added in Android 13."
+        "Lets the app route the hotspot through the test network tunnel. " +
+            "Added in Android 13."
 }

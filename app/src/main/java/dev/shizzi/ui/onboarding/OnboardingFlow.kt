@@ -105,7 +105,7 @@ private fun compatibilityStep(
     state: CompatibilityState,
     actions: OnboardingActions,
 ) = WizardStep(
-    title = "Compatibility check",
+    title = "Compatibility",
     content = { CompatibilityStep(state) },
     primary = when {
         state.isCompatible -> WizardAction(label = "Finish", onClick = actions.onFinish)
