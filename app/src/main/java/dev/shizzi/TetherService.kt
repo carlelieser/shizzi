@@ -11,21 +11,31 @@ import android.util.Log
  */
 class TetherService : ITetherService.Stub {
 
-    private val runner: ProbeRunner
-    private val session: TetherSession
+    private val context: Context
+
+    /**
+     * Resolved on first call rather than in the constructor.
+     *
+     * Shizuku's UserService.create catches whatever a constructor throws,
+     * returns null, and ServiceStarter exits: no binder is ever sent, and the
+     * app waits out its bind timeout with nothing to report but the timeout.
+     * Rebasing is the step here most likely to fail on a build that has moved
+     * its internals, so it has to fail where a caller can hear about it.
+     */
+    private val shellContext: Context by lazy { asShellContext(context) }
+    private val runner: ProbeRunner by lazy { ProbeRunner(shellContext) }
+    private val session: TetherSession by lazy { TetherSession(shellContext) }
 
     @Suppress("unused")
     constructor() : this(acquireSystemContext())
 
     /**
      * Shizuku prefers this constructor and supplies a context packaged as
-     * "android", so the rebasing has to happen here and not only in the no-arg
-     * path, which is the one that never runs.
+     * "android", so the rebasing has to be reachable from here and not only
+     * from the no-arg path, which is the one that never runs.
      */
     constructor(context: Context) {
-        val shellContext = asShellContext(context)
-        runner = ProbeRunner(shellContext)
-        session = TetherSession(shellContext)
+        this.context = context
         liveInstance = this
     }
 
@@ -34,7 +44,7 @@ class TetherService : ITetherService.Stub {
     override fun start(logging: Boolean): String {
         SessionLog.setEnabled(logging)
         return runCatching { session.start() }
-            .getOrElse { failure -> errorReport("start", failure) }
+            .getOrElse { failure -> sessionError("start", failure) }
     }
 
     /**
@@ -46,12 +56,12 @@ class TetherService : ITetherService.Stub {
             .onFailure { failure -> Log.w(TAG, "stop: probe teardown ${failure.message}") }
 
         return runCatching { session.stop() }
-            .getOrElse { failure -> errorReport("stop", failure) }
+            .getOrElse { failure -> sessionError("stop", failure) }
     }
 
     override fun getStatus(): String =
         runCatching { session.status() }
-            .getOrElse { failure -> errorReport("getStatus", failure) }
+            .getOrElse { failure -> sessionError("getStatus", failure) }
 
     /** Pushed by the app, which writes few entries and holds the only DataStore. */
     override fun setLogging(enabled: Boolean) {
@@ -93,6 +103,21 @@ class TetherService : ITetherService.Stub {
 
         Log.i(TAG, "report: $report")
         return report
+    }
+
+    /**
+     * A failure in the shape the app folds into its screen.
+     *
+     * Not [errorReport], which is a probe report: applyOutcome reads "state"
+     * and a report carries none, so a start failing this way would render as an
+     * idle screen rather than an error. Only [runProbes] is read as a report.
+     */
+    private fun sessionError(operation: String, failure: Throwable): String {
+        Log.e(TAG, "$operation failed", failure)
+        return org.json.JSONObject().apply {
+            put("state", SessionState.ERROR.name)
+            put("detail", "$operation: ${failure.javaClass.simpleName}: ${failure.message}")
+        }.toString()
     }
 
     private fun errorReport(operation: String, failure: Throwable): String {

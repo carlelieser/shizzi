@@ -5,6 +5,7 @@ import android.content.ServiceConnection
 import android.os.IBinder
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import org.json.JSONObject
@@ -133,7 +134,12 @@ class TetherClient {
         // the interface alive in the kernel.
         .tag(SERVICE_TAG)
         .processNameSuffix("probe")
-        .debuggable(true)
+        // Shizuku turns this into "-Xcompiler-option --debuggable
+        // -XjdwpProvider:adbconnection" on the app_process command line, which
+        // costs the shell process its AOT code for the whole of its life. Worth
+        // it to attach a debugger to it; not worth it on a user's phone, where
+        // it only makes a start that is already the slowest part slower.
+        .debuggable(BuildConfig.DEBUG)
         .version(TetherService.CONTRACT_VERSION)
 
     private val connection = object : ServiceConnection {
@@ -170,10 +176,36 @@ class TetherClient {
         pendingBind = deferred
         Shizuku.bindUserService(userServiceArgs, connection)
 
-        val bound = withTimeout(BIND_TIMEOUT_MS) { deferred.await() }
+        val bound = awaitBind(deferred)
         observeDeath(bound)
         return bound
     }
+
+    /**
+     * Restates a timeout as what actually went wrong.
+     *
+     * R8 renames TimeoutCancellationException, so the class name the UI shows
+     * is a letter and a digit and the message is kotlinx's, which knows nothing
+     * about what was being awaited. Every distinct way the shell process can
+     * fail to appear -- never started, started and exited, still starting --
+     * reached the user as the same uninformative string.
+     *
+     * IllegalStateException survives minification with its name intact, being
+     * a platform class.
+     */
+    private suspend fun awaitBind(deferred: CompletableDeferred<ITetherService>): ITetherService =
+        try {
+            withTimeout(BIND_TIMEOUT_MS) { deferred.await() }
+        } catch (timeout: TimeoutCancellationException) {
+            pendingBind = null
+            throw IllegalStateException(
+                "bindUserService: Shizuku returned no binder for the privileged " +
+                    "helper within ${BIND_TIMEOUT_MS}ms. The shell process either " +
+                    "never started or exited before handing one back; " +
+                    "`adb logcat -s ShizukuServiceStarter:*` carries the reason.",
+                timeout,
+            )
+        }
 
     /**
      * onServiceDisconnected does not cover this: the shell process is a child
@@ -326,10 +358,16 @@ class TetherClient {
         private const val SERVICE_TAG = "shizzi-session"
 
         /**
-         * Covers only the bind, which is fast. The probe run is not: Q5 waits
+         * Deliberately longer than the 30s Shizuku gives a user service to
+         * start (UserServiceRecord.setStartingTimeout), so the server's own
+         * deadline is the one that decides. At 10s this expired while the shell
+         * process was still legitimately starting, and reported a failure for a
+         * bind that had not failed.
+         *
+         * Covers only the bind. The probe run is not bounded by this: Q5 waits
          * up to 45s for upstream selection to settle.
          */
-        const val BIND_TIMEOUT_MS = 10_000L
+        const val BIND_TIMEOUT_MS = 35_000L
 
         /** R3.3 suggests a 10s bound on test-network availability. */
         const val AVAILABILITY_TIMEOUT_MS = 10_000

@@ -136,6 +136,13 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
                         DiagnosticsState.Complete(report, TetherService.REPORT_PATH)
                     },
                     onFailure = { failure ->
+                        // Same reason as the service's start path: a run that
+                        // never reached the shell process publishes no report,
+                        // so without this the failure is on screen only.
+                        SessionLog.error(
+                            "diagnostics failed in the app process: " +
+                                "${failure.javaClass.name}: ${failure.message}",
+                        )
                         DiagnosticsState.Failed(
                             "${failure.javaClass.simpleName}: ${failure.message}",
                         )
