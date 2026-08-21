@@ -23,14 +23,8 @@ private const val SOURCE_URL = "https://github.com/carlelieser/shizzi"
 private const val ISSUE_URL = "https://github.com/carlelieser/shizzi/issues/new"
 private const val AUTHOR_URL = "https://carlelieser.dev"
 
-/**
- * Enough to read as unavailable, not so far the user loses their place — the
- * run's toast sits over this, and a page faded to nothing would make it look
- * like a dialog on an empty screen.
- */
 private const val BusyAlpha = 0.4f
 
-/** Grouped so the page takes state rather than four values. */
 data class SettingsState(
     val shizuku: ShizukuState,
     val theme: ThemeChoice,
@@ -38,7 +32,6 @@ data class SettingsState(
     val isRunningDiagnostics: Boolean,
 )
 
-/** Likewise, so the page stays within the parameter limit. */
 data class SettingsActions(
     val onSetTheme: (ThemeChoice) -> Unit,
     val onSetLogging: (Boolean) -> Unit,
@@ -48,10 +41,6 @@ data class SettingsActions(
     val onRestartOnboarding: () -> Unit,
 )
 
-/**
- * Everything configurable, plus the Shizuku detail the home badge cannot hold.
- * Scrolls, since four sections already exceed a short screen.
- */
 @Composable
 fun SettingsPage(
     state: SettingsState,
@@ -61,8 +50,7 @@ fun SettingsPage(
     val isBusy = state.isRunningDiagnostics
 
     Column(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
-        // Outside the dimmed region: a run lasts as long as upstream selection
-        // takes to settle, and the ViewModel owns it, so leaving is free.
+
         ScreenHeader(title = "Settings", onBack = onBack)
 
         Column(
@@ -84,20 +72,11 @@ fun SettingsPage(
             SectionLabel("About")
             AboutSection()
 
-            // The last row would otherwise sit against the navigation bar.
             Spacer(Modifier.height(ShizziTheme.spacing.xxl))
         }
     }
 }
 
-/**
- * Swallows every pointer event over this subtree while [isBusy].
- *
- * At the boundary rather than an `isEnabled` per row: this screen has three
- * kinds of control, and disabling them individually means every future row has
- * to remember to opt in. Consumed in the initial pass, so events never reach
- * the children at all.
- */
 private fun Modifier.inert(isBusy: Boolean): Modifier = when {
     !isBusy -> this
     else -> this.pointerInput(Unit) {
@@ -111,10 +90,6 @@ private fun Modifier.inert(isBusy: Boolean): Modifier = when {
     }
 }
 
-/**
- * Titles only: these name things a developer already knows, so a description
- * under each just restated the title at greater length.
- */
 @Composable
 private fun DeveloperSection(isLogging: Boolean, actions: SettingsActions) {
     SettingsToggle(
@@ -123,7 +98,6 @@ private fun DeveloperSection(isLogging: Boolean, actions: SettingsActions) {
         onCheckedChange = actions.onSetLogging,
     )
 
-    // Under the toggle that decides whether it records anything.
     SettingsAction(
         label = SettingsText(title = "View logs"),
         onClick = actions.onOpenLog,
@@ -134,22 +108,12 @@ private fun DeveloperSection(isLogging: Boolean, actions: SettingsActions) {
         onClick = actions.onRunProbes,
     )
 
-    // Navigates rather than resetting anything else: the wizard reads the same
-    // Shizuku state and re-runs its own check, so there is nothing to clear
-    // beyond the flag that decides which tree renders.
     SettingsAction(
         label = SettingsText(title = "Restart onboarding"),
         onClick = actions.onRestartOnboarding,
     )
 }
 
-/**
- * Opened from the context rather than a callback threaded from the ViewModel:
- * no state changes, so routing it upward adds a hop that forwards an intent.
- *
- * Only Author keeps a subtitle, where it names the destination rather than
- * restating what the title and the external-link glyph already carry.
- */
 @Composable
 private fun AboutSection() {
     val context = LocalContext.current

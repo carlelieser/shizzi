@@ -1,27 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  The wifi_tethering mark, the same symbol the home screen shows as its status
-  glyph, so the launcher icon and the app's one large element are the same
-  shape rather than two drawings of the same idea.
-
-  Sized for the adaptive-icon mask: the 108dp canvas shows only its middle
-  72dp, and launchers crop that further to a circle, squircle or rounded
-  square of their choosing. The scale is set from the mark's half-diagonal
-  rather than its width, since the corners are what a circular mask reaches
-  first — 46.9x40.5dp puts every corner exactly 31dp from centre, inside the
-  33dp safe radius with room to spare.
-
-  The vertical offset is set by eye against the rendered icon, not by
-  centring the path's bounding box. The mark's lowest fifth is only the two
-  thin arc tips descending past the dot, so a box-centred mark measures
-  balanced while reading as sitting low — the visible weight is all in the
-  arcs above. 25.2 is where the black above the outer arc and the black below
-  the tips look equal at launcher size.
-
-  Path data is the official Material Symbols export at weight 400, whose
-  viewBox is 960 units with the Y axis pointing up; the translate flips it
-  into Android's Y-down space.
--->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"

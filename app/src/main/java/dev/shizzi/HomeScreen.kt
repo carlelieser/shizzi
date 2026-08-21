@@ -23,10 +23,6 @@ import dev.shizzi.ui.rememberNavigator
 import dev.shizzi.ui.rememberToastState
 import dev.shizzi.ui.theme.ThemeChoice
 
-/**
- * Everything the screens need from the ViewModel, grouped so routing does not
- * take a parameter per callback.
- */
 data class AppActions(
     val onToggle: () -> Unit,
     val onCancel: () -> Unit,
@@ -39,12 +35,6 @@ data class AppActions(
     val onRestartOnboarding: () -> Unit,
 )
 
-/**
- * Routes between the three screens.
- *
- * Log and Settings are screens rather than overlays, so the system back
- * gesture returns to Home rather than leaving the app.
- */
 @Composable
 fun HomeScreen(
     state: SessionUiState,
@@ -55,8 +45,6 @@ fun HomeScreen(
     val current = rememberNavigator()
     val goHome = { current.value = Screen.HOME }
 
-    // Back from the log returns to settings, which is now the only way into it
-    // — sending it to Home would drop the user two levels from one gesture.
     val goBack = {
         current.value = if (current.value == Screen.LOG) Screen.SETTINGS else Screen.HOME
     }
@@ -69,9 +57,6 @@ fun HomeScreen(
         onRequestPermission = actions.onRequestPermission,
     )
 
-    // Not from the settings screen: a run outlives a visit to it, and that
-    // toast would vanish the moment the user navigated home to wait — taking
-    // the export button with it.
     DiagnosticsToast(
         state = diagnostics,
         toasts = toasts,
@@ -105,8 +90,7 @@ fun HomeScreen(
                 actions = LogActions(
                     onClear = actions.onClearLog,
                     onEnableLogging = { actions.onSetLogging(true) },
-                    // Goes home as well as starting: the status glyph and the
-                    // button are what report progress, and neither is here.
+
                     onStartSession = {
                         goHome()
                         actions.onToggle()
@@ -125,9 +109,6 @@ fun HomeScreen(
             )
         }
 
-        // Last child, so it draws over whichever screen is showing. App-level
-        // rather than per-screen: an error raised on Home is still worth seeing
-        // after navigating to the log to investigate it.
         ToastHost(
             state = toasts,
             modifier = Modifier.align(Alignment.BottomCenter).systemBarsPadding(),

@@ -18,16 +18,8 @@ import dev.shizzi.UiStatus
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.brutalSurface
 
-/** Matches the welcome mark, so the same glyph is the same size across the app. */
 private val StatusIconSize = 280.dp
 
-/**
- * No label under it: the button already reads START or STOP, and a word between
- * the two would state the same fact a third time.
- *
- * Turquoise only when connected, so the screen has exactly one saturated
- * element at a time and it always means the tunnel is up.
- */
 @Composable
 fun StatusIcon(status: UiStatus) {
     val isConnected = status == UiStatus.CONNECTED
@@ -47,11 +39,6 @@ fun StatusIcon(status: UiStatus) {
     )
 }
 
-/**
- * One family throughout, so the glyph reads as one object changing rather than
- * four pictures. Ready and loading share a mark — the shimmer distinguishes
- * them, and swapping glyphs mid-animation would read as a transition.
- */
 private fun glyphFor(status: UiStatus): ImageVector = when (status) {
     UiStatus.READY -> Icons.Filled.WifiTethering
     UiStatus.LOADING -> Icons.Filled.WifiTethering
@@ -59,7 +46,6 @@ private fun glyphFor(status: UiStatus): ImageVector = when (status) {
     UiStatus.ERROR -> Icons.Filled.WifiTetheringError
 }
 
-/** The label the icon does not draw, for anyone using a screen reader. */
 private fun descriptionFor(status: UiStatus): String = when (status) {
     UiStatus.READY -> "Not connected"
     UiStatus.LOADING -> "Connecting"
@@ -67,10 +53,6 @@ private fun descriptionFor(status: UiStatus): String = when (status) {
     UiStatus.ERROR -> "Failed"
 }
 
-/**
- * Absent when Shizuku is ready: a badge confirming the expected is noise on
- * every launch. What to do about a problem is the toast's job.
- */
 @Composable
 fun ShizukuBadge(state: ShizukuState) {
     val text = badgeText(state) ?: return

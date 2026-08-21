@@ -3,7 +3,6 @@ package dev.shizzi
 import android.content.pm.PackageManager
 import rikka.shizuku.Shizuku
 
-/** The four states R1.2 requires the UI to distinguish. */
 sealed interface ShizukuState {
     data object NotInstalled : ShizukuState
     data object NotRunning : ShizukuState
@@ -11,7 +10,6 @@ sealed interface ShizukuState {
     data class Ready(val uid: Int, val isRoot: Boolean) : ShizukuState
 }
 
-/** Never requests permission: R1.3 forbids auto-requesting on launch. */
 object ShizukuGate {
 
     const val PERMISSION_REQUEST_CODE = 4001
@@ -28,20 +26,11 @@ object ShizukuGate {
         return ShizukuState.Ready(uid = uid, isRoot = uid == ROOT_UID)
     }
 
-    /**
-     * pingBinder() reports false until the sticky binder-received callback
-     * lands, which had the UI claiming Shizuku was stopped while a probe run
-     * against it succeeded. getUid() throws only when there is truly no binder.
-     */
     private fun isBinderLive(): Boolean {
         if (Shizuku.pingBinder()) return true
         return runCatching { Shizuku.getUid() }.isSuccess
     }
 
-    /**
-     * Absent or merely stopped drives different UI guidance (P-1 vs P-2), so
-     * the package manager settles it rather than a guess.
-     */
     private fun resolveAbsentBinder(): ShizukuState = when {
         isShizukuInstalled() -> ShizukuState.NotRunning
         else -> ShizukuState.NotInstalled
@@ -59,7 +48,6 @@ object ShizukuGate {
         Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
     }.getOrDefault(false)
 
-    /** Explicit user-driven request only (R1.3). */
     fun requestPermission() {
         Shizuku.requestPermission(PERMISSION_REQUEST_CODE)
     }
@@ -70,23 +58,12 @@ object ShizukuGate {
         else -> "unexpected uid $uid"
     }
 
-    /**
-     * The same identity for a settings row, where [describeUid]'s "the path
-     * under test" would be commentary on the app rather than information.
-     */
     fun shortUid(uid: Int): String = when (uid) {
         SHELL_UID -> "2000 (shell)"
         ROOT_UID -> "0 (root)"
         else -> "$uid"
     }
 
-    /**
-     * From the package manager, not Shizuku.getVersion(), which returns the API
-     * level (13) rather than the release (13.6.0) — and the release is what
-     * matters, since 13.5.4 on Android 16 crashes within minutes.
-     *
-     * Works whether or not the service is running; no binder involved.
-     */
     fun installedVersion(): String? {
         val packageManager = App.instance.packageManager
         return SHIZUKU_PACKAGES.firstNotNullOfOrNull { candidate ->
@@ -96,6 +73,5 @@ object ShizukuGate {
         }
     }
 
-    /** Shizuku proper, and Sui's package for root-backed installs. */
     private val SHIZUKU_PACKAGES = listOf("moe.shizuku.privileged.api", "moe.shizuku.redirect")
 }

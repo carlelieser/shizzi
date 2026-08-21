@@ -30,18 +30,9 @@ import dev.shizzi.UiStatus
 import dev.shizzi.ui.theme.ScreenPadding
 import dev.shizzi.ui.theme.ShizziTheme
 
-/** The rule between segments, sized to the caption text beside it. */
 private val DividerWidth = 1.dp
 private val DividerHeight = 12.dp
 
-/**
- * The bottom-edge status line: what the session is, then the build.
- *
- * Only the state takes full contrast, so the eye lands on the one word that
- * changes without the row competing with the button. Always present, unlike the
- * detail it replaced, which hid whenever it had nothing to say and took the
- * version with it.
- */
 @Composable
 fun StatusRow(state: SessionUiState, modifier: Modifier = Modifier) {
     Row(
@@ -51,7 +42,6 @@ fun StatusRow(state: SessionUiState, modifier: Modifier = Modifier) {
     ) {
         StatusLabel(statusWord(state.status))
 
-        // Only while a session is up, or it claims one that ended.
         if (state.status == UiStatus.CONNECTED && state.interfaceName.isNotEmpty()) {
             StatusDivider()
             TunnelSegment(state.interfaceName)
@@ -72,11 +62,6 @@ private fun StatusText(text: String) {
     )
 }
 
-/**
- * One Text rather than two composables: the caption carries letter-spacing, so
- * splitting them puts the trailing track between the words and opens a gap
- * wider than the space it should be.
- */
 @Composable
 private fun StatusLabel(status: String) {
     val colors = ShizziTheme.colors
@@ -96,23 +81,11 @@ private fun StatusLabel(status: String) {
     )
 }
 
-/**
- * A phrase by default, the real name a tap away.
- *
- * The framework assigns the name — TestNetworkService hardcodes a "testtun"
- * prefix and a counter, and no createTunInterface overload accepts one — so it
- * cannot be made friendlier at the source, and it means nothing to anyone not
- * reading Android internals. It stays reachable because it is the string that
- * matches `dumpsys tethering`, which is what someone filing a bug needs.
- */
 @Composable
 private fun TunnelSegment(name: String) {
-    // Keyed on the interface, so a new session starts at the phrase rather than
-    // inheriting the last one's expanded state.
+
     var isShowingName by remember(name) { mutableStateOf(false) }
 
-    // No ripple or press colour: in a row of muted captions, an indication here
-    // would be the loudest thing on an idle screen.
     val interaction = remember { MutableInteractionSource() }
 
     Text(
@@ -129,10 +102,6 @@ private fun TunnelSegment(name: String) {
     )
 }
 
-/**
- * Drawn rather than a "|" character, which carries the font's own spacing and
- * sits off-centre against uppercase caption text.
- */
 @Composable
 private fun StatusDivider() {
     Box(
@@ -144,10 +113,6 @@ private fun StatusDivider() {
     )
 }
 
-/**
- * Not the session's `detail`, which carries things like the raw interface name
- * — true, and not a status. An error's text belongs to the toast.
- */
 private fun statusWord(status: UiStatus): String = when (status) {
     UiStatus.READY -> "Ready"
     UiStatus.LOADING -> "Starting"

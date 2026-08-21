@@ -12,17 +12,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import dev.shizzi.ui.theme.ShizziTheme
 
-/**
- * Says the tethered clients are going out through a VPN.
- *
- * No surface behind it: every bordered element here is something to press, so
- * that treatment made a label look like a control. The key glyph is what
- * Android itself puts in the status bar for an active VPN.
- *
- * In the accent, against the usual rule, because this is the one thing a user
- * opens the app to confirm — and with no surface to frame it, the colour is
- * what keeps it from reading as a caption.
- */
 @Composable
 fun VpnChip() {
     Row(

@@ -1,16 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  Same layers as ic_launcher; some launchers request the round variant by
-  name. Android 8+ draws the launcher icon from these layers and applies its own
-  mask, so the shape follows whatever the launcher uses rather than being
-  baked in.
-
-  The monochrome layer is what Android 13+ themed icons tint to the user's
-  wallpaper palette; without it the icon opts out of theming and looks
-  out of place on a themed home screen. It reuses the foreground, whose mark
-  is a single path — the tint replaces its colour outright, so the turquoise
-  is irrelevant there.
--->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@color/ic_launcher_background" />
     <foreground android:drawable="@drawable/ic_launcher_foreground" />
