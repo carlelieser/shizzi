@@ -45,6 +45,17 @@ interface ITetherService {
      */
     void clearLog();
 
+    /**
+     * Resolves the two hidden APIs the app cannot work without, and nothing
+     * else. Creates no TUN and starts no hotspot, so it is cheap enough to run
+     * from onboarding.
+     *
+     * Here rather than in the app process because reflection onto these
+     * surfaces answers for the calling UID: run as an ordinary app it reports
+     * both absent on every release, including those the app works on.
+     */
+    String checkCompatibility();
+
     /** Checked by the app to detect a stale shell process (R2.5). */
     int getContractVersion();
 }

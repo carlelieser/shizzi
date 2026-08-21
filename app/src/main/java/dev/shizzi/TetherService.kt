@@ -13,6 +13,7 @@ class TetherService : ITetherService.Stub {
 
     private val runner: ProbeRunner
     private val session: TetherSession
+    private val compatibility: CompatibilityCheck
 
     @Suppress("unused")
     constructor() : this(acquireSystemContext())
@@ -26,6 +27,7 @@ class TetherService : ITetherService.Stub {
         val shellContext = asShellContext(context)
         runner = ProbeRunner(shellContext)
         session = TetherSession(shellContext)
+        compatibility = CompatibilityCheck(shellContext)
         liveInstance = this
     }
 
@@ -57,6 +59,14 @@ class TetherService : ITetherService.Stub {
     override fun setLogging(enabled: Boolean) {
         SessionLog.setEnabled(enabled)
     }
+
+    /**
+     * Never throws across the binder: the app reads a capability the report
+     * omits as absent, which is the honest answer when the check itself broke.
+     */
+    override fun checkCompatibility(): String =
+        runCatching { compatibility.run().toJson() }
+            .getOrElse { failure -> errorReport("checkCompatibility", failure) }
 
     /**
      * Empties the file this process writes; the app clears its own half.

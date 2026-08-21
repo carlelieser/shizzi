@@ -203,6 +203,18 @@ class TetherClient {
         bound.runProbes(attemptTethering, AVAILABILITY_TIMEOUT_MS)
     }
 
+    /**
+     * Resolves the two APIs the app rests on, at shell UID.
+     *
+     * Verifies the contract first: an older daemon has no such method and
+     * raises AbstractMethodError, which says nothing about compatibility.
+     */
+    suspend fun checkCompatibility(): List<CapabilityResult> = withContext(Dispatchers.IO) {
+        val bound = service()
+        verifyContract(bound)
+        parseCapabilities(bound.checkCompatibility())
+    }
+
     suspend fun start(logging: Boolean): String = withContext(Dispatchers.IO) {
         val bound = service()
         verifyContract(bound)
