@@ -58,9 +58,9 @@ data class WizardAction(
 /**
  * Content, progress, footer — the same three bands on every step.
  *
- * The content band takes the remaining height rather than being centred in it,
- * so a step whose content grows (the compatibility list, as its checks report)
- * extends downward instead of shifting what is already on screen.
+ * Title and content are centred together in the band between the header and the
+ * progress dots, so a short step does not sit against the footer with the top
+ * half of the screen empty.
  */
 @Composable
 fun Wizard(step: WizardStep, currentIndex: Int, stepCount: Int) {
@@ -70,7 +70,10 @@ fun Wizard(step: WizardStep, currentIndex: Int, stepCount: Int) {
             .systemBarsPadding()
             .padding(ScreenPadding),
     ) {
-        Box(modifier = Modifier.weight(1f)) {
+        Box(
+            modifier = Modifier.weight(1f),
+            contentAlignment = Alignment.Center,
+        ) {
             Column {
                 if (step.title.isNotEmpty()) StepTitle(step.title)
                 step.content()
