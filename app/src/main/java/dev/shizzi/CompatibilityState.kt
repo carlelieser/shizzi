@@ -41,12 +41,24 @@ sealed interface CompatibilityState {
      */
     data class Fixable(val results: List<CapabilityResult>) : CompatibilityState
 
-    data class Downloading(val progress: DownloadProgress) : CompatibilityState
+    /**
+     * Every state past [Fixable] carries [results] for the same reason it does:
+     * the rows above the card are the explanation for the offer, and they have
+     * already been answered. Dropping them mid-install would replace a finding
+     * with a spinner over a question the check has not re-asked.
+     */
+    data class Downloading(
+        val results: List<CapabilityResult>,
+        val progress: DownloadProgress,
+    ) : CompatibilityState
 
     /** Bytes on disk, digest checked. [path] is what the shell is handed. */
-    data class Downloaded(val path: String) : CompatibilityState
+    data class Downloaded(
+        val results: List<CapabilityResult>,
+        val path: String,
+    ) : CompatibilityState
 
-    data object Installing : CompatibilityState
+    data class Installing(val results: List<CapabilityResult>) : CompatibilityState
 
     /**
      * apexd took the module and will mount it on the next boot.
@@ -54,12 +66,18 @@ sealed interface CompatibilityState {
      * Not compatible yet — [isCompatible] stays false — because the method the
      * app needs does not resolve until the module is mounted.
      */
-    data object Staged : CompatibilityState
+    data class Staged(val results: List<CapabilityResult>) : CompatibilityState
 
-    data class DownloadFailed(val failure: DownloadFailure) : CompatibilityState
+    data class DownloadFailed(
+        val results: List<CapabilityResult>,
+        val failure: DownloadFailure,
+    ) : CompatibilityState
 
     /** [reason] is pm's own output, which is the only account of why. */
-    data class InstallFailed(val reason: String) : CompatibilityState
+    data class InstallFailed(
+        val results: List<CapabilityResult>,
+        val reason: String,
+    ) : CompatibilityState
 }
 
 /**
@@ -93,13 +111,20 @@ val CompatibilityState.isOnFixPath: Boolean
  * The results behind a fix-path state, so the capability rows keep showing what
  * the check actually found while the module is being fetched.
  *
- * Empty once the offer is accepted: the rows fall back to their loading mark,
- * which is honest — the answer they showed is being changed.
+ * Held across the whole fix path: the module install changes what a re-run
+ * would find, not what this run found, and the rows are the reason the offer is
+ * on screen at all.
  */
 val CompatibilityState.reportedResults: List<CapabilityResult>
     get() = when (this) {
         is CompatibilityState.Complete -> results
         is CompatibilityState.Fixable -> results
+        is CompatibilityState.Downloading -> results
+        is CompatibilityState.Downloaded -> results
+        is CompatibilityState.Installing -> results
+        is CompatibilityState.Staged -> results
+        is CompatibilityState.DownloadFailed -> results
+        is CompatibilityState.InstallFailed -> results
         else -> emptyList()
     }
 

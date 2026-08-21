@@ -165,6 +165,8 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
 
     fun installTetheringApex() = compatibility.installApex()
 
+    fun rebootDevice() = compatibility.rebootDevice()
+
     /** Persisted, so the wizard is a first run rather than a launch screen. */
     fun completeOnboarding() {
         viewModelScope.launch { settingsStore.setOnboardingComplete(true) }

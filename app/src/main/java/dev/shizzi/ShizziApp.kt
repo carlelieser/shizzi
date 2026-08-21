@@ -16,6 +16,7 @@ data class OnboardingEntry(
     val onCheckCompatibility: () -> Unit,
     val onDownloadTetheringApex: () -> Unit,
     val onInstallTetheringApex: () -> Unit,
+    val onRebootDevice: () -> Unit,
     val onComplete: () -> Unit,
 )
 
@@ -48,6 +49,7 @@ fun ShizziApp(
                 onCheckCompatibility = onboarding.onCheckCompatibility,
                 onDownloadTetheringApex = onboarding.onDownloadTetheringApex,
                 onInstallTetheringApex = onboarding.onInstallTetheringApex,
+                onRebootDevice = onboarding.onRebootDevice,
                 onFinish = onboarding.onComplete,
             ),
         )

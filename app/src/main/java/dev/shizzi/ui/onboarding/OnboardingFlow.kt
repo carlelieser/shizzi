@@ -22,6 +22,7 @@ data class OnboardingActions(
     val onCheckCompatibility: () -> Unit,
     val onDownloadTetheringApex: () -> Unit,
     val onInstallTetheringApex: () -> Unit,
+    val onRebootDevice: () -> Unit,
     val onFinish: () -> Unit,
 )
 
@@ -129,10 +130,9 @@ private fun compatibilityStep(
 /**
  * Whichever of download, install, or re-check the fix path is up to.
  *
- * Staged offers Check rather than a reboot: the app does not restart anyone's
- * phone, and after a reboot Check is exactly the action that confirms the module
- * took. Enabled so a user who has already rebooted is not stuck behind a
- * disabled button.
+ * Staged offers Restart, because that is the only thing left to do: the module
+ * is on the device and applies on the next boot, so asking for a Check that
+ * cannot pass until then would answer with the same card again.
  */
 private fun fixPathAction(
     state: CompatibilityState,
@@ -145,7 +145,7 @@ private fun fixPathAction(
         WizardAction(label = "Installing", isEnabled = false, onClick = {})
 
     is CompatibilityState.Staged ->
-        WizardAction(label = "Check", onClick = actions.onCheckCompatibility)
+        WizardAction(label = "Restart", onClick = actions.onRebootDevice)
 
     // A rejection is usually the device's signing key rather than the bytes, so
     // Check is what is left: it re-reads the device instead of implying that

@@ -1,5 +1,6 @@
 package dev.shizzi
 
+import android.os.ParcelFileDescriptor
 import java.io.BufferedReader
 import java.io.File
 import java.util.concurrent.Executors
@@ -38,7 +39,8 @@ fun parseStagingOutcome(report: String): StagingOutcome {
  * Runs in the shell (uid 2000) process: `pm install --apex` is refused to an
  * ordinary app, and the file has to sit somewhere pm can read it. /data/local/tmp
  * is readable by the app but writable only here, so the copy is this side's job
- * too — the app hands over a path in its own files dir.
+ * too — the app hands over an open descriptor, its own files dir being closed
+ * to this uid.
  *
  * apexd verifies the AVB footer against Google's key on its own. A re-signed
  * APEX is rejected there, so nothing in this class needs to prove authenticity;
@@ -47,17 +49,24 @@ fun parseStagingOutcome(report: String): StagingOutcome {
 class ApexInstaller(private val deadlineMs: Long = DEFAULT_DEADLINE_MS) {
 
     /**
-     * Copies [localPath] somewhere pm can reach, stages it, and clears the copy.
+     * Copies the bytes behind [apex] somewhere pm can reach, stages them, and
+     * clears the copy.
+     *
+     * Reads a descriptor rather than opening a path: the download lands in the
+     * app's private files dir, which is mode 0700 and so unopenable from uid
+     * 2000 — the app opens the file and hands the descriptor over instead.
      *
      * The staged copy goes whether or not the install took: pm has already read
      * the file by the time it answers, and leaving three megabytes in
      * /data/local/tmp after a rejection helps nobody.
      */
-    fun stage(localPath: String): StagingOutcome {
+    fun stage(apex: ParcelFileDescriptor): StagingOutcome {
         val staged = File(STAGING_DIR, TetheringApex.FILE_NAME)
 
         return try {
-            File(localPath).copyTo(staged, overwrite = true)
+            ParcelFileDescriptor.AutoCloseInputStream(apex).use { source ->
+                staged.outputStream().use(source::copyTo)
+            }
             install(staged.absolutePath)
         } finally {
             staged.delete()

@@ -75,6 +75,7 @@ class MainActivity : ComponentActivity() {
                             onCheckCompatibility = viewModel::checkCompatibility,
                             onDownloadTetheringApex = viewModel::downloadTetheringApex,
                             onInstallTetheringApex = viewModel::installTetheringApex,
+                            onRebootDevice = viewModel::rebootDevice,
                             onComplete = viewModel::completeOnboarding,
                         ),
                         actions = AppActions(

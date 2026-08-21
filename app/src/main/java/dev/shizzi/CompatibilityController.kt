@@ -89,19 +89,23 @@ class CompatibilityController(
      */
     fun downloadApex() {
         if (localState.value is CompatibilityState.Downloading) return
-        localState.value = CompatibilityState.Downloading(DownloadProgress(0, 0))
+
+        val results = localState.value.reportedResults
+        localState.value = CompatibilityState.Downloading(results, DownloadProgress(0, 0))
 
         scope.launch {
             val downloaded = withContext(Dispatchers.IO) {
                 ApexDownloader(context).download { progress ->
-                    localState.value = CompatibilityState.Downloading(progress)
+                    localState.value = CompatibilityState.Downloading(results, progress)
                 }
             }
 
             localState.value = downloaded.fold(
-                onSuccess = { file -> CompatibilityState.Downloaded(file.absolutePath) },
+                onSuccess = { file ->
+                    CompatibilityState.Downloaded(results, file.absolutePath)
+                },
                 onFailure = { failure ->
-                    CompatibilityState.DownloadFailed(failure.asDownloadFailure())
+                    CompatibilityState.DownloadFailed(results, failure.asDownloadFailure())
                 },
             )
         }
@@ -117,14 +121,16 @@ class CompatibilityController(
      */
     fun installApex() {
         val downloaded = localState.value as? CompatibilityState.Downloaded ?: return
-        localState.value = CompatibilityState.Installing
+        val results = downloaded.results
+        localState.value = CompatibilityState.Installing(results)
 
         scope.launch {
             localState.value = runCatching { client.installTetheringApex(downloaded.path) }
                 .fold(
-                    onSuccess = { outcome -> stagingVerdict(outcome) },
+                    onSuccess = { outcome -> stagingVerdict(results, outcome) },
                     onFailure = { failure ->
                         CompatibilityState.InstallFailed(
+                            results,
                             "${failure.javaClass.simpleName}: ${failure.message}",
                         )
                     },
@@ -132,8 +138,31 @@ class CompatibilityController(
         }
     }
 
-    private fun stagingVerdict(outcome: StagingOutcome): CompatibilityState = when {
-        outcome.isStaged -> CompatibilityState.Staged
-        else -> CompatibilityState.InstallFailed(outcome.rawOutput)
+    /**
+     * Restarts the device, so the staged module is mounted.
+     *
+     * Only from the staged state: a reboot is the last step of this sequence
+     * and means nothing before it. A failure lands back on the install card as
+     * the reason, which is the only place the user is looking.
+     */
+    fun rebootDevice() {
+        val staged = localState.value as? CompatibilityState.Staged ?: return
+
+        scope.launch {
+            val problem = runCatching { client.rebootDevice() }
+                .getOrElse { failure -> "${failure.javaClass.simpleName}: ${failure.message}" }
+
+            if (problem.isNotEmpty()) {
+                localState.value = CompatibilityState.InstallFailed(staged.results, problem)
+            }
+        }
+    }
+
+    private fun stagingVerdict(
+        results: List<CapabilityResult>,
+        outcome: StagingOutcome,
+    ): CompatibilityState = when {
+        outcome.isStaged -> CompatibilityState.Staged(results)
+        else -> CompatibilityState.InstallFailed(results, outcome.rawOutput)
     }
 }

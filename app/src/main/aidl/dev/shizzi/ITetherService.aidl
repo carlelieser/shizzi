@@ -1,5 +1,7 @@
 package dev.shizzi;
 
+import android.os.ParcelFileDescriptor;
+
 /** Privileged session surface, executed inside the Shizuku-spawned shell process. */
 interface ITetherService {
 
@@ -57,16 +59,34 @@ interface ITetherService {
     String checkCompatibility();
 
     /**
-     * Stages the tethering APEX at [localPath] for install on the next boot.
+     * Stages the tethering APEX for install on the next boot.
      *
      * Here rather than in the app process because the install needs shell UID
      * and a path under /data/local/tmp, which the app can read but not write —
      * so this side does the copy as well as the install.
      *
+     * Takes a descriptor rather than a path: the download lands in the app's
+     * private files dir, which is mode 0700 and unreadable to uid 2000, so a
+     * path would name a file this process cannot open. The app opens it and
+     * passes the open descriptor across instead.
+     *
      * Never throws across the binder: pm's own output is the only useful
      * account of a rejected APEX, and it comes back verbatim in the JSON (R7.5).
      */
-    String installTetheringApex(String localPath);
+    String installTetheringApex(in ParcelFileDescriptor apex);
+
+    /**
+     * Restarts the device, so a staged APEX is applied.
+     *
+     * Here rather than in the app process because rebooting needs shell UID.
+     * Only ever reached from a button the user pressed — a staged module
+     * applies on whatever boot comes next, so nothing about it justifies
+     * restarting a phone on the app's own initiative.
+     *
+     * Returns empty when the reboot was issued, else why it was not: the caller
+     * is still on screen if this fails.
+     */
+    String rebootDevice();
 
     /** Checked by the app to detect a stale shell process (R2.5). */
     int getContractVersion();

@@ -3,6 +3,8 @@ package dev.shizzi
 import android.content.ComponentName
 import android.content.ServiceConnection
 import android.os.IBinder
+import android.os.ParcelFileDescriptor
+import java.io.File
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
@@ -250,6 +252,11 @@ class TetherClient {
     /**
      * Stages the verified APEX at [path] through the shell.
      *
+     * Opens the file here and sends the descriptor: [path] names a file in the
+     * app's private files dir, which uid 2000 cannot open for itself, so a path
+     * alone would reach the shell as a file that does not exist. Closed on the
+     * way out whether or not the staging took.
+     *
      * Verifies the contract for the same reason [checkCompatibility] does: an
      * older daemon has no such method and raises AbstractMethodError, which
      * would read as the install failing rather than as never having run.
@@ -258,8 +265,23 @@ class TetherClient {
         withContext(Dispatchers.IO) {
             val bound = service()
             verifyContract(bound)
-            parseStagingOutcome(bound.installTetheringApex(path))
+
+            ParcelFileDescriptor.open(File(path), ParcelFileDescriptor.MODE_READ_ONLY)
+                .use { apex -> parseStagingOutcome(bound.installTetheringApex(apex)) }
         }
+
+    /**
+     * Restarts the device so a staged module is applied.
+     *
+     * Returns why it could not be issued, or empty on success — the process
+     * usually dies mid-call, so a caller sees a result only when nothing
+     * happened.
+     */
+    suspend fun rebootDevice(): String = withContext(Dispatchers.IO) {
+        val bound = service()
+        verifyContract(bound)
+        bound.rebootDevice()
+    }
 
     suspend fun start(logging: Boolean): String = withContext(Dispatchers.IO) {
         val bound = service()

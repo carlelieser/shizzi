@@ -3,6 +3,7 @@ package dev.shizzi
 import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
+import android.os.ParcelFileDescriptor
 import android.util.Log
 
 /**
@@ -84,9 +85,23 @@ class TetherService : ITetherService.Stub {
      * apexd underneath it, and that text is the only thing that says why —
      * losing it to a RemoteException would leave the user a bare failure.
      */
-    override fun installTetheringApex(localPath: String): String =
-        runCatching { apexInstaller.stage(localPath).toJson() }
+    override fun installTetheringApex(apex: ParcelFileDescriptor): String =
+        runCatching { apexInstaller.stage(apex).toJson() }
             .getOrElse { failure -> stagingError(failure) }
+
+    /**
+     * Never throws across the binder: a reboot that could not be issued leaves
+     * the user looking at the button they just pressed, and the reason is the
+     * only thing that explains why nothing happened.
+     */
+    override fun rebootDevice(): String =
+        runCatching {
+            Runtime.getRuntime().exec(arrayOf("svc", "power", "reboot"))
+            ""
+        }.getOrElse { failure ->
+            Log.e(TAG, "rebootDevice failed", failure)
+            "${failure.javaClass.simpleName}: ${failure.message}"
+        }
 
     /**
      * Empties the file this process writes; the app clears its own half.
