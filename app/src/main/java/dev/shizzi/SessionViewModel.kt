@@ -46,6 +46,9 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
     private val localDiagnostics = MutableStateFlow<DiagnosticsState>(DiagnosticsState.Idle)
     val diagnosticsState: StateFlow<DiagnosticsState> = localDiagnostics.asStateFlow()
 
+    private val localCompatibility = MutableStateFlow<CompatibilityState>(CompatibilityState.Idle)
+    val compatibilityState: StateFlow<CompatibilityState> = localCompatibility.asStateFlow()
+
     /** Guards against a second collector per onResume. */
     private var sessionCollector: Job? = null
 
@@ -143,6 +146,35 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
                 )
             refreshShizukuState()
         }
+    }
+
+    /**
+     * Resolves the two APIs the app rests on, through the shell.
+     *
+     * A thrown failure is [CompatibilityState.Failed] rather than a verdict of
+     * incompatible: not reaching Shizuku says nothing about the device, and
+     * telling a working handset it is unsupported is the worse error.
+     */
+    fun checkCompatibility() {
+        if (localCompatibility.value is CompatibilityState.Checking) return
+        localCompatibility.value = CompatibilityState.Checking
+
+        viewModelScope.launch {
+            localCompatibility.value = runCatching { diagnostics.checkCompatibility() }
+                .fold(
+                    onSuccess = { results -> CompatibilityState.Complete(results) },
+                    onFailure = { failure ->
+                        CompatibilityState.Failed(
+                            "${failure.javaClass.simpleName}: ${failure.message}",
+                        )
+                    },
+                )
+        }
+    }
+
+    /** Persisted, so the wizard is a first run rather than a launch screen. */
+    fun completeOnboarding() {
+        viewModelScope.launch { settingsStore.completeOnboarding() }
     }
 
     /** Drops a finished run's result, so its toast leaves the screen. */
