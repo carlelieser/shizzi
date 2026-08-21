@@ -13,7 +13,7 @@ forwards hotspot traffic through a Go datapath. Supports IPv4 and IPv6.
 
 ## Requirements
 
-- Android 13 (API 33+), arm64
+- Android 11 (API 30+), arm64
 - [Shizuku](https://shizuku.rikka.app/) 13.6.0+
 
 ## Install

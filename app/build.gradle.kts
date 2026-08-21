@@ -76,11 +76,12 @@ android {
 
     defaultConfig {
         applicationId = "dev.shizzi"
-        // TetheringManager.setPreferTestNetworks, the one call the whole
-        // approach rests on, was added in API 33. Below it the app installs,
-        // launches, and can do nothing but report UNSUPPORTED. Rejecting those
-        // devices at install time is the honest failure.
-        minSdk = 33
+        // TetheringManager.setPreferTestNetworks lives in the tethering Mainline
+        // module, not the platform, so the API level does not decide whether a
+        // device has it. 30-32 ship a module too old to carry it and can be
+        // offered a newer one (see TetheringApex); below 30 the android11 train
+        // predates the feature entirely, and no module install reaches it.
+        minSdk = 30
         targetSdk = 35
         versionCode = 2
         versionName = "0.2.0"

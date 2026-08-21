@@ -46,8 +46,11 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
     private val localDiagnostics = MutableStateFlow<DiagnosticsState>(DiagnosticsState.Idle)
     val diagnosticsState: StateFlow<DiagnosticsState> = localDiagnostics.asStateFlow()
 
-    private val localCompatibility = MutableStateFlow<CompatibilityState>(CompatibilityState.Idle)
-    val compatibilityState: StateFlow<CompatibilityState> = localCompatibility.asStateFlow()
+    /** Owns the check and the module install a failed one can lead to. */
+    private val compatibility =
+        CompatibilityController(getApplication(), diagnostics, viewModelScope)
+
+    val compatibilityState: StateFlow<CompatibilityState> = compatibility.state
 
     /** Guards against a second collector per onResume. */
     private var sessionCollector: Job? = null
@@ -155,29 +158,12 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    /**
-     * Resolves the two APIs the app rests on, through the shell.
-     *
-     * A thrown failure is [CompatibilityState.Failed] rather than a verdict of
-     * incompatible: not reaching Shizuku says nothing about the device, and
-     * telling a working handset it is unsupported is the worse error.
-     */
-    fun checkCompatibility() {
-        if (localCompatibility.value is CompatibilityState.Checking) return
-        localCompatibility.value = CompatibilityState.Checking
+    /** Delegated: the check and the module install it can lead to are one sequence. */
+    fun checkCompatibility() = compatibility.check()
 
-        viewModelScope.launch {
-            localCompatibility.value = runCatching { diagnostics.checkCompatibility() }
-                .fold(
-                    onSuccess = { results -> CompatibilityState.Complete(results) },
-                    onFailure = { failure ->
-                        CompatibilityState.Failed(
-                            "${failure.javaClass.simpleName}: ${failure.message}",
-                        )
-                    },
-                )
-        }
-    }
+    fun downloadTetheringApex() = compatibility.downloadApex()
+
+    fun installTetheringApex() = compatibility.installApex()
 
     /** Persisted, so the wizard is a first run rather than a launch screen. */
     fun completeOnboarding() {
@@ -192,7 +178,7 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
      * badge for the moment before the new run reports.
      */
     fun restartOnboarding() {
-        localCompatibility.value = CompatibilityState.Idle
+        compatibility.reset()
         viewModelScope.launch { settingsStore.setOnboardingComplete(false) }
     }
 

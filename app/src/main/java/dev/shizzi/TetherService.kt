@@ -26,6 +26,7 @@ class TetherService : ITetherService.Stub {
     private val runner: ProbeRunner by lazy { ProbeRunner(shellContext) }
     private val session: TetherSession by lazy { TetherSession(shellContext) }
     private val compatibility: CompatibilityCheck by lazy { CompatibilityCheck(shellContext) }
+    private val apexInstaller: ApexInstaller by lazy { ApexInstaller() }
 
     @Suppress("unused")
     constructor() : this(acquireSystemContext())
@@ -78,6 +79,15 @@ class TetherService : ITetherService.Stub {
             .getOrElse { failure -> errorReport("checkCompatibility", failure) }
 
     /**
+     * Never throws across the binder: a rejected APEX is reported by pm and by
+     * apexd underneath it, and that text is the only thing that says why —
+     * losing it to a RemoteException would leave the user a bare failure.
+     */
+    override fun installTetheringApex(localPath: String): String =
+        runCatching { apexInstaller.stage(localPath).toJson() }
+            .getOrElse { failure -> stagingError(failure) }
+
+    /**
      * Empties the file this process writes; the app clears its own half.
      *
      * Never throws across the binder — a failed clear is not worth a
@@ -127,6 +137,21 @@ class TetherService : ITetherService.Stub {
             put("state", SessionState.ERROR.name)
             put("detail", "$operation: ${failure.javaClass.simpleName}: ${failure.message}")
         }.toString()
+    }
+
+    /**
+     * A staging failure in the shape [parseStagingOutcome] reads.
+     *
+     * Not [errorReport]: the app folds this into the install card, which looks
+     * for "staged" and "output" — a probe report carries neither and would
+     * render as a staged device that never staged.
+     */
+    private fun stagingError(failure: Throwable): String {
+        Log.e(TAG, "installTetheringApex failed", failure)
+        return StagingOutcome(
+            isStaged = false,
+            rawOutput = "installTetheringApex: ${failure.javaClass.simpleName}: ${failure.message}",
+        ).toJson()
     }
 
     private fun errorReport(operation: String, failure: Throwable): String {

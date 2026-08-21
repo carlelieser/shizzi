@@ -90,18 +90,6 @@ private fun CapabilityDetail(detail: String) {
 }
 
 /**
- * Offers a break after each dot in a dotted name.
- *
- * These lines are exception text, whose class and method names carry no spaces
- * — so the layout has no legal break and splits mid-identifier. A zero-width
- * space is a break opportunity that renders as nothing, leaving the text
- * exactly as the platform reported it while letting it wrap where a reader
- * would expect.
- */
-private fun breakableIdentifiers(detail: String): String =
-    detail.replace(".", ".\u200B")
-
-/**
  * Reserved at the mark's size in every state, so a row does not resize as its
  * spinner is replaced by a result.
  */

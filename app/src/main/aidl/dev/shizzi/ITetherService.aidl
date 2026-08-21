@@ -56,6 +56,18 @@ interface ITetherService {
      */
     String checkCompatibility();
 
+    /**
+     * Stages the tethering APEX at [localPath] for install on the next boot.
+     *
+     * Here rather than in the app process because the install needs shell UID
+     * and a path under /data/local/tmp, which the app can read but not write —
+     * so this side does the copy as well as the install.
+     *
+     * Never throws across the binder: pm's own output is the only useful
+     * account of a rejected APEX, and it comes back verbatim in the JSON (R7.5).
+     */
+    String installTetheringApex(String localPath);
+
     /** Checked by the app to detect a stale shell process (R2.5). */
     int getContractVersion();
 }

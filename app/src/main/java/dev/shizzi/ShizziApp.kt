@@ -14,6 +14,8 @@ import dev.shizzi.ui.onboarding.OnboardingFlow
 data class OnboardingEntry(
     val compatibility: CompatibilityState,
     val onCheckCompatibility: () -> Unit,
+    val onDownloadTetheringApex: () -> Unit,
+    val onInstallTetheringApex: () -> Unit,
     val onComplete: () -> Unit,
 )
 
@@ -44,6 +46,8 @@ fun ShizziApp(
             actions = OnboardingActions(
                 onRequestPermission = actions.onRequestPermission,
                 onCheckCompatibility = onboarding.onCheckCompatibility,
+                onDownloadTetheringApex = onboarding.onDownloadTetheringApex,
+                onInstallTetheringApex = onboarding.onInstallTetheringApex,
                 onFinish = onboarding.onComplete,
             ),
         )

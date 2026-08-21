@@ -8,6 +8,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import dev.shizzi.CompatibilityState
 import dev.shizzi.ShizukuState
 import dev.shizzi.isCompatible
+import dev.shizzi.isOnFixPath
 
 /**
  * The steps, in order. Adding one is an entry here plus the composable it
@@ -19,6 +20,8 @@ enum class OnboardingStep { WELCOME, SHIZUKU, COMPATIBILITY }
 data class OnboardingActions(
     val onRequestPermission: () -> Unit,
     val onCheckCompatibility: () -> Unit,
+    val onDownloadTetheringApex: () -> Unit,
+    val onInstallTetheringApex: () -> Unit,
     val onFinish: () -> Unit,
 )
 
@@ -100,6 +103,10 @@ private fun shizukuStep(
  * Finish appears only for a device that passed. One that did not keeps Check,
  * which is the only action left worth offering — Shizuku may have been granted
  * since, and nothing else on this screen can change the answer.
+ *
+ * A device on the fix path gets the step of that path it has reached instead:
+ * there is something better to offer it than re-running a check whose answer
+ * will not change until the module is installed.
  */
 private fun compatibilityStep(
     state: CompatibilityState,
@@ -109,6 +116,7 @@ private fun compatibilityStep(
     content = { CompatibilityStep(state) },
     primary = when {
         state.isCompatible -> WizardAction(label = "Finish", onClick = actions.onFinish)
+        state.isOnFixPath -> fixPathAction(state, actions)
 
         else -> WizardAction(
             label = "Check",
@@ -117,3 +125,40 @@ private fun compatibilityStep(
         )
     },
 )
+
+/**
+ * Whichever of download, install, or re-check the fix path is up to.
+ *
+ * Staged offers Check rather than a reboot: the app does not restart anyone's
+ * phone, and after a reboot Check is exactly the action that confirms the module
+ * took. Enabled so a user who has already rebooted is not stuck behind a
+ * disabled button.
+ */
+private fun fixPathAction(
+    state: CompatibilityState,
+    actions: OnboardingActions,
+): WizardAction = when (state) {
+    is CompatibilityState.Downloaded ->
+        WizardAction(label = "Install", onClick = actions.onInstallTetheringApex)
+
+    is CompatibilityState.Installing ->
+        WizardAction(label = "Installing", isEnabled = false, onClick = {})
+
+    is CompatibilityState.Staged ->
+        WizardAction(label = "Check", onClick = actions.onCheckCompatibility)
+
+    // A rejection is usually the device's signing key rather than the bytes, so
+    // Check is what is left: it re-reads the device instead of implying that
+    // pressing Install again would land differently.
+    is CompatibilityState.InstallFailed ->
+        WizardAction(label = "Check", onClick = actions.onCheckCompatibility)
+
+    is CompatibilityState.DownloadFailed ->
+        WizardAction(label = "Retry", onClick = actions.onDownloadTetheringApex)
+
+    else -> WizardAction(
+        label = "Download",
+        isEnabled = state !is CompatibilityState.Downloading,
+        onClick = actions.onDownloadTetheringApex,
+    )
+}

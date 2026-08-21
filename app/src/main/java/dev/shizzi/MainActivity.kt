@@ -73,6 +73,8 @@ class MainActivity : ComponentActivity() {
                         onboarding = OnboardingEntry(
                             compatibility = compatibility,
                             onCheckCompatibility = viewModel::checkCompatibility,
+                            onDownloadTetheringApex = viewModel::downloadTetheringApex,
+                            onInstallTetheringApex = viewModel::installTetheringApex,
                             onComplete = viewModel::completeOnboarding,
                         ),
                         actions = AppActions(

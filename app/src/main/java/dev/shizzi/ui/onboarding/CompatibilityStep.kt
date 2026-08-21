@@ -16,6 +16,8 @@ import androidx.compose.ui.Modifier
 import dev.shizzi.Capability
 import dev.shizzi.CapabilityResult
 import dev.shizzi.CompatibilityState
+import dev.shizzi.isOnFixPath
+import dev.shizzi.reportedResults
 import dev.shizzi.ui.theme.ShizziTheme
 
 /**
@@ -29,7 +31,8 @@ fun CompatibilityStep(state: CompatibilityState) {
     // Scrolls only when a failure's quoted detail is on screen. Scrolling
     // always would leave the column unbounded, and the verdict below it could
     // not take a weight — which is what centres it in the gap above the dots.
-    val isOverflowing = state is CompatibilityState.Failed
+    // The fix path scrolls too: its card sits below both capability rows.
+    val isOverflowing = state is CompatibilityState.Failed || state.isOnFixPath
 
     Column(
         modifier = Modifier
@@ -73,7 +76,28 @@ private fun ColumnScope.VerdictBand(state: CompatibilityState, isOverflowing: Bo
         modifier = Modifier.fillMaxWidth().then(sizing),
         contentAlignment = Alignment.Center,
     ) {
-        CompatibilityVerdict(state)
+        when {
+            state.isOnFixPath -> FixPathCard(state)
+            else -> CompatibilityVerdict(state)
+        }
+    }
+}
+
+/**
+ * The offer, then the install — one card at a time.
+ *
+ * A verdict mark would be wrong here: this device has not been judged
+ * incompatible, it has been offered something to do about it.
+ */
+@Composable
+private fun FixPathCard(state: CompatibilityState) {
+    when (state) {
+        is CompatibilityState.Fixable,
+        is CompatibilityState.Downloading,
+        is CompatibilityState.DownloadFailed,
+        -> TetheringProviderDownloadCard(state = state, hasNetwork = hasValidatedNetwork())
+
+        else -> TetheringProviderInstallCard(state)
     }
 }
 
@@ -96,15 +120,16 @@ private fun CheckFailure(problem: String) {
 /**
  * Idle renders as loading rather than a fourth state: the check starts with the
  * step, so the gap before the first result is the only time this is seen.
+ *
+ * A run that answered keeps its marks while the module is fetched — the rows
+ * are why the offer is being made, so blanking them would remove the
+ * explanation at the moment it matters.
  */
 private fun statusFor(state: CompatibilityState, capability: Capability): CapabilityStatus =
-    when (state) {
-        is CompatibilityState.Complete -> when {
-            state.resultFor(capability)?.isPresent == true -> CapabilityStatus.SUCCESS
-            else -> CapabilityStatus.FAILURE
-        }
-
-        is CompatibilityState.Failed -> CapabilityStatus.FAILURE
+    when {
+        state.resultFor(capability)?.isPresent == true -> CapabilityStatus.SUCCESS
+        state.resultFor(capability) != null -> CapabilityStatus.FAILURE
+        state is CompatibilityState.Failed -> CapabilityStatus.FAILURE
         else -> CapabilityStatus.LOADING
     }
 
@@ -112,10 +137,8 @@ private fun statusFor(state: CompatibilityState, capability: Capability): Capabi
  * Empty unless the run answered: a failed run's reason is the run's, and
  * repeating it under both rows would state it twice.
  */
-private fun detailFor(state: CompatibilityState, capability: Capability): String = when (state) {
-    is CompatibilityState.Complete -> state.resultFor(capability)?.detail.orEmpty()
-    else -> ""
-}
+private fun detailFor(state: CompatibilityState, capability: Capability): String =
+    state.resultFor(capability)?.detail.orEmpty()
 
-private fun CompatibilityState.Complete.resultFor(capability: Capability): CapabilityResult? =
-    results.firstOrNull { it.capability == capability }
+private fun CompatibilityState.resultFor(capability: Capability): CapabilityResult? =
+    reportedResults.firstOrNull { it.capability == capability }

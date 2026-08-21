@@ -247,6 +247,20 @@ class TetherClient {
         parseCapabilities(bound.checkCompatibility())
     }
 
+    /**
+     * Stages the verified APEX at [path] through the shell.
+     *
+     * Verifies the contract for the same reason [checkCompatibility] does: an
+     * older daemon has no such method and raises AbstractMethodError, which
+     * would read as the install failing rather than as never having run.
+     */
+    suspend fun installTetheringApex(path: String): StagingOutcome =
+        withContext(Dispatchers.IO) {
+            val bound = service()
+            verifyContract(bound)
+            parseStagingOutcome(bound.installTetheringApex(path))
+        }
+
     suspend fun start(logging: Boolean): String = withContext(Dispatchers.IO) {
         val bound = service()
         verifyContract(bound)
