@@ -3,10 +3,10 @@ package dev.shizzi.ui.onboarding
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.RestartAlt
-import androidx.compose.material.icons.filled.SystemUpdateAlt
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
@@ -43,7 +43,7 @@ fun ModuleStateIcon(state: CompatibilityState) {
             is CompatibilityState.Downloading,
             is CompatibilityState.Installing,
             -> CircularProgressIndicator(
-                color = ShizziTheme.colors.primary,
+                color = ShizziTheme.colors.onSurfaceMuted,
                 strokeWidth = 2.dp,
                 modifier = Modifier.size(SpinnerSize),
             )
@@ -62,25 +62,28 @@ private fun glyphFor(state: CompatibilityState): ImageVector = when (state) {
     is CompatibilityState.Staged -> Icons.Filled.RestartAlt
     is CompatibilityState.DownloadFailed -> Icons.Filled.ErrorOutline
     is CompatibilityState.InstallFailed -> Icons.Filled.ErrorOutline
-    is CompatibilityState.Downloaded -> Icons.Filled.SystemUpdateAlt
-    else -> Icons.Filled.Download
+    is CompatibilityState.Downloaded -> Icons.Filled.Check
+    else -> Icons.Filled.FileDownload
 }
 
 /**
- * Muted for a stop, primary for anything still moving forward — the same
- * division the capability rows draw between a failure and a pass.
+ * Primary only once something has landed, matching the capability rows: their
+ * check mark is the one primary glyph and it means an answered pass. An offer
+ * not yet acted on, and a stop, are both muted — colouring the initial download
+ * primary would give the loudest mark on screen to the state that has done the
+ * least.
  */
 @Composable
 private fun tintFor(state: CompatibilityState): Color = when (state) {
-    is CompatibilityState.DownloadFailed -> ShizziTheme.colors.onSurfaceMuted
-    is CompatibilityState.InstallFailed -> ShizziTheme.colors.onSurfaceMuted
-    else -> ShizziTheme.colors.primary
+    is CompatibilityState.Downloaded -> ShizziTheme.colors.primary
+    is CompatibilityState.Staged -> ShizziTheme.colors.primary
+    else -> ShizziTheme.colors.onSurfaceMuted
 }
 
 private fun descriptionFor(state: CompatibilityState): String = when (state) {
     is CompatibilityState.Staged -> "Restart required"
     is CompatibilityState.DownloadFailed -> "Download failed"
     is CompatibilityState.InstallFailed -> "Install failed"
-    is CompatibilityState.Downloaded -> "Ready to install"
+    is CompatibilityState.Downloaded -> "Downloaded and verified"
     else -> "Module available"
 }

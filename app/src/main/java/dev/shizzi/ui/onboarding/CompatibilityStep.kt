@@ -30,9 +30,10 @@ import dev.shizzi.ui.theme.ShizziTheme
 fun CompatibilityStep(state: CompatibilityState) {
     // Scrolls only when a failure's quoted detail is on screen. Scrolling
     // always would leave the column unbounded, and the verdict below it could
-    // not take a weight — which is what centres it in the gap above the dots.
-    // The fix path scrolls too: its card sits below both capability rows.
-    val isOverflowing = state is CompatibilityState.Failed || state.isOnFixPath
+    // not take a weight — which is what places it in the gap above the dots.
+    // The fix path deliberately does not scroll: its card is bottom-aligned
+    // against that weighted gap, which an unbounded column does not have.
+    val isOverflowing = state is CompatibilityState.Failed
 
     Column(
         modifier = Modifier
@@ -64,6 +65,11 @@ fun CompatibilityStep(state: CompatibilityState) {
  *
  * Falls back to wrapping its content while the column scrolls, where there is
  * no bounded height to take a fraction of.
+ *
+ * The fix card is the exception: it sits at the bottom of the band rather than
+ * in the middle of it, directly above the footer whose button acts on it. A
+ * verdict mark is a result and belongs in the empty space; this is a control,
+ * and floating it mid-screen separates it from the button that drives it.
  */
 @Composable
 private fun ColumnScope.VerdictBand(state: CompatibilityState, isOverflowing: Boolean) {
@@ -72,9 +78,17 @@ private fun ColumnScope.VerdictBand(state: CompatibilityState, isOverflowing: Bo
         else -> Modifier.weight(1f)
     }
 
+    val placement = when {
+        state.isOnFixPath -> Alignment.BottomCenter
+        else -> Alignment.Center
+    }
+
     Box(
-        modifier = Modifier.fillMaxWidth().then(sizing),
-        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(sizing)
+            .padding(top = ShizziTheme.spacing.lg),
+        contentAlignment = placement,
     ) {
         when {
             state.isOnFixPath -> FixPathCard(state)
