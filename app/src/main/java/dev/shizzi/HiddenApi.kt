@@ -91,9 +91,11 @@ object HiddenApiCatalog {
             id = "TetheringManager.setPreferTestNetworks",
             className = "android.net.TetheringManager",
             memberName = "setPreferTestNetworks",
-            since = 33,
+            since = 32,
             notes = "THE load-bearing call: without it the tethering stack never " +
-                "selects the TUN. @TestApi, gated on TETHER_PRIVILEGED.",
+                "selects the TUN. @TestApi, gated on TETHER_PRIVILEGED. Carried " +
+                "by the tethering module rather than the platform, so a build " +
+                "below 33 has it only if that module is new enough.",
         ),
         HiddenApiPath(
             id = "WifiManager.startTetheredHotspot",
