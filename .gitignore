@@ -21,3 +21,6 @@ local.properties
 *.jks
 *.keystore
 /keystore.properties
+
+# Claude Code session state and its git worktrees.
+/.claude/

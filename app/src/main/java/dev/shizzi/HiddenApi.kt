@@ -7,7 +7,6 @@ import android.net.LinkAddress
 import android.net.LinkProperties
 import android.net.Network
 import android.net.NetworkCapabilities
-import android.os.Build
 import android.os.IBinder
 import android.os.ParcelFileDescriptor
 import java.lang.reflect.Method
@@ -32,11 +31,9 @@ data class HiddenApiPath(
  * The reflection paths, as data. Resolution failures are reported per-path so a
  * single missing method identifies itself instead of collapsing the whole run.
  *
- * `since` values are verified against AOSP sources. The two subsystems here
- * have different floors: test-network creation ships from API 29, but
- * tethering-side upstream selection (setPreferTestNetworks) only from 33 —
- * which is why the app's floor is 33, and why a working test network on
- * Android 10 achieves nothing. See docs/android-10-support.md.
+ * `since` is the earliest API level the path was verified on, and the two
+ * subsystems here do not share a floor. Which releases the app as a whole can
+ * run on is a separate question, worked out in docs/android-compatibility.md.
  */
 object HiddenApiCatalog {
     val paths: List<HiddenApiPath> = listOf(
@@ -53,10 +50,9 @@ object HiddenApiCatalog {
             className = "android.net.TestNetworkManager",
             memberName = "createTunInterface",
             since = 29,
-            notes = "Signature changed across releases: API 29-30 take " +
-                "LinkAddress[], later releases take Collection<LinkAddress>. " +
-                "Both overloads are probed, and both are passed the IPv4 and " +
-                "IPv6 TUN addresses together.",
+            notes = "Two overloads exist, taking LinkAddress[] and " +
+                "Collection<LinkAddress>. Both are probed, and both are passed " +
+                "the IPv4 and IPv6 TUN addresses together.",
         ),
         HiddenApiPath(
             id = "TestNetworkManager.setupTestNetwork",
@@ -96,8 +92,8 @@ object HiddenApiCatalog {
             className = "android.net.TetheringManager",
             memberName = "setPreferTestNetworks",
             since = 33,
-            notes = "THE load-bearing call. @TestApi, added in T. Absent below " +
-                "33, which is why the feature floor is API 33 (spec 1.3).",
+            notes = "THE load-bearing call: without it the tethering stack never " +
+                "selects the TUN. @TestApi, gated on TETHER_PRIVILEGED.",
         ),
         HiddenApiPath(
             id = "WifiManager.startTetheredHotspot",
@@ -238,8 +234,8 @@ class TestNetworkApi(private val context: Context) {
     /**
      * Creates a TUN carrying [addresses].
      *
-     * Tries the Collection overload first (API 31+) then the array overload
-     * (API 29-30), because the parameter type changed between releases.
+     * Tries the Collection overload first, then the array overload, because
+     * builds disagree on which one they carry.
      */
     fun createTunInterface(addresses: List<LinkAddress>): TunHandle {
         val instance = manager ?: error("createTunInterface: test_network service unavailable")
@@ -342,15 +338,12 @@ class TunHandle(private val delegate: Any) {
 }
 
 /**
- * TetheringManager.setPreferTestNetworks (API 33+), the single call the whole
- * approach rests on — so its absence is reported rather than swallowed.
+ * TetheringManager.setPreferTestNetworks, the single call the whole approach
+ * rests on — so its absence is reported rather than swallowed.
  */
 class TetheringPreferenceApi(private val context: Context) {
 
     private fun resolveMethod(): Method {
-        check(Build.VERSION.SDK_INT >= 33) {
-            "setPreferTestNetworks requires API 33, device is ${Build.VERSION.SDK_INT}"
-        }
         val owner = Class.forName("android.net.TetheringManager")
         return owner.getMethod("setPreferTestNetworks", Boolean::class.javaPrimitiveType)
     }
