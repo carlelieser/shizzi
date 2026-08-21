@@ -2,6 +2,7 @@ package dev.shizzi
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.os.Build
 import android.util.Log
 
 /**
@@ -221,34 +222,52 @@ class TetherService : ITetherService.Stub {
         }
 
         /**
-         * Repoints ContextImpl.mAttributionSource at the shell package.
+         * Repoints the context's op package at the shell package.
          *
          * createPackageContext fixes getPackageName but not getOpPackageName,
-         * which is what services actually attribute by. On API 36 that reads
-         * mAttributionSource; the older mOpPackageName field no longer backs
-         * it, so writing that one succeeded and changed nothing.
+         * which is what services actually attribute by. Which field backs it
+         * depends on the release: AttributionSource arrived in API 31 and has
+         * backed it since, while API 30 has only the mOpPackageName string —
+         * writing the wrong one succeeds and changes nothing, so the two are
+         * kept apart rather than tried in sequence.
          *
          * @throws IllegalStateException so a future release moving this again
          *   fails loudly instead of producing another silent no-op.
          */
         private fun forceOpPackageName(context: Context) {
             runCatching {
-                val field = context.javaClass.getDeclaredField("mAttributionSource")
-                field.isAccessible = true
+                when {
+                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
+                        rebaseAttributionSource(context)
 
-                val current = field.get(context)
-                    ?: error("mAttributionSource was null")
-                val rebased = current.javaClass
-                    .getMethod("withPackageName", String::class.java)
-                    .invoke(current, SHELL_PACKAGE)
-
-                field.set(context, rebased)
+                    else -> rebaseOpPackageName(context)
+                }
             }.getOrElse { failure ->
                 throw IllegalStateException(
                     "forceOpPackageName: could not attribute context to $SHELL_PACKAGE",
                     failure,
                 )
             }
+        }
+
+        /** API 31+, where getOpPackageName reads through AttributionSource. */
+        private fun rebaseAttributionSource(context: Context) {
+            val field = context.javaClass.getDeclaredField("mAttributionSource")
+            field.isAccessible = true
+
+            val current = field.get(context) ?: error("mAttributionSource was null")
+            val rebased = current.javaClass
+                .getMethod("withPackageName", String::class.java)
+                .invoke(current, SHELL_PACKAGE)
+
+            field.set(context, rebased)
+        }
+
+        /** API 30, which predates AttributionSource entirely. */
+        private fun rebaseOpPackageName(context: Context) {
+            val field = context.javaClass.getDeclaredField("mOpPackageName")
+            field.isAccessible = true
+            field.set(context, SHELL_PACKAGE)
         }
     }
 }
