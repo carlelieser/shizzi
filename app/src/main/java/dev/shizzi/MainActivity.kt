@@ -22,7 +22,6 @@ class MainActivity : ComponentActivity() {
 
     private val viewModel: SessionViewModel by viewModels()
 
-    /** R1.3: permission arrives via this listener, never auto-requested at launch. */
     private val permissionListener =
         Shizuku.OnRequestPermissionResultListener { _, _ -> viewModel.refreshShizukuState() }
 
@@ -32,10 +31,6 @@ class MainActivity : ComponentActivity() {
     private val binderDeadListener =
         Shizuku.OnBinderDeadListener { viewModel.refreshShizukuState() }
 
-    /**
-     * Once at launch, never blocking: the service runs either way, so a denial
-     * costs the user visibility rather than function.
-     */
     private val notificationPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
 
@@ -51,9 +46,6 @@ class MainActivity : ComponentActivity() {
             ShizziTheme(choice = loaded.theme) {
                 val colors = ShizziTheme.colors
 
-                // Edge-to-edge makes the bar icons the app's responsibility, or
-                // they stay light-on-light and invisible. Keyed on the resolved
-                // theme, since the setting can override the system's.
                 SideEffect {
                     WindowCompat.getInsetsController(window, window.decorView)
                         .isAppearanceLightStatusBars = !colors.isDark
@@ -91,16 +83,9 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        // After setContent: the listener attaches to the view setContent
-        // installs, which does not exist before it runs.
         holdFirstFrameUntilSettingsLoad()
     }
 
-    /**
-     * Holds the window until the stored theme is known: otherwise it paints
-     * under the default for a frame or two while DataStore reads, flashing dark
-     * on every launch for a user who chose Light on a dark-mode phone.
-     */
     private fun holdFirstFrameUntilSettingsLoad() {
         val content = findViewById<View>(android.R.id.content)
 

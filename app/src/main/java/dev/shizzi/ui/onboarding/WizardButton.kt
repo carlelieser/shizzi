@@ -15,17 +15,8 @@ import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.brutalSurface
 import dev.shizzi.ui.theme.isPressed
 
-/** Matches the connect button, so the two read as the same control. */
 private val ButtonHeight = 56.dp
 
-/**
- * Full-width footer button.
- *
- * Turquoise for the step's own action and neutral for the way past it, which
- * keeps the app's rule that the saturated element is the one worth acting on.
- * A disabled button keeps its footprint and loses its fill, so a footer whose
- * primary becomes available does not reflow.
- */
 @Composable
 fun WizardButton(action: WizardAction, isPrimary: Boolean) {
     val interaction = remember { MutableInteractionSource() }

@@ -8,20 +8,10 @@ import dev.shizzi.BuildConfig
 import dev.shizzi.SessionLog
 import java.io.File
 
-/** Subdirectory of files/, matching the authority's declared path. */
 private const val EXPORT_DIR = "exports"
 
-/** One name, overwritten per export: the last report is the only one worth keeping. */
 private const val EXPORT_NAME = "shizzi-probe-report.json"
 
-/**
- * Writes its own copy from the [report] string rather than sharing the shell's
- * file: that lives in /data/local/tmp, which this process cannot read, and a
- * FileProvider can only serve paths inside app storage anyway.
- *
- * Failures are logged, not thrown — the user can already see where the report
- * landed, so crashing because no app accepts JSON costs more than it saves.
- */
 fun Context.exportReport(report: String) {
     val uri = runCatching { writeExport(report) }
         .getOrElse { failure ->
@@ -33,8 +23,7 @@ fun Context.exportReport(report: String) {
         .setType("application/json")
         .putExtra(Intent.EXTRA_STREAM, uri)
         .putExtra(Intent.EXTRA_SUBJECT, EXPORT_NAME)
-        // The receiving process has no claim on this file; the grant is what
-        // lets it read the uri, and it lasts only as long as the intent.
+
         .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
 
     try {

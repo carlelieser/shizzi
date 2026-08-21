@@ -5,16 +5,8 @@ import android.os.Build
 import android.util.Log
 import org.json.JSONObject
 
-/** What the session is currently doing, as reported to the UI. */
 enum class SessionState { IDLE, STARTING, ACTIVE, ERROR }
 
-/**
- * Owns a long-lived protected-tethering session inside the shell process. The
- * probe runner answers questions and tears down immediately; this holds the
- * session up until asked to stop.
- *
- * The start ordering in [bringUp] is load-bearing — see the notes there.
- */
 class TetherSession(private val context: Context) {
 
     private val testNetworkApi = TestNetworkApi(context)
@@ -25,7 +17,6 @@ class TetherSession(private val context: Context) {
     private var detail = "not started"
     private var interfaceName: String? = null
 
-    /** When the session went ACTIVE, for the summary [stop] writes. */
     private var activeSince: Long = 0
     private var watchdog: SessionWatchdog? = null
     private val teardown = SessionTeardown(context)
@@ -34,17 +25,12 @@ class TetherSession(private val context: Context) {
 
     val isActive: Boolean get() = state == SessionState.ACTIVE
 
-    /**
-     * Brings the session up, tearing down on any failure.
-     *
-     * @return JSON status; never throws, so the UI always has something to show.
-     */
     fun start(): String {
         if (isActive) return status()
 
         state = SessionState.STARTING
         SessionLog.info("session start requested")
-        // The first thing worth knowing about a log someone sends in.
+
         SessionLog.info(
             "device: ${Build.MANUFACTURER} ${Build.MODEL}, " +
                 "android ${Build.VERSION.RELEASE} (sdk ${Build.VERSION.SDK_INT}), " +
@@ -64,15 +50,6 @@ class TetherSession(private val context: Context) {
             }
     }
 
-    /**
-     * Establishes the session in the order upstream selection requires: TUN,
-     * then preference, then downstream. A live test network has to exist when
-     * tethering goes looking, or it selects from what it already knows — on a
-     * device carrying a stale entry from a previous boot, that is a dead
-     * interface holding the slot the real TUN needs.
-     *
-     * @throws IllegalStateException naming the step that failed.
-     */
     private fun bringUp(): String {
         val group = SessionResources(testNetworkApi, context.connectivityManager())
         resources = group
@@ -100,7 +77,6 @@ class TetherSession(private val context: Context) {
         return status()
     }
 
-    /** Stops the session if the tunnel stops being the sole upstream (R6.1). */
     private fun startWatchdog(name: String) {
         val guard = SessionWatchdog(name) { problem ->
             SessionLog.warn("upstream drift: $problem")
@@ -110,11 +86,6 @@ class TetherSession(private val context: Context) {
         guard.start()
     }
 
-    /**
-     * A teardown failure is kept alongside [problem], not overwritten by it:
-     * "the hotspot is still up" is the more dangerous of the two and the one
-     * the plain message hides. The caller logs its own cause.
-     */
     private fun tearDownAfter(problem: String) {
         stop()
 
@@ -126,15 +97,6 @@ class TetherSession(private val context: Context) {
         }
     }
 
-    /**
-     * Driven false-then-true, because the framework acts on the *change*: an
-     * already-true preference set true again is a no-op, and the new TUN then
-     * appears with nothing prompting tethering to look at it.
-     *
-     * That was the intermittent failure — stop, start, and the upstream never
-     * moves off the previous selection for the whole verify window, while the
-     * next start works because its teardown had just cleared the preference.
-     */
     private fun preferTestNetworks() {
         val api = TetheringPreferenceApi(context)
         runCatching { api.setPreferTestNetworks(false) }
@@ -142,11 +104,6 @@ class TetherSession(private val context: Context) {
         api.setPreferTestNetworks(true)
     }
 
-    /**
-     * Cycles the hotspot if one is already running, so the user does not have
-     * to have enabled tethering first — failing them with an upstream error
-     * would make the app's internal sequencing their problem.
-     */
     private fun restartDownstream() {
         val control = DownstreamControl(context)
         control.stopWifiTethering()
@@ -157,22 +114,12 @@ class TetherSession(private val context: Context) {
         awaitDownstreamTethered()
     }
 
-    /**
-     * Tethered, not merely requested: startWifiTethering returns on acceptance,
-     * well before the downstream is up, and tethering with nothing to serve
-     * never looks for an upstream — `Upstream wanted` stays false and
-     * verifyUpstream times out against an empty list. That was every "tethering
-     * reports []" failure on the device.
-     *
-     * A timeout here is not fatal; verifyUpstream is the real gate.
-     */
     private fun awaitDownstreamTethered() {
         val deadline = System.currentTimeMillis() + DOWNSTREAM_SETTLE_MS
         val downstream = DownstreamInspector()
 
         while (System.currentTimeMillis() < deadline) {
-            // Non-null means something *is* tethered, which is what this waits
-            // for -- the same reading means "still up" during teardown.
+
             if (downstream.findTetheredDownstream() != null) {
                 SessionLog.info("downstream tethered")
                 return
@@ -183,12 +130,6 @@ class TetherSession(private val context: Context) {
         SessionLog.warn("downstream not tethered after ${DOWNSTREAM_SETTLE_MS}ms; continuing")
     }
 
-    /**
-     * R4.3: startup is provisional until the owned TUN is the sole upstream.
-     *
-     * @throws IllegalStateException so [start] tears down rather than leaving
-     *   clients on a physical upstream.
-     */
     private fun verifyUpstream(name: String) {
         val deadline = System.currentTimeMillis() + UPSTREAM_SETTLE_MS
         var observed = liveUpstreams(name)
@@ -204,30 +145,18 @@ class TetherSession(private val context: Context) {
     private fun liveUpstreams(owned: String): List<String> =
         inspector.observe().liveInterfaceNames(owned)
 
-    /**
-     * Releases everything in fail-closed order: downstream first (R6.1).
-     *
-     * Reports ERROR when the downstream could not be confirmed down. Claiming
-     * "stopped" while the hotspot is still broadcasting is the one lie with
-     * real consequence here — clients stay connected through the physical
-     * upstream, which is what the session exists to prevent.
-     */
     fun stop(): String {
         watchdog?.stop()
         watchdog = null
         vpn.stop()
         teardown.removeShutdownHook()
 
-        // Before anything is released: /proc/net/dev stops knowing the
-        // interface once it is gone. Null if the session never went active.
         val summary = if (activeSince == 0L) null else sessionSummary()
 
         val downstreamProblem = teardown.releaseDownstream()
 
         teardown.releaseUpstreamSelection(interfaceName)
 
-        // release() already logs each problem; this keeps the count in the
-        // teardown's own narrative rather than leaving it implicit.
         val releaseProblems = resources?.release().orEmpty()
         resources = null
 
@@ -247,10 +176,6 @@ class TetherSession(private val context: Context) {
         return status()
     }
 
-    /**
-     * Only for a session that reached ACTIVE: a failed start tears down through
-     * the same path, and summarising it reports zeroes over the real finding.
-     */
     private fun sessionSummary(): String {
         val traffic = interfaceName?.let(InterfaceCounters::read) ?: Traffic()
         val elapsed = when (activeSince) {
@@ -262,7 +187,6 @@ class TetherSession(private val context: Context) {
             "${Traffic.format(traffic.up)} up, ${Traffic.format(traffic.down)} down"
     }
 
-    /** Whole units only: a log line reporting a session's length is not a stopwatch. */
     private fun formatDuration(millis: Long): String {
         val totalSeconds = millis / 1000
         val hours = totalSeconds / 3600
@@ -280,13 +204,9 @@ class TetherSession(private val context: Context) {
         put("state", state.name)
         put("detail", detail)
         put("interface", interfaceName ?: JSONObject.NULL)
-        // A boolean rather than the handle: the handle is an opaque framework
-        // token, and nothing on the far side of the binder should render it.
+
         put("isVpnBound", vpn.isBound)
 
-        // Different sources on purpose: bytes from /proc in process every call,
-        // the device count from dumpsys behind its own rate limit. That split
-        // is what keeps a fast poll affordable.
         val traffic = interfaceName?.let(InterfaceCounters::read) ?: Traffic()
         put("bytesUp", traffic.up)
         put("bytesDown", traffic.down)
@@ -303,7 +223,6 @@ class TetherSession(private val context: Context) {
         const val TUN_ADDRESS = "192.0.2.2"
         const val TUN_PREFIX_LENGTH = 24
 
-        /** The IPv6 counterpart, from the documentation range so it cannot collide. */
         const val TUN_ADDRESS_V6 = "2001:db8::2"
         const val TUN_PREFIX_LENGTH_V6 = 64
 
@@ -312,12 +231,6 @@ class TetherSession(private val context: Context) {
         const val UPSTREAM_SETTLE_MS = 8_000L
         const val UPSTREAM_POLL_MS = 500L
 
-        /**
-         * How long to wait for the hotspot to come up before building the TUN.
-         *
-         * Generous because this covers a cold start of the Wi-Fi AP, which on
-         * a real device takes seconds rather than milliseconds.
-         */
         const val DOWNSTREAM_SETTLE_MS = 10_000L
         const val DOWNSTREAM_POLL_MS = 500L
     }

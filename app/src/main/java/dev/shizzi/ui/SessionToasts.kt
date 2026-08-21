@@ -5,14 +5,6 @@ import androidx.compose.runtime.LaunchedEffect
 import dev.shizzi.ShizukuState
 import dev.shizzi.SessionUiState
 
-/**
- * Turns state into toasts, in one place: all three screens float the same host,
- * and "what deserves a message" is worth reading together rather than inferring
- * from scattered call sites.
- *
- * Only two things are announced — a session failure, and a Shizuku problem the
- * user can act on. Success is already in the status icon and the button label.
- */
 @Composable
 fun SessionToasts(
     state: SessionUiState,
@@ -23,10 +15,6 @@ fun SessionToasts(
     ShizukuToast(state.shizukuState, toasts, onRequestPermission)
 }
 
-/**
- * Indefinite: an unread error should not time out while the user is looking
- * away from the phone they just tried to tether from.
- */
 @Composable
 private fun ErrorToast(lastError: String, toasts: ToastState) {
     LaunchedEffect(lastError) {
@@ -45,12 +33,6 @@ private fun ErrorToast(lastError: String, toasts: ToastState) {
     }
 }
 
-/**
- * The badge in the header says Shizuku is unavailable; this says what to do.
- *
- * Only the permission case carries an action, because it is the only one the
- * app can resolve — installing or starting Shizuku happens outside it.
- */
 @Composable
 private fun ShizukuToast(
     state: ShizukuState,
@@ -76,7 +58,6 @@ private fun ShizukuToast(
     }
 }
 
-/** Phrased as the user's situation rather than the API's return value. */
 private fun describe(state: ShizukuState): String = when (state) {
     is ShizukuState.NotInstalled -> "Shizuku is not installed"
     is ShizukuState.NotRunning -> "Shizuku is installed but not running"

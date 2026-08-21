@@ -22,15 +22,6 @@ private val ButtonWidth = 200.dp
 private val ButtonHeight = 56.dp
 private val SpinnerSize = 24.dp
 
-/**
- * Turquoise to start, neutral to stop: only starting is the primary action, and
- * a filled Stop would compete with the connected status glyph for the eye.
- * Not red either — ending your own session is not destructive.
- *
- * Goes neutral with a spinner while coming up, since a turquoise button that
- * ignores taps invites them; Cancel is the live control in that window. The
- * footprint never changes, so nothing reflows.
- */
 @Composable
 fun ConnectButton(
     label: String,
@@ -71,8 +62,7 @@ fun ConnectButton(
             else -> Text(
                 text = label.uppercase(),
                 style = ShizziTheme.typography.title,
-                // onPrimary only on the filled button; the neutral fill needs a
-                // colour that reads against the surface instead.
+
                 color = when (state) {
                     ConnectButtonState.START -> colors.onPrimary
                     ConnectButtonState.STOP -> colors.onSurface
@@ -83,18 +73,12 @@ fun ConnectButton(
     }
 }
 
-/** What the button is currently offering, which decides its fill and label colour. */
 enum class ConnectButtonState { START, STOP, LOADING, DISABLED }
 
-/**
- * Plain text rather than a second bordered box: two stacked surfaces would read
- * as equal choices, and cancelling is the lesser one.
- */
 @Composable
 fun CancelButton(onClick: () -> Unit) {
     Box(
-        // Sized to the touch minimum rather than to the text, which is shorter
-        // than a finger.
+
         modifier = Modifier
             .height(MinTouchTarget)
             .clickable(onClick = onClick),

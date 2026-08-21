@@ -18,17 +18,9 @@ import dev.shizzi.CapabilityResult
 import dev.shizzi.CompatibilityState
 import dev.shizzi.ui.theme.ShizziTheme
 
-/**
- * The capabilities, then the verdict they add up to.
- *
- * Scrolls, because a device failing both checks carries two quoted resolution
- * failures and that exceeds a short screen.
- */
 @Composable
 fun CompatibilityStep(state: CompatibilityState) {
-    // Scrolls only when a failure's quoted detail is on screen. Scrolling
-    // always would leave the column unbounded, and the verdict below it could
-    // not take a weight — which is what centres it in the gap above the dots.
+
     val isOverflowing = state is CompatibilityState.Failed
 
     Column(
@@ -56,12 +48,6 @@ fun CompatibilityStep(state: CompatibilityState) {
     }
 }
 
-/**
- * Centres the verdict in whatever is left between the cards and the footer.
- *
- * Falls back to wrapping its content while the column scrolls, where there is
- * no bounded height to take a fraction of.
- */
 @Composable
 private fun ColumnScope.VerdictBand(state: CompatibilityState, isOverflowing: Boolean) {
     val sizing = when {
@@ -77,12 +63,6 @@ private fun ColumnScope.VerdictBand(state: CompatibilityState, isOverflowing: Bo
     }
 }
 
-/**
- * Why the check could not run, under the rows it left unanswered.
- *
- * Distinct from a capability's own detail: this is the app failing to reach the
- * privileged process, so it belongs to the run rather than to either row.
- */
 @Composable
 private fun CheckFailure(problem: String) {
     Text(
@@ -93,10 +73,6 @@ private fun CheckFailure(problem: String) {
     )
 }
 
-/**
- * Idle renders as loading rather than a fourth state: the check starts with the
- * step, so the gap before the first result is the only time this is seen.
- */
 private fun statusFor(state: CompatibilityState, capability: Capability): CapabilityStatus =
     when (state) {
         is CompatibilityState.Complete -> when {
@@ -108,10 +84,6 @@ private fun statusFor(state: CompatibilityState, capability: Capability): Capabi
         else -> CapabilityStatus.LOADING
     }
 
-/**
- * Empty unless the run answered: a failed run's reason is the run's, and
- * repeating it under both rows would state it twice.
- */
 private fun detailFor(state: CompatibilityState, capability: Capability): String = when (state) {
     is CompatibilityState.Complete -> state.resultFor(capability)?.detail.orEmpty()
     else -> ""

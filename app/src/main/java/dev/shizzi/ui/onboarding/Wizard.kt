@@ -18,23 +18,8 @@ import dev.shizzi.ui.theme.ScreenPadding
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.brutalSurface
 
-/** One dot per step. Sized to read as a marker rather than a tappable control. */
 private val ProgressDotSize = 10.dp
 
-/**
- * One screen of the wizard.
- *
- * A step says what it shows and what its buttons do; it does not place them.
- * The frame is [Wizard]'s, so a step added later cannot drift from the others
- * by laying out its own title or footer.
- *
- * [title] is empty for a step whose content is its own heading — Welcome sets
- * the word at display size as the thing being introduced, and a title above it
- * would be that word twice.
- *
- * [content] is given the width and left to fill it — the frame contributes the
- * screen padding, the title, and the space the footer occupies, nothing else.
- */
 data class WizardStep(
     val title: String,
     val content: @Composable () -> Unit,
@@ -42,26 +27,12 @@ data class WizardStep(
     val secondary: WizardAction? = null,
 )
 
-/**
- * A footer button.
- *
- * [isEnabled] rather than omitting a button that cannot yet be pressed: a
- * footer that gains a control when a check finishes moves the one the user was
- * reaching for.
- */
 data class WizardAction(
     val label: String,
     val isEnabled: Boolean = true,
     val onClick: () -> Unit,
 )
 
-/**
- * Content, progress, footer — the same three bands on every step.
- *
- * Title and content are centred together in the band between the header and the
- * progress dots, so a short step does not sit against the footer with the top
- * half of the screen empty.
- */
 @Composable
 fun Wizard(step: WizardStep, currentIndex: Int, stepCount: Int) {
     Column(
@@ -90,13 +61,6 @@ fun Wizard(step: WizardStep, currentIndex: Int, stepCount: Int) {
     }
 }
 
-/**
- * Filled for where the user is, outlined for everywhere else — the same
- * "this one is active" vocabulary [ThemePicker] uses, so the app has one.
- *
- * Steps behind the user are not marked as done: this wizard cannot be
- * navigated backward, so a third state would distinguish nothing actionable.
- */
 @Composable
 private fun ProgressDots(currentIndex: Int, stepCount: Int, modifier: Modifier = Modifier) {
     Row(
@@ -112,10 +76,6 @@ private fun ProgressDots(currentIndex: Int, stepCount: Int, modifier: Modifier =
     }
 }
 
-/**
- * Square, like every other surface here. A circle would be the one round
- * element in an app whose corners are 0dp without exception.
- */
 @Composable
 private fun ProgressDot(isCurrent: Boolean) {
     val colors = ShizziTheme.colors
@@ -127,11 +87,6 @@ private fun ProgressDot(isCurrent: Boolean) {
     )
 }
 
-/**
- * The primary sits above the secondary rather than beside it: the buttons are
- * full-width, and a row of two would halve the primary to give equal weight to
- * the lesser choice.
- */
 @Composable
 private fun WizardFooter(primary: WizardAction, secondary: WizardAction?) {
     Column(verticalArrangement = Arrangement.spacedBy(ShizziTheme.spacing.md)) {

@@ -9,26 +9,14 @@ import dev.shizzi.CompatibilityState
 import dev.shizzi.ShizukuState
 import dev.shizzi.isCompatible
 
-/**
- * The steps, in order. Adding one is an entry here plus the composable it
- * names; the wizard reads the count from this and needs no other change.
- */
 enum class OnboardingStep { WELCOME, SHIZUKU, COMPATIBILITY }
 
-/** What the flow needs from the app, grouped so it stays within the parameter limit. */
 data class OnboardingActions(
     val onRequestPermission: () -> Unit,
     val onCheckCompatibility: () -> Unit,
     val onFinish: () -> Unit,
 )
 
-/**
- * Runs the three steps and hands off to the app when the last one passes.
- *
- * No back navigation: each step is a precondition for the one after it, so
- * returning to an earlier one offers a user nothing to change. The system back
- * gesture leaves the app, as it does on Home.
- */
 @Composable
 fun OnboardingFlow(
     shizukuState: ShizukuState,
@@ -37,8 +25,6 @@ fun OnboardingFlow(
 ) {
     val current = rememberOnboardingStep()
 
-    // Started with the step rather than by a button, so a device that passes
-    // shows its verdict on arrival. Check then re-runs it for one that did not.
     LaunchedEffect(current.value) {
         if (current.value == OnboardingStep.COMPATIBILITY) actions.onCheckCompatibility()
     }
@@ -65,7 +51,6 @@ fun OnboardingFlow(
     )
 }
 
-/** Saveable so a rotation mid-onboarding does not return to Welcome. */
 @Composable
 private fun rememberOnboardingStep(): MutableState<OnboardingStep> =
     rememberSaveable { mutableStateOf(OnboardingStep.WELCOME) }
@@ -76,12 +61,6 @@ private fun welcomeStep(onNext: () -> Unit) = WizardStep(
     primary = WizardAction(label = "Get started", onClick = onNext),
 )
 
-/**
- * Continue is gated on Shizuku being ready, not merely installed: the next step
- * asks the privileged process a question, and arriving there unable to bind
- * would report the device incompatible over a Shizuku that is simply not
- * running.
- */
 private fun shizukuStep(
     state: ShizukuState,
     onGrant: () -> Unit,
@@ -96,11 +75,6 @@ private fun shizukuStep(
     ),
 )
 
-/**
- * Finish appears only for a device that passed. One that did not keeps Check,
- * which is the only action left worth offering — Shizuku may have been granted
- * since, and nothing else on this screen can change the answer.
- */
 private fun compatibilityStep(
     state: CompatibilityState,
     actions: OnboardingActions,

@@ -25,41 +25,22 @@ import dev.shizzi.ui.theme.ThemeChoice
 import dev.shizzi.ui.theme.brutalSurface
 import dev.shizzi.ui.theme.isPressed
 
-/** Tall enough to take a finger, shorter than the connect button. */
 private val OptionHeight = 44.dp
 
-/** Sized like a settings row's trailing glyph rather than a header icon. */
 private val OptionIconSize = 20.dp
 
-/**
- * Sun, moon, and both at once for the one that follows the device —
- * Brightness4 is a rayed sun with a crescent cut into it, which reads as
- * "either, depending" and keeps the three in one visual family.
- *
- * Not BrightnessAuto or SettingsBrightness, which read as automatic
- * *brightness* — a different setting that also exists on the device.
- */
 private fun glyphFor(choice: ThemeChoice): ImageVector = when (choice) {
     ThemeChoice.SYSTEM -> Icons.Filled.Brightness4
     ThemeChoice.LIGHT -> Icons.Filled.LightMode
     ThemeChoice.DARK -> Icons.Filled.DarkMode
 }
 
-/**
- * Written out rather than derived from the enum name: with the text gone this
- * is the only thing naming the option, so it is copy, not a debug string that
- * happens to be readable.
- */
 private fun labelFor(choice: ThemeChoice): String = when (choice) {
     ThemeChoice.SYSTEM -> "Match system"
     ThemeChoice.LIGHT -> "Light"
     ThemeChoice.DARK -> "Dark"
 }
 
-/**
- * Not a radio group: this design has no unfilled-circle vocabulary, and a
- * filled box is already how the app says "this one is active".
- */
 @Composable
 fun ThemePicker(selected: ThemeChoice, onSelect: (ThemeChoice) -> Unit) {
     Row(
@@ -101,7 +82,7 @@ private fun ThemeOption(
             ),
         contentAlignment = Alignment.Center,
     ) {
-        // With the glyph replacing the word, this is all a screen reader has.
+
         Icon(
             imageVector = glyphFor(choice),
             contentDescription = labelFor(choice),

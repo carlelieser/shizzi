@@ -11,7 +11,6 @@ import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
 
-/** The three values the theme setting can take. */
 enum class ThemeChoice { SYSTEM, LIGHT, DARK }
 
 private val LocalShizziColors: ProvidableCompositionLocal<ShizziColors> =
@@ -23,10 +22,6 @@ private val LocalShizziTypography: ProvidableCompositionLocal<ShizziTypography> 
 private val LocalShizziSpacing: ProvidableCompositionLocal<ShizziSpacing> =
     staticCompositionLocalOf { Spacing }
 
-/**
- * `ShizziTheme.colors.primary` rather than a global import, so a preview or a
- * test can substitute a different set.
- */
 object ShizziTheme {
     val colors: ShizziColors
         @Composable @ReadOnlyComposable get() = LocalShizziColors.current
@@ -38,14 +33,6 @@ object ShizziTheme {
         @Composable @ReadOnlyComposable get() = LocalShizziSpacing.current
 }
 
-/**
- * SYSTEM is the only value that consults the platform; LIGHT and DARK are
- * absolute, which is the point of offering them.
- *
- * MaterialTheme is supplied underneath with the same palette, because Material
- * components read from it and its defaults would put stock purple inside an
- * otherwise turquoise app.
- */
 @Composable
 fun ShizziTheme(
     choice: ThemeChoice = ThemeChoice.SYSTEM,
@@ -71,7 +58,6 @@ fun ShizziTheme(
     }
 }
 
-/** Only the roles Material components actually read; nothing renders the rest. */
 private fun materialSchemeFrom(colors: ShizziColors, isDark: Boolean) = when {
     isDark -> darkColorScheme(
         primary = colors.primary,

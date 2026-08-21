@@ -23,23 +23,12 @@ import androidx.compose.ui.unit.dp
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.Spacing
 
-/** Trailing glyph size, smaller than a header icon since it only marks a row. */
 private val RowIconSize = 20.dp
 
-/** Vertical padding shared by every settings row. */
 private val RowPadding = Spacing.md
 
-/**
- * Roughly a single-line label's, so the toggle row matches the text rows.
- * requiredHeight overrides the incoming constraint rather than negotiating
- * within it, which is what lets the control draw larger than it occupies.
- */
 private val SwitchLayoutHeight = 24.dp
 
-/**
- * `subheading` rather than `label` so the name outranks its own description —
- * the two were 13sp over 14sp, which inverted the hierarchy.
- */
 @Composable
 fun SettingsLabel(title: String, subtitle: String, modifier: Modifier = Modifier) {
     Column(
@@ -62,10 +51,6 @@ fun SettingsLabel(title: String, subtitle: String, modifier: Modifier = Modifier
     }
 }
 
-/**
- * The break is carried by the gap and the change of register rather than a
- * rule, which would put a second horizontal line under the header's.
- */
 @Composable
 fun SectionLabel(text: String) {
     Text(
@@ -79,15 +64,6 @@ fun SectionLabel(text: String) {
     )
 }
 
-/**
- * The switch is 48dp tall against a title's ~22dp, so a row centred on it takes
- * its height from the control and puts ~13dp of air around the label that the
- * text-only rows do not have. The row is padded to match [SettingsAction] and
- * the switch overhangs it instead, keeping the section on one rhythm.
- *
- * Invisible while the rows carried subtitles, where a two-line label came close
- * enough to the switch's height to hide the difference.
- */
 @Composable
 fun SettingsToggle(
     label: SettingsText,
@@ -104,8 +80,6 @@ fun SettingsToggle(
             modifier = Modifier.weight(1f),
         )
 
-        // Laid out at the label's height, still drawing and taking touch at its
-        // natural 48dp.
         Switch(
             checked = isChecked,
             onCheckedChange = onCheckedChange,
@@ -119,13 +93,6 @@ fun SettingsToggle(
     }
 }
 
-/**
- * The trailing glyph says where the tap goes — onward within the app, or out of
- * the corner and outside it — which is worth knowing before the browser opens.
- *
- * The outward arrow is not auto-mirrored: it means "leaves the app" rather than
- * a direction of travel, and flipping it in an RTL locale would lose that.
- */
 @Composable
 fun SettingsAction(
     label: SettingsText,
@@ -165,5 +132,4 @@ private fun TrailingIcon(icon: ImageVector) {
     )
 }
 
-/** Grouped so a row stays inside the parameter limit with a control and a callback. */
 data class SettingsText(val title: String, val subtitle: String = "")
