@@ -14,17 +14,8 @@ import androidx.compose.ui.unit.dp
 import dev.shizzi.ShizukuState
 import dev.shizzi.ui.theme.ShizziTheme
 
-/** A verdict at the scale of the welcome mark, not a row's trailing glyph. */
 private val StatusIconSize = 120.dp
 
-/**
- * Whether Shizuku is usable, under the card that says why.
- *
- * Three marks for four states: the card distinguishes not-installed from
- * not-running from permission-required, and all three mean the same thing here
- * — the next step cannot run. Repeating that distinction in a glyph would
- * restate what the rows above already say.
- */
 @Composable
 fun ShizukuStatusIcon(state: ShizukuState) {
     val colors = ShizziTheme.colors

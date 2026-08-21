@@ -17,19 +17,8 @@ import androidx.compose.ui.unit.dp
 import dev.shizzi.ui.shimmer
 import dev.shizzi.ui.theme.ShizziTheme
 
-/** Most of the screen's width, so the mark carries the page on its own. */
 private val WelcomeIconSize = 280.dp
 
-/**
- * The mark, then the word.
- *
- * The icon centres itself in the space above the title, which stays on the
- * left margin every following step's title uses.
- *
- * One line under the title says what the app is. The steps that follow explain
- * what it needs rather than what it does, so without this the first screen
- * names the app and nothing else.
- */
 @Composable
 fun WelcomeStep() {
     Column(
@@ -43,9 +32,7 @@ fun WelcomeStep() {
             tint = ShizziTheme.colors.primary,
             modifier = Modifier
                 .size(WelcomeIconSize)
-                // Always sweeping: the home glyph shimmers to say a session is
-                // coming up, where here there is nothing to wait for and the
-                // mark is simply alive while the user reads the screen.
+
                 .shimmer(isActive = true, highlight = ShizziTheme.colors.primaryBright)
                 .padding(bottom = ShizziTheme.spacing.xl),
         )

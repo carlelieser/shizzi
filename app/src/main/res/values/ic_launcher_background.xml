@@ -1,16 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  The launcher icon's backdrop.
-
-  Near-black rather than the app's turquoise: the mark is the accent colour,
-  and an accent-on-accent icon would have no contrast. This is the same value
-  as the dark theme's background, so the icon reads as a piece of the app
-  rather than a separate object, and the turquoise on it is the one saturated
-  element — the rule the rest of the app follows.
-
-  Held apart from the adaptive icon's own XML because the legacy round icon
-  and the monochrome layer reference it too.
--->
 <resources>
     <color name="ic_launcher_background">#0C0A09</color>
 </resources>

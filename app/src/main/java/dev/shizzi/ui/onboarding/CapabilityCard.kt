@@ -21,22 +21,12 @@ import dev.shizzi.Capability
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.brutalSurface
 
-/** Sized like a settings row's trailing glyph, which is the same job. */
 private val MarkSize = 20.dp
 
-/** Matches the mark, so the row does not change height when the check lands. */
 private val SpinnerSize = 16.dp
 
-/** How one capability's check is going. */
 enum class CapabilityStatus { LOADING, SUCCESS, FAILURE }
 
-/**
- * One capability: what it is, why it matters, and how it went.
- *
- * The description is what the row is for. "Prefer test networks" names a method
- * and tells a user nothing, so each row says what the device would be unable to
- * do without it.
- */
 @Composable
 fun CapabilityCard(capability: Capability, status: CapabilityStatus, detail: String) {
     Row(
@@ -63,9 +53,6 @@ fun CapabilityCard(capability: Capability, status: CapabilityStatus, detail: Str
                 color = ShizziTheme.colors.onSurfaceMuted,
             )
 
-            // Only when it failed: the evidence for a capability that is
-            // present is the app working, and printing it on every row would
-            // bury the one line that matters.
             if (status == CapabilityStatus.FAILURE) {
                 CapabilityDetail(detail)
             }
@@ -75,10 +62,6 @@ fun CapabilityCard(capability: Capability, status: CapabilityStatus, detail: Str
     }
 }
 
-/**
- * The verbatim reason, in the log face — this is a resolution failure quoted
- * from the platform, not copy, and setting it as prose would claim otherwise.
- */
 @Composable
 private fun CapabilityDetail(detail: String) {
     Text(
@@ -89,10 +72,6 @@ private fun CapabilityDetail(detail: String) {
     )
 }
 
-/**
- * Reserved at the mark's size in every state, so a row does not resize as its
- * spinner is replaced by a result.
- */
 @Composable
 private fun StatusMark(status: CapabilityStatus) {
     val colors = ShizziTheme.colors
@@ -130,11 +109,6 @@ private fun titleFor(capability: Capability): String = when (capability) {
     Capability.PREFER_TEST_NETWORKS -> "Prefer test networks"
 }
 
-/**
- * What the device would be unable to do, rather than what the API is called.
- * The two are separate capabilities with separate floors — a device can have
- * the first and not the second — so neither description implies the other.
- */
 private fun descriptionFor(capability: Capability): String = when (capability) {
     Capability.TEST_NETWORK ->
         "Lets the app create the test network tunnel your hotspot traffic " +

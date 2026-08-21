@@ -2,27 +2,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- R1.1: required to talk to Shizuku at all. -->
     <uses-permission android:name="moe.shizuku.manager.permission.API" />
 
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
 
-    <!--
-      The session outlives the UI. Without a foreground service this process is
-      cached the moment the user leaves, and whatever kills it takes the death
-      recipient with it — leaving the hotspot tethered and clients silently
-      routed over cellular, which is the failure the session exists to prevent.
-    -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!--
-      Held by the shell UID at runtime, not by this app. Declared so the
-      manifest records the privileged surface the UserService relies on; the
-      app process is never granted these.
-    -->
     <uses-permission
         android:name="android.permission.MANAGE_TEST_NETWORKS"
         tools:ignore="ProtectedPermissions" />
@@ -48,14 +36,6 @@
             </intent-filter>
         </activity>
 
-        <!--
-          Owns the session for as long as it is up, so the shell process's
-          death recipient stays registered even with no UI on screen.
-
-          specialUse because no standard type describes this honestly: it is
-          not dataSync, connectedDevice, or location. The subtype below records
-          what the service actually does.
-        -->
         <service
             android:name=".SessionService"
             android:exported="false"
@@ -66,22 +46,6 @@
                     down the hotspot if the privileged helper process dies" />
         </service>
 
-        <!--
-          R1.1: the provider is how the Shizuku server reaches into this app to
-          deliver the binder, so it must be exported — ShizukuProvider asserts
-          this at attach time and throws otherwise.
-
-          R2.3's "not exported" applies to the UserService, not here. Access is
-          gated instead by INTERACT_ACROSS_USERS_FULL, a signature-level
-          permission no ordinary app can hold.
-        -->
-        <!--
-          Serves the exported probe report to whichever app the user picks.
-
-          Not exported, and granted per intent: the receiving app gets a
-          read permission scoped to the one uri, for as long as the intent
-          lives, rather than standing access to app storage.
-        -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.exports"

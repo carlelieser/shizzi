@@ -9,17 +9,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/**
- * Runs the compatibility check and, where it can, the fix for a failed one.
- *
- * Owns [state] rather than reporting into the ViewModel's, because the three
- * operations here are one sequence — a check that finds a fixable device leads
- * to a download, which leads to an install — and splitting the transitions
- * across two owners is what would let them disagree.
- *
- * Holds no resources: [client] is the ViewModel's, and the downloader is built
- * per run.
- */
 class CompatibilityController(
     private val context: Context,
     private val client: TetherClient,
@@ -29,18 +18,10 @@ class CompatibilityController(
     private val localState = MutableStateFlow<CompatibilityState>(CompatibilityState.Idle)
     val state: StateFlow<CompatibilityState> = localState.asStateFlow()
 
-    /** Dropped when the wizard is restarted, so a stale verdict is not shown. */
     fun reset() {
         localState.value = CompatibilityState.Idle
     }
 
-    /**
-     * Resolves the two APIs the app rests on, through the shell.
-     *
-     * A thrown failure is [CompatibilityState.Failed] rather than a verdict of
-     * incompatible: not reaching Shizuku says nothing about the device, and
-     * telling a working handset it is unsupported is the worse error.
-     */
     fun check() {
         if (localState.value is CompatibilityState.Checking) return
         localState.value = CompatibilityState.Checking
@@ -58,15 +39,6 @@ class CompatibilityController(
         }
     }
 
-    /**
-     * Offers the module only to a device that would actually be fixed by it.
-     *
-     * The version guard is the second half of the test: APEX installs cannot be
-     * downgraded, so a device already carrying this module version or a later
-     * one would have the install rejected by apexd. Such a device reads as
-     * [CompatibilityState.Complete] — accurate, and honest about there being
-     * nothing left to try.
-     */
     private fun verdictFor(results: List<CapabilityResult>): CompatibilityState {
         val installedVersion = TetheringModuleInfo(context).read().versionCode
         val canUpgradeModule = installedVersion == null ||
@@ -80,13 +52,6 @@ class CompatibilityController(
         }
     }
 
-    /**
-     * Fetches the module into app storage and proves the bytes before offering
-     * to install them.
-     *
-     * A digest or size mismatch fails here rather than being left for the
-     * install path: nothing unverified may reach `pm install`.
-     */
     fun downloadApex() {
         if (localState.value is CompatibilityState.Downloading) return
 
@@ -111,14 +76,6 @@ class CompatibilityController(
         }
     }
 
-    /**
-     * Stages the downloaded module through the shell.
-     *
-     * A rejection is expected on a handset whose tethering APEX is OEM-signed:
-     * apexd pins the signing key, so a Google-signed module is refused outright.
-     * That verbatim reason is what the card shows, and the device falls back to
-     * being unsupported rather than staying staged forever.
-     */
     fun installApex() {
         val downloaded = localState.value as? CompatibilityState.Downloaded ?: return
         val results = downloaded.results
@@ -138,13 +95,6 @@ class CompatibilityController(
         }
     }
 
-    /**
-     * Restarts the device, so the staged module is mounted.
-     *
-     * Only from the staged state: a reboot is the last step of this sequence
-     * and means nothing before it. A failure lands back on the install card as
-     * the reason, which is the only place the user is looking.
-     */
     fun rebootDevice() {
         val staged = localState.value as? CompatibilityState.Staged ?: return
 

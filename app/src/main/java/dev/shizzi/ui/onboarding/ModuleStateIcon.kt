@@ -18,21 +18,10 @@ import androidx.compose.ui.unit.dp
 import dev.shizzi.CompatibilityState
 import dev.shizzi.ui.theme.ShizziTheme
 
-/** Matches the capability rows' mark, so the three cards read as one column. */
 private val IconSize = 24.dp
 
 private val SpinnerSize = 18.dp
 
-/**
- * What the module card is doing, as a glyph.
- *
- * The fix-path cards are otherwise built exactly like the capability rows above
- * them — same surface, same type — so without a mark of their own they read as a
- * third capability rather than as the thing to act on. This is the leading
- * distinction, and it tracks the state rather than decorating it: a spinner
- * while work is in flight, a warning when it stopped, the restart glyph once the
- * module is staged.
- */
 @Composable
 fun ModuleStateIcon(state: CompatibilityState) {
     Box(
@@ -66,13 +55,6 @@ private fun glyphFor(state: CompatibilityState): ImageVector = when (state) {
     else -> Icons.Filled.FileDownload
 }
 
-/**
- * Primary only once something has landed, matching the capability rows: their
- * check mark is the one primary glyph and it means an answered pass. An offer
- * not yet acted on, and a stop, are both muted — colouring the initial download
- * primary would give the loudest mark on screen to the state that has done the
- * least.
- */
 @Composable
 private fun tintFor(state: CompatibilityState): Color = when (state) {
     is CompatibilityState.Downloaded -> ShizziTheme.colors.primary

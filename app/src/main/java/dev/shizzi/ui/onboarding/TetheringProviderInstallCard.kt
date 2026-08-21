@@ -13,13 +13,6 @@ import dev.shizzi.CompatibilityState
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.brutalSurface
 
-/**
- * The verified module, ready to install — and afterwards, the reboot it needs.
- *
- * The restart is a prompt, never an action. An app that reboots someone's phone
- * takes a decision that is theirs, and a staged APEX applies on the next boot
- * whenever that happens to be.
- */
 @Composable
 fun TetheringProviderInstallCard(state: CompatibilityState) {
     Row(
@@ -55,13 +48,6 @@ fun TetheringProviderInstallCard(state: CompatibilityState) {
     }
 }
 
-/**
- * pm's own output, verbatim.
- *
- * This is the whole account of a rejection — on a handset carrying an
- * OEM-signed module, apexd's signature complaint arrives through here and is
- * the only thing that explains why a correct file was refused.
- */
 @Composable
 private fun InstallFailureDetail(reason: String) {
     Text(

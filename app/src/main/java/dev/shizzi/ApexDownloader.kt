@@ -10,37 +10,12 @@ import java.net.URL
 import java.net.UnknownHostException
 import java.security.MessageDigest
 
-/** How far a download has got, for the card to render. */
 data class DownloadProgress(val bytesRead: Long, val totalBytes: Long)
 
-/**
- * Why a download did not produce a verified file.
- *
- * [isConnectivity] separates the one failure a user can fix by joining a network
- * from every other: a 404 and a digest mismatch are also failures, and offering
- * "check your connection" for either sends the user after the wrong thing. The
- * verbatim [reason] is carried under both (R7.5) — this decides the headline.
- */
 data class DownloadFailure(val reason: String, val isConnectivity: Boolean)
 
-/**
- * Fetches the tethering APEX into app-private storage and proves it intact.
- *
- * HttpURLConnection rather than a client library: this is one GET, and the
- * project carries no HTTP dependency to reuse. INTERNET is already declared.
- *
- * Runs in the app process. The shell process does the install — it can write
- * /data/local/tmp, which this one cannot — so the file crosses as a path.
- */
 class ApexDownloader(private val context: Context) {
 
-    /**
-     * Streams to disk while digesting, so the bytes are never held whole in
-     * memory and the check covers exactly what was written.
-     *
-     * @param onProgress called on the calling thread, per chunk.
-     * @return the verified file, or why there is not one.
-     */
     fun download(onProgress: (DownloadProgress) -> Unit): Result<File> {
         val destination = File(context.filesDir, TetheringApex.FILE_NAME)
 
@@ -78,7 +53,6 @@ class ApexDownloader(private val context: Context) {
             readTimeout = TIMEOUT_MS
         }
 
-    /** @return the SHA-256 of everything written to [sink]. */
     private fun copyDigesting(
         source: InputStream,
         sink: OutputStream,
@@ -101,10 +75,6 @@ class ApexDownloader(private val context: Context) {
         return digest.digest().joinToString("") { byte -> "%02x".format(byte) }
     }
 
-    /**
-     * Size first, because a truncated body names the shorter problem; the digest
-     * would only report that the bytes differ.
-     */
     private fun verify(destination: File, digest: String) {
         val size = destination.length()
         check(size == TetheringApex.SIZE_BYTES) {
@@ -115,13 +85,6 @@ class ApexDownloader(private val context: Context) {
         }
     }
 
-    /**
-     * No route versus anything else.
-     *
-     * These two are what a device with no validated network raises; a bad status
-     * or a digest mismatch reaches here as something else and keeps its own
-     * headline.
-     */
     private fun isConnectivity(failure: Throwable): Boolean =
         failure is UnknownHostException || failure is SocketTimeoutException
 
@@ -134,14 +97,12 @@ class ApexDownloader(private val context: Context) {
     }
 }
 
-/** Carries [DownloadFailure] out of the [Result] the download returns. */
 class ApexDownloadException(
     val reason: String,
     val isConnectivity: Boolean,
     cause: Throwable,
 ) : Exception(reason, cause)
 
-/** The failure a [Result] from [ApexDownloader.download] carries. */
 fun Throwable.asDownloadFailure(): DownloadFailure = when (this) {
     is ApexDownloadException -> DownloadFailure(reason, isConnectivity)
     else -> DownloadFailure("${javaClass.simpleName}: $message", isConnectivity = false)

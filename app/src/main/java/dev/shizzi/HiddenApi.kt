@@ -12,13 +12,6 @@ import android.os.ParcelFileDescriptor
 import java.lang.reflect.Method
 import java.net.InetAddress
 
-/**
- * Every hidden/system API this depends on, in one place.
- *
- * Exit criterion #4 requires a written record of which hidden APIs were touched.
- * Each [HiddenApiPath] entry is both the documentation and the thing invoked, so
- * the two cannot drift; see also docs/hidden-api-record.md.
- */
 data class HiddenApiPath(
     val id: String,
     val className: String,
@@ -27,14 +20,6 @@ data class HiddenApiPath(
     val notes: String,
 )
 
-/**
- * The reflection paths, as data. Resolution failures are reported per-path so a
- * single missing method identifies itself instead of collapsing the whole run.
- *
- * `since` is the earliest API level the path was verified on, and the two
- * subsystems here do not share a floor. Which releases the app as a whole can
- * run on is a separate question, worked out in docs/android-compatibility.md.
- */
 object HiddenApiCatalog {
     val paths: List<HiddenApiPath> = listOf(
         HiddenApiPath(
@@ -142,18 +127,9 @@ object HiddenApiCatalog {
     )
 }
 
-/**
- * Not cosmetic: tethering's getIPv6Interface returns null unless the upstream
- * has an IPv6 DNS server, and IPv6 is then never provisioned downstream.
- */
 val TEST_NETWORK_DNS_SERVERS: List<InetAddress>
     get() = listOf("2001:4860:4860::8888", "8.8.8.8").map(InetAddress::getByName)
 
-/**
- * Kotlin cannot call the package-private constructor even with hidden-API
- * exemptions lifted: the restriction is compile-time visibility, not the
- * runtime greylist.
- */
 fun buildLinkAddress(address: InetAddress, prefixLength: Int): LinkAddress {
     val constructor = LinkAddress::class.java
         .getDeclaredConstructor(InetAddress::class.java, Int::class.javaPrimitiveType)
@@ -161,29 +137,17 @@ fun buildLinkAddress(address: InetAddress, prefixLength: Int): LinkAddress {
     return constructor.newInstance(address, prefixLength)
 }
 
-/**
- * Falls back to the known AOSP value only when reflection fails, and the caller
- * reports which path was taken — a silent mismatch would masquerade as a
- * working test network.
- */
 fun resolveTransportTest(): Int = runCatching {
     NetworkCapabilities::class.java.getField("TRANSPORT_TEST").getInt(null)
 }.getOrDefault(TRANSPORT_TEST_AOSP_FALLBACK)
 
-/** TRANSPORT_TEST as defined on AOSP; used only if the field cannot be read. */
 const val TRANSPORT_TEST_AOSP_FALLBACK = 7
 
-/** Outcome of resolving one hidden API path. */
 sealed interface Resolution {
     data class Found(val path: HiddenApiPath) : Resolution
     data class Missing(val path: HiddenApiPath, val reason: String) : Resolution
 }
 
-/**
- * Construction resolves nothing; each accessor resolves lazily and reports its
- * own failure, so a probe run can tell "class absent" from "method renamed"
- * from "permission denied".
- */
 class TestNetworkApi(private val context: Context) {
 
     private val managerClass: Class<*>? = runCatching {
@@ -192,13 +156,12 @@ class TestNetworkApi(private val context: Context) {
 
     @SuppressLint("WrongConstant")
     private val manager: Any? = runCatching {
-        // "test_network" is TestNetworkManager.TEST_NETWORK_SERVICE, itself hidden.
+
         context.getSystemService("test_network")
     }.getOrNull()
 
     val isAvailable: Boolean get() = managerClass != null && manager != null
 
-    /** Resolves every catalog entry so the report can list what exists on this build. */
     fun resolveAll(): List<Resolution> = HiddenApiCatalog.paths.map { path ->
         resolveOne(path)
     }
@@ -219,11 +182,6 @@ class TestNetworkApi(private val context: Context) {
         else -> Resolution.Missing(path, "no declared constructor on ${path.className}")
     }
 
-    /**
-     * Members are looked up as methods *and* fields: the catalog holds constants
-     * such as TRANSPORT_TEST alongside methods, and checking only declaredMethods
-     * reports every constant as missing.
-     */
     private fun resolveMethodOrField(owner: Class<*>, path: HiddenApiPath): Resolution {
         val hasMethod = owner.declaredMethods.any { it.name == path.memberName }
         val hasField = owner.declaredFields.any { it.name == path.memberName }
@@ -233,12 +191,6 @@ class TestNetworkApi(private val context: Context) {
         }
     }
 
-    /**
-     * Creates a TUN carrying [addresses].
-     *
-     * Tries the Collection overload first, then the array overload, because
-     * builds disagree on which one they carry.
-     */
     fun createTunInterface(addresses: List<LinkAddress>): TunHandle {
         val instance = manager ?: error("createTunInterface: test_network service unavailable")
         val owner = managerClass ?: error("createTunInterface: TestNetworkManager class absent")
@@ -273,17 +225,6 @@ class TestNetworkApi(private val context: Context) {
         method.invoke(instance, argument)
     }.getOrNull()
 
-    /**
-     * Registers [interfaceName] as a test network bound to [binder]'s lifetime.
-     *
-     * The LinkProperties overload carries [dnsServers] because tethering's
-     * getIPv6Interface requires hasIpv6DnsServer() and the plain overload
-     * leaves that empty. Only the DNS servers survive — the framework
-     * overwrites the interface name and link addresses.
-     *
-     * Falls back to the plain overload where the other is absent, so such a
-     * build still gets a working IPv4 session.
-     */
     fun setupTestNetwork(interfaceName: String, dnsServers: List<InetAddress>, binder: IBinder) {
         val instance = manager ?: error("setupTestNetwork: test_network service unavailable")
         val owner = managerClass ?: error("setupTestNetwork: TestNetworkManager class absent")
@@ -314,7 +255,6 @@ class TestNetworkApi(private val context: Context) {
         method.invoke(instance, request.first, true, request.second)
     }.isSuccess
 
-    /** Tears down the framework-side test network for [network]. */
     fun teardownTestNetwork(network: Network) {
         val instance = manager ?: return
         val owner = managerClass ?: return
@@ -323,7 +263,6 @@ class TestNetworkApi(private val context: Context) {
     }
 }
 
-/** Wrapper over a hidden TestNetworkInterface instance. */
 class TunHandle(private val delegate: Any) {
 
     val interfaceName: String
@@ -339,10 +278,6 @@ class TunHandle(private val delegate: Any) {
         }
 }
 
-/**
- * TetheringManager.setPreferTestNetworks, the single call the whole approach
- * rests on — so its absence is reported rather than swallowed.
- */
 class TetheringPreferenceApi(private val context: Context) {
 
     private fun resolveMethod(): Method {
@@ -358,19 +293,11 @@ class TetheringPreferenceApi(private val context: Context) {
         resolveMethod().invoke(tetheringManager(), prefer)
     }
 
-    /**
-     * Whether the method is reachable here, without calling it.
-     *
-     * @return null when it resolves, else why it did not — the class being
-     *   absent and the method being absent from it are different builds, and
-     *   collapsing them to a boolean loses which.
-     */
     fun resolutionFailure(): String? = runCatching { resolveMethod() }.fold(
         onSuccess = { null },
         onFailure = { failure -> "${failure.javaClass.simpleName}: ${failure.message}" },
     )
 }
 
-/** ConnectivityManager is public API; kept here so the probe reads in one place. */
 fun Context.connectivityManager(): ConnectivityManager =
     getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager

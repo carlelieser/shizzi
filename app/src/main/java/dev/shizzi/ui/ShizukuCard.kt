@@ -17,11 +17,6 @@ import dev.shizzi.ShizukuState
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.brutalSurface
 
-/**
- * A card rather than a row: this is what a user opens Settings to check when a
- * session will not start, and the version matters in particular — 13.5.4 on
- * Android 16 crashes within minutes.
- */
 @Composable
 fun ShizukuCard(state: ShizukuState, onGrant: () -> Unit) {
     Column(
@@ -41,10 +36,6 @@ fun ShizukuCard(state: ShizukuState, onGrant: () -> Unit) {
     }
 }
 
-/**
- * The value takes the remaining width so a long version string wraps in its own
- * column instead of pushing the name off the row.
- */
 @Composable
 private fun StatusRow(name: String, value: String) {
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
@@ -64,10 +55,6 @@ private fun StatusRow(name: String, value: String) {
     }
 }
 
-/**
- * Offered only when permission is what stands in the way. R1.3 forbids
- * requesting on launch, so this is the explicit action that triggers it.
- */
 @Composable
 private fun GrantButton(onGrant: () -> Unit) {
     Box(
@@ -94,11 +81,6 @@ private fun statusText(state: ShizukuState): String = when (state) {
     ShizukuState.PermissionRequired -> "Permission required"
 }
 
-/**
- * What the privileged service runs as, known only once it is Ready. A dash
- * rather than a hidden row, which would change the card's height and read as
- * information it is not.
- */
 private fun serviceText(state: ShizukuState): String = when (state) {
     is ShizukuState.Ready -> ShizukuGate.shortUid(state.uid)
     else -> "—"

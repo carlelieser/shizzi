@@ -1,11 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  The one directory the export shares from.
-
-  Scoped to a subdirectory rather than to files/ itself: the app's own storage
-  also holds session.log, and a provider rooted higher would grant any app
-  holding the share intent a path to read it.
--->
 <paths>
     <files-path name="exports" path="exports/" />
 </paths>

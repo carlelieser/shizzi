@@ -15,17 +15,6 @@ import dev.shizzi.DownloadProgress
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.brutalSurface
 
-/**
- * Offers the tethering module to a device that only needs that.
- *
- * The copy names what the device gains rather than what the file is: "tethering
- * APEX" is the accurate term and tells a user nothing about why they should
- * accept a download.
- *
- * Offline is a state here, not an error. With no validated network the card says
- * so and the action is disabled, rather than presenting a button whose only
- * outcome is a failure the user could have been warned about.
- */
 @Composable
 fun TetheringProviderDownloadCard(state: CompatibilityState, hasNetwork: Boolean) {
     Row(
@@ -63,10 +52,6 @@ fun TetheringProviderDownloadCard(state: CompatibilityState, hasNetwork: Boolean
     }
 }
 
-/**
- * Determinate wherever the total is known, which is always after the first
- * chunk — the expected size is a constant, not a header the server may omit.
- */
 @Composable
 private fun DownloadBar(progress: DownloadProgress) {
     val fraction = when {
@@ -84,7 +69,6 @@ private fun DownloadBar(progress: DownloadProgress) {
     )
 }
 
-/** The verbatim reason, in the log face — quoted from the platform, not copy. */
 @Composable
 private fun FailureDetail(reason: String) {
     Text(
@@ -95,12 +79,6 @@ private fun FailureDetail(reason: String) {
     )
 }
 
-/**
- * A connectivity failure gets its own headline because it is the only one the
- * user can act on. A 404 or a digest mismatch keeps a headline of its own —
- * telling someone to check their connection would send them after the wrong
- * thing entirely.
- */
 private fun bodyFor(state: CompatibilityState, hasNetwork: Boolean): String = when {
     state is CompatibilityState.Downloading -> "Downloading the module…"
 

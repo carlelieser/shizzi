@@ -16,21 +16,12 @@ import dev.shizzi.CompatibilityState
 import dev.shizzi.isCompatible
 import dev.shizzi.ui.theme.ShizziTheme
 
-/** Matches the Shizuku step's mark, so the two verdicts carry equal weight. */
 private val VerdictIconSize = 120.dp
 
-/** Sized under the mark it replaces, so the band does not jump when it lands. */
 private val SpinnerSize = 64.dp
 
 private val SpinnerStroke = 3.dp
 
-/**
- * The verdict, as one mark under the capabilities that justify it.
- *
- * The same three marks the Shizuku step uses, so a verdict reads the same way
- * on both. Unlike that step, the spinner has a state behind it: the check is a
- * round trip to the shell rather than a synchronous read.
- */
 @Composable
 fun CompatibilityVerdict(state: CompatibilityState) {
     val colors = ShizziTheme.colors

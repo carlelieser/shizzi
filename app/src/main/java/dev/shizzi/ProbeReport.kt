@@ -3,21 +3,8 @@ package dev.shizzi
 import org.json.JSONArray
 import org.json.JSONObject
 
-/**
- * Outcome of a single probe question.
- *
- * SKIPPED exists so a report stays readable when an early probe fails: later
- * probes record that they never ran rather than reporting a misleading failure.
- */
 enum class ProbeOutcome { PASS, FAIL, SKIPPED }
 
-/**
- * One answered viability question.
- *
- * [detail] carries the verbatim evidence — an interface name, an exception
- * message, a dumpsys excerpt — because R7.5 forbids generic error text and the
- * whole value of a probe report is in the specifics.
- */
 data class ProbeResult(
     val id: String,
     val question: String,
@@ -25,7 +12,6 @@ data class ProbeResult(
     val detail: String,
 )
 
-/** Accumulates results in order and renders the JSON the app displays. */
 class ProbeReportBuilder {
 
     private val results = mutableListOf<ProbeResult>()
@@ -53,13 +39,6 @@ class ProbeReportBuilder {
         hiddenApiFindings += resolutions
     }
 
-    /**
-     * Records the outcome of releasing the session as spec case T-2.
-     *
-     * An empty problem list is a PASS worth stating: T-2 asks whether the run
-     * leaves an orphaned testtun or a leaked fd behind, and silence would be
-     * indistinguishable from never having checked.
-     */
     fun recordReleaseProblems(problems: List<String>) {
         record(
             id = "T-2",
@@ -72,7 +51,6 @@ class ProbeReportBuilder {
         )
     }
 
-    /** True when no probe failed; skipped probes do not count as failures. */
     val hasFailure: Boolean get() = results.any { it.outcome == ProbeOutcome.FAIL }
 
     fun build(environment: JSONObject): String {
