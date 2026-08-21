@@ -133,7 +133,12 @@ class TetherClient {
         // the interface alive in the kernel.
         .tag(SERVICE_TAG)
         .processNameSuffix("probe")
-        .debuggable(true)
+        // Shizuku turns this into "-Xcompiler-option --debuggable
+        // -XjdwpProvider:adbconnection" on the app_process command line, which
+        // costs the shell process its AOT code for the whole of its life. Worth
+        // it to attach a debugger to it; not worth it on a user's phone, where
+        // it only makes a start that is already the slowest part slower.
+        .debuggable(BuildConfig.DEBUG)
         .version(TetherService.CONTRACT_VERSION)
 
     private val connection = object : ServiceConnection {
