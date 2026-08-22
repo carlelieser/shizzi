@@ -16,6 +16,10 @@ forwards hotspot traffic through a Go datapath. Supports IPv4 and IPv6.
 - Android 11 (API 30+), arm64
 - [Shizuku](https://shizuku.rikka.app/) 13.6.0+
 
+Android 13 and up work outright. On Android 11 and 12 it depends on the device's
+tethering module; the app checks on first launch and offers to install the
+module it needs. See [compatibility](docs/android-compatibility.md).
+
 ## Install
 
 Download the APK from the
