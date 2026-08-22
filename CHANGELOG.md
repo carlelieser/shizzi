@@ -7,55 +7,43 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.3.0] - 2026-08-22
 
-Android 11 and 12 devices can now run Shizzi. The capability they were missing
-ships as an updatable system module, so the app offers to install it rather than
-turning those devices away at the store. First launch also walks you through
-setup, and the log now records what a session actually did.
+Android 11 and 12 can now run Shizzi. Setup is walked through on first launch,
+and the log records what a session did.
 
 ### Added
 
-- **Support for Android 11 and 12 (API 30-32).** These releases can tether if
-  their tethering module is new enough. The app checks the device it is on and,
-  when the module is the only thing missing, offers to install it -- downloading
-  a pinned, checksummed copy, staging it through Shizuku, and telling you a
-  reboot is needed to apply it. 0.2.0 refused to install below Android 13.
-- **Onboarding on first launch.** A short wizard covers what the app does,
-  connecting Shizuku, and checking this device's compatibility, so setup fails
-  in a place that explains itself rather than at the first attempt to tether.
-  It can be run again from the Developer section in settings.
-- **A compatibility check that answers without tethering.** It probes the two
-  capabilities the approach needs and reports each one's verdict, instead of
-  making you start a session to find out.
-- **Diagnostics you can run and export.** A run reports progress while it works
-  and produces a report you can share.
+- **Android 11 and 12 (API 30-32).** These releases tether if their tethering
+  module is new enough. When the module is all that is missing, the app offers
+  to install it: a pinned, checksummed download staged through Shizuku, applied
+  on reboot. 0.2.0 refused to install below Android 13.
+- **Onboarding on first launch** covering Shizuku and this device's
+  compatibility. Repeatable from Developer settings.
+- **A compatibility check** that reports each capability's verdict without
+  starting a session.
+- **Diagnostics**, with progress while running and an exportable report.
 
 ### Changed
 
-- **The log records what a session did, not just what went right.** Failures
-  that previously only reached logcat -- resource release problems, a downstream
-  that would not stop, shutdown with a session still active -- are now in the
-  log, which is the point of it existing: it was quietest exactly when you
-  opened it to find out what went wrong.
-- **The log is reachable from settings**, is cleared across both processes that
-  write it, and the logging setting now controls it. Clearing previously
-  truncated the app's file, silently failed on the shell's, and reported
-  success -- leaving most of the history on disk.
+- **The log records failures, not just successes.** Resource release problems, a
+  downstream that would not stop, and shutdown with a session active previously
+  reached logcat only.
+- **The log moved to settings**, is cleared across both processes that write it,
+  and follows the logging setting. Clearing previously emptied the app's file,
+  failed silently on the shell's, and reported success.
 - **The log screen** was rebuilt around a menu, jump bands, and an empty state.
-- Toasts can be swiped away and rank themselves by weight rather than colour.
-- Compose moved to the 2025.08.00 BOM and the build to AGP 8.9.2.
+- Toasts can be swiped away and rank by weight rather than colour.
+- Compose moved to the 2025.08.00 BOM, the build to AGP 8.9.2.
 
 ### Fixed
 
-- **Release builds no longer require a debuggable shell process**, which kept
-  the privileged side from starting outside a debug build.
-- **A slow Shizuku start no longer fails the bind.** The bind now outlasts
-  Shizuku's own start timeout instead of giving up first.
-- **The shell context is attributed correctly on API 30.**
-- **A failed context rebase is reported** instead of taking the process down.
-- **Timeouts name what timed out** rather than a minified class.
-- **A diagnostics run stops the hotspot it started.**
-- **The datapath builds and tests off Android**, so its tests run in CI --
-  `bind.go` is Android-only and now has a stub elsewhere.
+- Release builds no longer require a debuggable shell process, which kept the
+  privileged side from starting outside a debug build.
+- A slow Shizuku start no longer fails the bind.
+- The shell context is attributed correctly on API 30.
+- A failed context rebase is reported instead of killing the process.
+- Timeouts name what timed out rather than a minified class.
+- A diagnostics run stops the hotspot it started.
+- The datapath builds off Android, so its tests run in CI.
 
 ## [0.2.0] - 2026-08-19
 
