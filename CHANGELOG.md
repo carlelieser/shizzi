@@ -1,36 +1,22 @@
 # Changelog
 
-All notable changes to Shizzi are documented here.
-
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.3.0] - 2026-08-22
 
-Android 11 and 12 can now run Shizzi. Setup is walked through on first launch,
-and the log records what a session did.
+Adds support for Android 11 and 12 (API 30-32) by providing a tethering module update if necessary. Also adds an onboarding flow. Minor updates to the UI and better logging.
 
 ### Added
 
-- **Android 11 and 12 (API 30-32).** These releases tether if their tethering
-  module is new enough. When the module is all that is missing, the app offers
-  to install it: a pinned, checksummed download staged through Shizuku, applied
-  on reboot. 0.2.0 refused to install below Android 13.
-- **Onboarding on first launch** covering Shizuku and this device's
-  compatibility. Repeatable from Developer settings.
-- **A compatibility check** that reports each capability's verdict without
-  starting a session.
-- **Diagnostics**, with progress while running and an exportable report.
+- **Android 11 and 12 (API 30-32) Support.** Through tethering module update.
+- **Onboarding** With welcome, shizuku setup, and compatibility check.
 
 ### Changed
 
-- **The log records failures, not just successes.** Resource release problems, a
-  downstream that would not stop, and shutdown with a session active previously
-  reached logcat only.
-- **The log moved to settings**, is cleared across both processes that write it,
-  and follows the logging setting. Clearing previously emptied the app's file,
-  failed silently on the shell's, and reported success.
-- **The log screen** was rebuilt around a menu, jump bands, and an empty state.
+- **Better logging.** Improved logging throughout the codebase.
+- **UI** Moved logging into settings, updated setting item labels and descriptions.
+- **Log Viewer** was rebuilt around a menu, jump bands, and an empty state.
 - Toasts can be swiped away and rank by weight rather than colour.
 - Compose moved to the 2025.08.00 BOM, the build to AGP 8.9.2.
 
@@ -38,12 +24,12 @@ and the log records what a session did.
 
 - Release builds no longer require a debuggable shell process, which kept the
   privileged side from starting outside a debug build.
-- A slow Shizuku start no longer fails the bind.
+- A slow Shizuku start no longer fails to bind.
 - The shell context is attributed correctly on API 30.
 - A failed context rebase is reported instead of killing the process.
-- Timeouts name what timed out rather than a minified class.
-- A diagnostics run stops the hotspot it started.
-- The datapath builds off Android, so its tests run in CI.
+- Better timeout messaging.
+- Automatically tear down hotspot after diagnostic run.
+- Datapath tests can now run in CI.
 
 ## [0.2.0] - 2026-08-19
 
