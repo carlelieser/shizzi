@@ -20,12 +20,14 @@ import dev.shizzi.ui.theme.brutalSurface
 
 private val StatusIconSize = 280.dp
 
+private const val InactiveAlpha = 0.10f
+
 @Composable
 fun StatusIcon(status: UiStatus) {
     val isConnected = status == UiStatus.CONNECTED
     val target = when {
         isConnected -> ShizziTheme.colors.primary
-        else -> ShizziTheme.colors.onSurfaceMuted
+        else -> ShizziTheme.colors.onSurfaceMuted.copy(alpha = InactiveAlpha)
     }
     val tint by animateColorAsState(target, label = "statusTint")
 

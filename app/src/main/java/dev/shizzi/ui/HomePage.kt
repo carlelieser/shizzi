@@ -106,7 +106,10 @@ private fun HomeBody(state: SessionUiState, actions: HomeActions) {
     val isStarting = state.status == UiStatus.LOADING
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(ScreenPadding),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(ScreenPadding)
+            .padding(top = ShizziTheme.spacing.xxxl * 2),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {

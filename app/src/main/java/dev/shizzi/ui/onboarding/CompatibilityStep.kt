@@ -16,11 +16,12 @@ import androidx.compose.ui.Modifier
 import dev.shizzi.Capability
 import dev.shizzi.CapabilityResult
 import dev.shizzi.CompatibilityState
+import dev.shizzi.isOnFixPath
+import dev.shizzi.reportedResults
 import dev.shizzi.ui.theme.ShizziTheme
 
 @Composable
 fun CompatibilityStep(state: CompatibilityState) {
-
     val isOverflowing = state is CompatibilityState.Failed
 
     Column(
@@ -55,11 +56,34 @@ private fun ColumnScope.VerdictBand(state: CompatibilityState, isOverflowing: Bo
         else -> Modifier.weight(1f)
     }
 
+    val placement = when {
+        state.isOnFixPath -> Alignment.BottomCenter
+        else -> Alignment.Center
+    }
+
     Box(
-        modifier = Modifier.fillMaxWidth().then(sizing),
-        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(sizing)
+            .padding(top = ShizziTheme.spacing.lg),
+        contentAlignment = placement,
     ) {
-        CompatibilityVerdict(state)
+        when {
+            state.isOnFixPath -> FixPathCard(state)
+            else -> CompatibilityVerdict(state)
+        }
+    }
+}
+
+@Composable
+private fun FixPathCard(state: CompatibilityState) {
+    when (state) {
+        is CompatibilityState.Fixable,
+        is CompatibilityState.Downloading,
+        is CompatibilityState.DownloadFailed,
+        -> TetheringProviderDownloadCard(state = state, hasNetwork = hasValidatedNetwork())
+
+        else -> TetheringProviderInstallCard(state)
     }
 }
 
@@ -74,20 +98,15 @@ private fun CheckFailure(problem: String) {
 }
 
 private fun statusFor(state: CompatibilityState, capability: Capability): CapabilityStatus =
-    when (state) {
-        is CompatibilityState.Complete -> when {
-            state.resultFor(capability)?.isPresent == true -> CapabilityStatus.SUCCESS
-            else -> CapabilityStatus.FAILURE
-        }
-
-        is CompatibilityState.Failed -> CapabilityStatus.FAILURE
+    when {
+        state.resultFor(capability)?.isPresent == true -> CapabilityStatus.SUCCESS
+        state.resultFor(capability) != null -> CapabilityStatus.FAILURE
+        state is CompatibilityState.Failed -> CapabilityStatus.FAILURE
         else -> CapabilityStatus.LOADING
     }
 
-private fun detailFor(state: CompatibilityState, capability: Capability): String = when (state) {
-    is CompatibilityState.Complete -> state.resultFor(capability)?.detail.orEmpty()
-    else -> ""
-}
+private fun detailFor(state: CompatibilityState, capability: Capability): String =
+    state.resultFor(capability)?.detail.orEmpty()
 
-private fun CompatibilityState.Complete.resultFor(capability: Capability): CapabilityResult? =
-    results.firstOrNull { it.capability == capability }
+private fun CompatibilityState.resultFor(capability: Capability): CapabilityResult? =
+    reportedResults.firstOrNull { it.capability == capability }

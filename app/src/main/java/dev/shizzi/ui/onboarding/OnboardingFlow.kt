@@ -8,12 +8,16 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import dev.shizzi.CompatibilityState
 import dev.shizzi.ShizukuState
 import dev.shizzi.isCompatible
+import dev.shizzi.isOnFixPath
 
 enum class OnboardingStep { WELCOME, SHIZUKU, COMPATIBILITY }
 
 data class OnboardingActions(
     val onRequestPermission: () -> Unit,
     val onCheckCompatibility: () -> Unit,
+    val onDownloadTetheringApex: () -> Unit,
+    val onInstallTetheringApex: () -> Unit,
+    val onRebootDevice: () -> Unit,
     val onFinish: () -> Unit,
 )
 
@@ -83,6 +87,7 @@ private fun compatibilityStep(
     content = { CompatibilityStep(state) },
     primary = when {
         state.isCompatible -> WizardAction(label = "Finish", onClick = actions.onFinish)
+        state.isOnFixPath -> fixPathAction(state, actions)
 
         else -> WizardAction(
             label = "Check",
@@ -91,3 +96,29 @@ private fun compatibilityStep(
         )
     },
 )
+
+private fun fixPathAction(
+    state: CompatibilityState,
+    actions: OnboardingActions,
+): WizardAction = when (state) {
+    is CompatibilityState.Downloaded ->
+        WizardAction(label = "Install", onClick = actions.onInstallTetheringApex)
+
+    is CompatibilityState.Installing ->
+        WizardAction(label = "Installing", isEnabled = false, onClick = {})
+
+    is CompatibilityState.Staged ->
+        WizardAction(label = "Restart", onClick = actions.onRebootDevice)
+
+    is CompatibilityState.InstallFailed ->
+        WizardAction(label = "Check", onClick = actions.onCheckCompatibility)
+
+    is CompatibilityState.DownloadFailed ->
+        WizardAction(label = "Retry", onClick = actions.onDownloadTetheringApex)
+
+    else -> WizardAction(
+        label = "Download",
+        isEnabled = state !is CompatibilityState.Downloading,
+        onClick = actions.onDownloadTetheringApex,
+    )
+}

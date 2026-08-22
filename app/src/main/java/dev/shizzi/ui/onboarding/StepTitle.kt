@@ -12,9 +12,9 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import dev.shizzi.ui.theme.ShizziTheme
 
-private val TitleSize = 72.sp
+private val TitleSize = 44.sp
 
-private val MinTitleSize = 40.sp
+private val MinTitleSize = 26.sp
 
 private val TitleStep = 1.sp
 
@@ -25,7 +25,6 @@ val StepTitleStyle: TextStyle
         lineBreak = LineBreak.Heading,
 
         letterSpacing = (-0.04).em,
-
         lineHeightStyle = LineHeightStyle(
             alignment = LineHeightStyle.Alignment.Center,
             trim = LineHeightStyle.Trim.Both,

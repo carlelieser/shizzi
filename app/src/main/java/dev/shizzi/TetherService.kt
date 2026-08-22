@@ -2,6 +2,8 @@ package dev.shizzi
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.os.Build
+import android.os.ParcelFileDescriptor
 import android.util.Log
 
 class TetherService : ITetherService.Stub {
@@ -12,6 +14,7 @@ class TetherService : ITetherService.Stub {
     private val runner: ProbeRunner by lazy { ProbeRunner(shellContext) }
     private val session: TetherSession by lazy { TetherSession(shellContext) }
     private val compatibility: CompatibilityCheck by lazy { CompatibilityCheck(shellContext) }
+    private val apexInstaller: ApexInstaller by lazy { ApexInstaller() }
 
     @Suppress("unused")
     constructor() : this(acquireSystemContext())
@@ -49,6 +52,19 @@ class TetherService : ITetherService.Stub {
         runCatching { compatibility.run().toJson() }
             .getOrElse { failure -> errorReport("checkCompatibility", failure) }
 
+    override fun installTetheringApex(apex: ParcelFileDescriptor): String =
+        runCatching { apexInstaller.stage(apex).toJson() }
+            .getOrElse { failure -> stagingError(failure) }
+
+    override fun rebootDevice(): String =
+        runCatching {
+            Runtime.getRuntime().exec(arrayOf("svc", "power", "reboot"))
+            ""
+        }.getOrElse { failure ->
+            Log.e(TAG, "rebootDevice failed", failure)
+            "${failure.javaClass.simpleName}: ${failure.message}"
+        }
+
     override fun clearLog() {
         runCatching { SessionLog.clear() }
             .onFailure { failure -> Log.w(TAG, "clearLog: ${failure.message}") }
@@ -74,6 +90,14 @@ class TetherService : ITetherService.Stub {
             put("state", SessionState.ERROR.name)
             put("detail", "$operation: ${failure.javaClass.simpleName}: ${failure.message}")
         }.toString()
+    }
+
+    private fun stagingError(failure: Throwable): String {
+        Log.e(TAG, "installTetheringApex failed", failure)
+        return StagingOutcome(
+            isStaged = false,
+            rawOutput = "installTetheringApex: ${failure.javaClass.simpleName}: ${failure.message}",
+        ).toJson()
     }
 
     private fun errorReport(operation: String, failure: Throwable): String {
@@ -123,22 +147,36 @@ class TetherService : ITetherService.Stub {
 
         private fun forceOpPackageName(context: Context) {
             runCatching {
-                val field = context.javaClass.getDeclaredField("mAttributionSource")
-                field.isAccessible = true
+                when {
+                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
+                        rebaseAttributionSource(context)
 
-                val current = field.get(context)
-                    ?: error("mAttributionSource was null")
-                val rebased = current.javaClass
-                    .getMethod("withPackageName", String::class.java)
-                    .invoke(current, SHELL_PACKAGE)
-
-                field.set(context, rebased)
+                    else -> rebaseOpPackageName(context)
+                }
             }.getOrElse { failure ->
                 throw IllegalStateException(
                     "forceOpPackageName: could not attribute context to $SHELL_PACKAGE",
                     failure,
                 )
             }
+        }
+
+        private fun rebaseAttributionSource(context: Context) {
+            val field = context.javaClass.getDeclaredField("mAttributionSource")
+            field.isAccessible = true
+
+            val current = field.get(context) ?: error("mAttributionSource was null")
+            val rebased = current.javaClass
+                .getMethod("withPackageName", String::class.java)
+                .invoke(current, SHELL_PACKAGE)
+
+            field.set(context, rebased)
+        }
+
+        private fun rebaseOpPackageName(context: Context) {
+            val field = context.javaClass.getDeclaredField("mOpPackageName")
+            field.isAccessible = true
+            field.set(context, SHELL_PACKAGE)
         }
     }
 }

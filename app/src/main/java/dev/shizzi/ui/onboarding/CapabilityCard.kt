@@ -72,9 +72,6 @@ private fun CapabilityDetail(detail: String) {
     )
 }
 
-private fun breakableIdentifiers(detail: String): String =
-    detail.replace(".", ".\u200B")
-
 @Composable
 private fun StatusMark(status: CapabilityStatus) {
     val colors = ShizziTheme.colors

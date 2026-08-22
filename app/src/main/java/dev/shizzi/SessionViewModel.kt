@@ -33,8 +33,10 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
     private val localDiagnostics = MutableStateFlow<DiagnosticsState>(DiagnosticsState.Idle)
     val diagnosticsState: StateFlow<DiagnosticsState> = localDiagnostics.asStateFlow()
 
-    private val localCompatibility = MutableStateFlow<CompatibilityState>(CompatibilityState.Idle)
-    val compatibilityState: StateFlow<CompatibilityState> = localCompatibility.asStateFlow()
+    private val compatibility =
+        CompatibilityController(getApplication(), diagnostics, viewModelScope)
+
+    val compatibilityState: StateFlow<CompatibilityState> = compatibility.state
 
     private var sessionCollector: Job? = null
 
@@ -112,29 +114,20 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun checkCompatibility() {
-        if (localCompatibility.value is CompatibilityState.Checking) return
-        localCompatibility.value = CompatibilityState.Checking
+    fun checkCompatibility() = compatibility.check()
 
-        viewModelScope.launch {
-            localCompatibility.value = runCatching { diagnostics.checkCompatibility() }
-                .fold(
-                    onSuccess = { results -> CompatibilityState.Complete(results) },
-                    onFailure = { failure ->
-                        CompatibilityState.Failed(
-                            "${failure.javaClass.simpleName}: ${failure.message}",
-                        )
-                    },
-                )
-        }
-    }
+    fun downloadTetheringApex() = compatibility.downloadApex()
+
+    fun installTetheringApex() = compatibility.installApex()
+
+    fun rebootDevice() = compatibility.rebootDevice()
 
     fun completeOnboarding() {
         viewModelScope.launch { settingsStore.setOnboardingComplete(true) }
     }
 
     fun restartOnboarding() {
-        localCompatibility.value = CompatibilityState.Idle
+        compatibility.reset()
         viewModelScope.launch { settingsStore.setOnboardingComplete(false) }
     }
 

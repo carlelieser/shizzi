@@ -3,6 +3,8 @@ package dev.shizzi
 import android.content.ComponentName
 import android.content.ServiceConnection
 import android.os.IBinder
+import android.os.ParcelFileDescriptor
+import java.io.File
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
@@ -180,6 +182,21 @@ class TetherClient {
         val bound = service()
         verifyContract(bound)
         parseCapabilities(bound.checkCompatibility())
+    }
+
+    suspend fun installTetheringApex(path: String): StagingOutcome =
+        withContext(Dispatchers.IO) {
+            val bound = service()
+            verifyContract(bound)
+
+            ParcelFileDescriptor.open(File(path), ParcelFileDescriptor.MODE_READ_ONLY)
+                .use { apex -> parseStagingOutcome(bound.installTetheringApex(apex)) }
+        }
+
+    suspend fun rebootDevice(): String = withContext(Dispatchers.IO) {
+        val bound = service()
+        verifyContract(bound)
+        bound.rebootDevice()
     }
 
     suspend fun start(logging: Boolean): String = withContext(Dispatchers.IO) {
