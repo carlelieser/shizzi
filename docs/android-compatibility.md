@@ -7,8 +7,13 @@ gets the tethering stack to use that network as the hotspot's upstream. All of
 this needs privileges an ordinary app does not have, which the app obtains
 through [Shizuku](https://shizuku.rikka.app/).
 
-**`minSdk = 33`.** API 32 may work on an updated tethering module but is
-untested on hardware. Nothing below 32 can work.
+**`minSdk = 30`.** Capability 3 is what decides whether a device can tether,
+and on API 30-32 it depends on the installed tethering module rather than the
+API level. Those devices install the app and are offered the Android 12
+tethering APEX, which carries the mechanism; a device that declines it, or whose
+module still lacks the call after installing, is told so instead of tethering.
+API 33 and up have it outright. Nothing below 30 can work -- API 29 cannot start
+a hotspot at all.
 
 ## What the platform has to provide
 
@@ -22,7 +27,7 @@ Three separate capabilities, with three different floors:
    and `UpstreamNetworkMonitor` has to check it. From API 32 or 33, depending on
    the tethering module.
 
-Capability 3 sets `minSdk`. Capability 2 has the lowest floor, so checking
+Capability 3 decides support. Capability 2 has the lowest floor, so checking
 whether a release "supports test networks" returns yes well below the real
 floor and answers nothing.
 
@@ -31,9 +36,9 @@ floor and answers nothing.
 | API | Release | Start hotspot | Test network | Prefer test network | Net |
 | --- | --- | --- | --- | --- | --- |
 | 29 | Android 10 | **no** | yes | no | no |
-| 30 | Android 11 | yes | yes | **no** | no |
-| 31 | Android 12 | yes | yes | **no** | no |
-| 32 | Android 12L | yes | yes | *module-dependent* | maybe |
+| 30 | Android 11 | yes | yes | *module-dependent* | with module |
+| 31 | Android 12 | yes | yes | *module-dependent* | with module |
+| 32 | Android 12L | yes | yes | *module-dependent* | with module |
 | 33 | Android 13 | yes | yes | yes | **yes** |
 | 36 | Android 16 | yes | yes | yes | yes (known-good) |
 
@@ -77,9 +82,11 @@ Tethering ships as an updatable Mainline APEX, so the API level does not
 determine the module version. An API 32 device that has taken module updates may
 have this; one that has not, will not.
 
-This does not lower `minSdk`. Only the call was verified, not tethering:
-emulators have no SoftAP, so no hotspot was started and no traffic carried, and
-whether `UpstreamNetworkMonitor` selects the TUN on 32 is untested.
+Only the call was verified, not tethering: emulators have no SoftAP, so no
+hotspot was started and no traffic carried, and whether `UpstreamNetworkMonitor`
+selects the TUN on 32 is untested. This is why 30-32 are reached through the
+module install rather than claimed as supported -- the app probes the device it
+is actually on and reports what it finds.
 
 ### API 33 and up
 
@@ -90,6 +97,25 @@ separately. The app is known to work on an Android 16 device.
 A 33+ device is not guaranteed to work. The app reaches `TestNetworkManager` and
 `TetheringManager` by reflection into `@hide` and `@TestApi` surfaces, which
 vendors can trim. Run `ProbeRunner.kt` to check a specific handset.
+
+## The tethering module install
+
+Tethering ships as an updatable Mainline APEX, so on 30-32 the API level does
+not determine whether `setPreferTestNetworks` is present -- the installed module
+version does. The repo carries `apex/tethering-311314000.apex`, the Android 12
+tethering module that contains the call.
+
+When the compatibility check finds a test network but no preference call on a
+30-32 device, the app offers that module. It downloads the APEX pinned by commit
+SHA and SHA-256, stages it through the Shizuku shell with
+`pm install --apex --staged`, and the device reboots to apply it. A staged APEX
+install only takes effect on reboot, so the app says so rather than reporting
+success against a module that is not live yet.
+
+This is offered, not assumed to work. Vendors can trim the surfaces the app
+reflects into, and the emulator verification behind the module covered the call
+rather than a carried hotspot. After the reboot the check runs again and answers
+from the device rather than from the API level.
 
 ## What the shell UID buys
 
