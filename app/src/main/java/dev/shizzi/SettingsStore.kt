@@ -16,6 +16,9 @@ data class Settings(
     val isLogging: Boolean = true,
 
     val hasCompletedOnboarding: Boolean = false,
+
+    val isExternalControlEnabled: Boolean = false,
+    val externalControlToken: String = "",
 )
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore("settings")
@@ -36,16 +39,28 @@ class SettingsStore(private val context: Context) {
         context.dataStore.edit { it[ONBOARDED] = hasCompleted }
     }
 
+    suspend fun setExternalControlEnabled(isEnabled: Boolean) {
+        context.dataStore.edit { it[EXTERNAL_CONTROL] = isEnabled }
+    }
+
+    suspend fun setExternalControlToken(token: String) {
+        context.dataStore.edit { it[EXTERNAL_TOKEN] = token }
+    }
+
     private fun toSettings(preferences: Preferences) = Settings(
         theme = runCatching { ThemeChoice.valueOf(preferences[THEME].orEmpty()) }
             .getOrDefault(ThemeChoice.SYSTEM),
         isLogging = preferences[LOGGING] ?: true,
         hasCompletedOnboarding = preferences[ONBOARDED] ?: false,
+        isExternalControlEnabled = preferences[EXTERNAL_CONTROL] ?: false,
+        externalControlToken = preferences[EXTERNAL_TOKEN].orEmpty(),
     )
 
     private companion object {
         val THEME = stringPreferencesKey("theme")
         val LOGGING = booleanPreferencesKey("logging")
         val ONBOARDED = booleanPreferencesKey("onboarded")
+        val EXTERNAL_CONTROL = booleanPreferencesKey("external_control")
+        val EXTERNAL_TOKEN = stringPreferencesKey("external_control_token")
     }
 }
