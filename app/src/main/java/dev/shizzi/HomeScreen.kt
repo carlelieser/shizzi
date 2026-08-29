@@ -38,16 +38,19 @@ data class AppActions(
     val onSetExternalControl: (Boolean) -> Unit,
     val onSetExternalControlToken: (String) -> Unit,
     val onRegenerateExternalControlToken: () -> Unit,
-    val onFixBackgroundStart: () -> Unit,
+    val onGrantPermission: (AppPermission) -> Unit,
 )
 
 @Composable
 fun HomeScreen(
-    state: SessionUiState,
-    settings: Settings,
-    diagnostics: DiagnosticsState,
+    state: AppState,
     actions: AppActions,
 ) {
+    val session = state.session
+    val settings = state.settings
+    val diagnostics = state.diagnostics
+    val permissions = state.permissions
+
     val current = rememberNavigator()
     val goHome = { current.value = Screen.HOME }
 
@@ -58,7 +61,7 @@ fun HomeScreen(
 
     val toasts = rememberToastState()
     SessionToasts(
-        state = state,
+        state = session,
         toasts = toasts,
         onRequestPermission = actions.onRequestPermission,
     )
@@ -73,15 +76,15 @@ fun HomeScreen(
         when (current.value) {
             Screen.SETTINGS -> SettingsPage(
                 state = SettingsState(
-                    shizuku = state.shizukuState,
+                    shizuku = session.shizukuState,
                     theme = settings.theme,
                     isLogging = settings.isLogging,
                     isRunningDiagnostics = diagnostics is DiagnosticsState.Running,
                     externalControl = ExternalControlState(
                         isEnabled = settings.isExternalControlEnabled,
                         token = settings.externalControlToken,
-                        hasBackgroundStart = state.hasBackgroundStart,
                     ),
+                    permissions = permissions,
                 ),
                 actions = SettingsActions(
                     onSetTheme = actions.onSetTheme,
@@ -94,8 +97,8 @@ fun HomeScreen(
                         onSetEnabled = actions.onSetExternalControl,
                         onRegenerateToken = actions.onRegenerateExternalControlToken,
                         onClearToken = { actions.onSetExternalControlToken("") },
-                        onFixBackgroundStart = actions.onFixBackgroundStart,
                     ),
+                    onGrantPermission = actions.onGrantPermission,
                 ),
                 onBack = goHome,
             )
@@ -117,7 +120,7 @@ fun HomeScreen(
             )
 
             Screen.HOME -> HomePage(
-                state = state,
+                state = session,
                 actions = HomeActions(
                     onToggle = actions.onToggle,
                     onCancel = actions.onCancel,

@@ -14,6 +14,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import dev.shizzi.AppPermission
+import dev.shizzi.PermissionStatus
 import dev.shizzi.ShizukuState
 import dev.shizzi.ui.theme.ScreenPadding
 import dev.shizzi.ui.theme.ShizziTheme
@@ -31,6 +33,7 @@ data class SettingsState(
     val isLogging: Boolean,
     val isRunningDiagnostics: Boolean,
     val externalControl: ExternalControlState,
+    val permissions: List<PermissionStatus>,
 )
 
 data class SettingsActions(
@@ -41,6 +44,7 @@ data class SettingsActions(
     val onRequestPermission: () -> Unit,
     val onRestartOnboarding: () -> Unit,
     val externalControl: ExternalControlActions,
+    val onGrantPermission: (AppPermission) -> Unit,
 )
 
 @Composable
@@ -67,6 +71,12 @@ fun SettingsPage(
 
             SectionLabel("Appearance")
             ThemePicker(selected = state.theme, onSelect = actions.onSetTheme)
+
+            SectionLabel("Permissions")
+            PermissionsSection(
+                statuses = state.permissions,
+                onGrant = actions.onGrantPermission,
+            )
 
             SectionLabel("External control")
             ExternalControlSection(
