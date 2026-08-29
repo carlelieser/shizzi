@@ -150,4 +150,6 @@ dependencies {
     implementation("dev.rikka.shizuku:provider:13.1.5")
 
     implementation("org.lsposed.hiddenapibypass:hiddenapibypass:4.3")
+
+    testImplementation("junit:junit:4.13.2")
 }
