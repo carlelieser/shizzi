@@ -213,6 +213,15 @@ class TetherClient {
         service().stop()
     }
 
+    suspend fun grantBackgroundStart(): String? = withContext(Dispatchers.IO) {
+        runCatching {
+            val bound = service()
+
+            verifyContract(bound)
+            bound.grantBackgroundStart()
+        }.getOrElse { failure -> failure.message ?: "could not reach Shizuku" }
+    }
+
     suspend fun clearLog(): String? = withContext(Dispatchers.IO) {
         runCatching {
             val bound = service()

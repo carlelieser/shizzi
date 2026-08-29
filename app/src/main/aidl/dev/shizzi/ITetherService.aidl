@@ -22,5 +22,9 @@ interface ITetherService {
 
     String rebootDevice();
 
+    String grantBackgroundStart();
+
+    boolean hasBackgroundStart();
+
     int getContractVersion();
 }

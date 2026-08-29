@@ -28,6 +28,15 @@ object ExternalResult {
         context.sendBroadcast(intent)
     }
 
+    fun fail(context: Context, command: ExternalCommand, reason: String) {
+        val intent = accepted(command).apply {
+            putExtra(ExternalControl.EXTRA_STATUS, UiStatus.ERROR.name)
+            putExtra(ExternalControl.EXTRA_IS_ACTIVE, false)
+            putExtra(ExternalControl.EXTRA_ERROR, reason)
+        }
+        context.sendBroadcast(intent)
+    }
+
     private fun accepted(command: ExternalCommand) = Intent(ExternalControl.ACTION_RESULT).apply {
         putExtra(ExternalControl.EXTRA_COMMAND, command.name)
         putExtra(ExternalControl.EXTRA_ACCEPTED, true)

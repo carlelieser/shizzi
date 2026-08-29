@@ -26,6 +26,12 @@ class TetherService : ITetherService.Stub {
 
     override fun getContractVersion(): Int = CONTRACT_VERSION
 
+    override fun grantBackgroundStart(): String? =
+        BackgroundStartPermit.grant(BuildConfig.APPLICATION_ID)
+
+    override fun hasBackgroundStart(): Boolean =
+        BackgroundStartPermit.isHeld(BuildConfig.APPLICATION_ID)
+
     override fun start(logging: Boolean): String {
         SessionLog.setEnabled(logging)
         return runCatching { session.start() }

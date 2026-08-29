@@ -11,6 +11,17 @@ Once enabled, any app on the device can control tethering. To restrict that,
 set a token in the same section and include it with every intent. Without a
 token, no caller is verified.
 
+## Background starts
+
+Android 12 and up block an app in the background from starting a foreground
+service, which is what an intent-triggered session needs. Enabling external
+control grants Shizzi the `START_FOREGROUND_SERVICES_FROM_BACKGROUND` app op
+through Shizuku to lift that block.
+
+Shizuku must be running and granted when you flip the toggle. If it is not,
+the grant fails and commands are accepted but never start a session; the log
+records why, and turning the toggle off and on again retries it.
+
 ## Actions
 
 Sent to `dev.shizzi/.ExternalControlReceiver` as a broadcast.

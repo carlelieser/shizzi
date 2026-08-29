@@ -45,11 +45,31 @@ class ExternalControlReceiver : BroadcastReceiver() {
     }
 
     private fun apply(context: Context, command: ExternalCommand) {
-        when (resolve(command)) {
-            ExternalCommand.START -> SessionService.start(context, command)
-            ExternalCommand.STOP -> SessionService.stop(context, command)
-            else -> ExternalResult.announce(context, command, SessionService.liveState.value)
+        val resolved = resolve(command)
+        if (resolved == ExternalCommand.QUERY_STATUS) {
+            ExternalResult.announce(context, command, SessionService.liveState.value)
+            return
         }
+
+        runCatching { deliver(context, resolved, command) }
+            .onFailure { failure -> reportUndelivered(context, command, failure) }
+    }
+
+    private fun deliver(context: Context, resolved: ExternalCommand, reportAs: ExternalCommand) {
+        when (resolved) {
+            ExternalCommand.STOP -> SessionService.stop(context, reportAs)
+            else -> SessionService.start(context, reportAs)
+        }
+    }
+
+    private fun reportUndelivered(
+        context: Context,
+        command: ExternalCommand,
+        failure: Throwable,
+    ) {
+        val reason = "${failure.javaClass.simpleName}: ${failure.message}"
+        SessionLog.error("external ${command.name} could not reach the session service: $reason")
+        ExternalResult.fail(context, command, reason)
     }
 
     private fun resolve(command: ExternalCommand): ExternalCommand = when (command) {

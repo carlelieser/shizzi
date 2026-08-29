@@ -12,6 +12,14 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   default, with an optional token. See
   [external control](docs/external-control.md).
 
+### Fixed
+
+- **Background starts.** Android 12 and up blocked intent-triggered sessions
+  from starting the foreground service, so a command was accepted and then did
+  nothing. Enabling external control now grants the app op through Shizuku, and
+  a start that cannot be delivered reports the reason instead of failing
+  silently.
+
 ## [0.3.0] - 2026-08-22
 
 Adds support for Android 11 and 12 (API 30-32) by providing a tethering module update if necessary. Also adds an onboarding flow. Minor updates to the UI and better logging.

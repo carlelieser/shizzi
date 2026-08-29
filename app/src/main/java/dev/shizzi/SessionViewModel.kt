@@ -70,7 +70,17 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun setExternalControl(isEnabled: Boolean) {
-        viewModelScope.launch { settingsStore.setExternalControlEnabled(isEnabled) }
+        viewModelScope.launch {
+            settingsStore.setExternalControlEnabled(isEnabled)
+            if (isEnabled) permitBackgroundStart()
+        }
+    }
+
+    private suspend fun permitBackgroundStart() {
+        if (!BackgroundStartPermit.isRequired) return
+
+        val problem = diagnostics.grantBackgroundStart() ?: return
+        SessionLog.error("could not permit background starts: $problem")
     }
 
     fun setExternalControlToken(token: String) {
