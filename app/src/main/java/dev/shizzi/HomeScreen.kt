@@ -15,6 +15,8 @@ import dev.shizzi.ui.LogPage
 import dev.shizzi.ui.Screen
 import dev.shizzi.ui.SessionToasts
 import dev.shizzi.ui.SettingsActions
+import dev.shizzi.ui.ExternalControlActions
+import dev.shizzi.ui.ExternalControlState
 import dev.shizzi.ui.SettingsPage
 import dev.shizzi.ui.SettingsState
 import dev.shizzi.ui.ToastHost
@@ -33,6 +35,9 @@ data class AppActions(
     val onDismissDiagnostics: () -> Unit,
     val onClearLog: (onCleared: (String?) -> Unit) -> Unit,
     val onRestartOnboarding: () -> Unit,
+    val onSetExternalControl: (Boolean) -> Unit,
+    val onSetExternalControlToken: (String) -> Unit,
+    val onRegenerateExternalControlToken: () -> Unit,
 )
 
 @Composable
@@ -71,6 +76,10 @@ fun HomeScreen(
                     theme = settings.theme,
                     isLogging = settings.isLogging,
                     isRunningDiagnostics = diagnostics is DiagnosticsState.Running,
+                    externalControl = ExternalControlState(
+                        isEnabled = settings.isExternalControlEnabled,
+                        token = settings.externalControlToken,
+                    ),
                 ),
                 actions = SettingsActions(
                     onSetTheme = actions.onSetTheme,
@@ -79,6 +88,11 @@ fun HomeScreen(
                     onRunProbes = actions.onRunProbes,
                     onRequestPermission = actions.onRequestPermission,
                     onRestartOnboarding = actions.onRestartOnboarding,
+                    externalControl = ExternalControlActions(
+                        onSetEnabled = actions.onSetExternalControl,
+                        onRegenerateToken = actions.onRegenerateExternalControlToken,
+                        onClearToken = { actions.onSetExternalControlToken("") },
+                    ),
                 ),
                 onBack = goHome,
             )

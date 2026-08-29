@@ -80,6 +80,10 @@ class MainActivity : ComponentActivity() {
                             onDismissDiagnostics = viewModel::dismissDiagnostics,
                             onClearLog = viewModel::clearLog,
                             onRestartOnboarding = viewModel::restartOnboarding,
+                            onSetExternalControl = viewModel::setExternalControl,
+                            onSetExternalControlToken = viewModel::setExternalControlToken,
+                            onRegenerateExternalControlToken =
+                                viewModel::regenerateExternalControlToken,
                         ),
                     )
                 }

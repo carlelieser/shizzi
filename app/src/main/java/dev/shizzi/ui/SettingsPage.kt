@@ -30,6 +30,7 @@ data class SettingsState(
     val theme: ThemeChoice,
     val isLogging: Boolean,
     val isRunningDiagnostics: Boolean,
+    val externalControl: ExternalControlState,
 )
 
 data class SettingsActions(
@@ -39,6 +40,7 @@ data class SettingsActions(
     val onRunProbes: () -> Unit,
     val onRequestPermission: () -> Unit,
     val onRestartOnboarding: () -> Unit,
+    val externalControl: ExternalControlActions,
 )
 
 @Composable
@@ -65,6 +67,13 @@ fun SettingsPage(
 
             SectionLabel("Appearance")
             ThemePicker(selected = state.theme, onSelect = actions.onSetTheme)
+
+            SectionLabel("External control")
+            ExternalControlSection(
+                state = state.externalControl,
+                actions = actions.externalControl,
+            )
+            if (state.externalControl.isEnabled) ExternalControlHint()
 
             SectionLabel("Developer")
             DeveloperSection(isLogging = state.isLogging, actions = actions)

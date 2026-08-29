@@ -69,6 +69,18 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch { settingsStore.setLogging(enabled) }
     }
 
+    fun setExternalControl(isEnabled: Boolean) {
+        viewModelScope.launch { settingsStore.setExternalControlEnabled(isEnabled) }
+    }
+
+    fun setExternalControlToken(token: String) {
+        viewModelScope.launch { settingsStore.setExternalControlToken(token) }
+    }
+
+    fun regenerateExternalControlToken() {
+        setExternalControlToken(ExternalControlToken.generate())
+    }
+
     fun setTheme(choice: ThemeChoice) {
         viewModelScope.launch { settingsStore.setTheme(choice) }
     }
