@@ -42,6 +42,7 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
 
     init {
         refreshShizukuState()
+        refreshBackgroundStart()
         observeSession()
     }
 
@@ -50,7 +51,12 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
 
         sessionCollector = viewModelScope.launch {
             SessionService.liveState.collect { session ->
-                localState.update { local -> session.copy(shizukuState = local.shizukuState) }
+                localState.update { local ->
+                    session.copy(
+                        shizukuState = local.shizukuState,
+                        hasBackgroundStart = local.hasBackgroundStart,
+                    )
+                }
             }
         }
     }
@@ -78,9 +84,18 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
 
     private suspend fun permitBackgroundStart() {
         if (!BackgroundStartPermit.isRequired) return
+        if (BackgroundStartPermit.isHeld(getApplication())) return
 
-        val problem = diagnostics.grantBackgroundStart() ?: return
-        SessionLog.error("could not permit background starts: $problem")
+        val problem = diagnostics.grantBackgroundStart()
+        if (problem != null) SessionLog.error("could not permit background starts: $problem")
+
+        refreshBackgroundStart()
+    }
+
+    fun refreshBackgroundStart() {
+        localState.update {
+            it.copy(hasBackgroundStart = BackgroundStartPermit.isHeld(getApplication()))
+        }
     }
 
     fun setExternalControlToken(token: String) {

@@ -13,12 +13,14 @@ import dev.shizzi.ui.theme.ShizziTheme
 data class ExternalControlState(
     val isEnabled: Boolean,
     val token: String,
+    val hasBackgroundStart: Boolean,
 )
 
 data class ExternalControlActions(
     val onSetEnabled: (Boolean) -> Unit,
     val onRegenerateToken: () -> Unit,
     val onClearToken: () -> Unit,
+    val onFixBackgroundStart: () -> Unit,
 )
 
 @Composable
@@ -36,6 +38,16 @@ fun ExternalControlSection(
     )
 
     if (!state.isEnabled) return
+
+    if (!state.hasBackgroundStart) {
+        SettingsAction(
+            label = SettingsText(
+                title = "Allow background starts",
+                subtitle = "Android blocks Shizzi from starting a session until this is on",
+            ),
+            onClick = actions.onFixBackgroundStart,
+        )
+    }
 
     TokenRow(token = state.token, actions = actions)
 }

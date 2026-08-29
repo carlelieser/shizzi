@@ -38,6 +38,7 @@ data class AppActions(
     val onSetExternalControl: (Boolean) -> Unit,
     val onSetExternalControlToken: (String) -> Unit,
     val onRegenerateExternalControlToken: () -> Unit,
+    val onFixBackgroundStart: () -> Unit,
 )
 
 @Composable
@@ -79,6 +80,7 @@ fun HomeScreen(
                     externalControl = ExternalControlState(
                         isEnabled = settings.isExternalControlEnabled,
                         token = settings.externalControlToken,
+                        hasBackgroundStart = state.hasBackgroundStart,
                     ),
                 ),
                 actions = SettingsActions(
@@ -92,6 +94,7 @@ fun HomeScreen(
                         onSetEnabled = actions.onSetExternalControl,
                         onRegenerateToken = actions.onRegenerateExternalControlToken,
                         onClearToken = { actions.onSetExternalControlToken("") },
+                        onFixBackgroundStart = actions.onFixBackgroundStart,
                     ),
                 ),
                 onBack = goHome,

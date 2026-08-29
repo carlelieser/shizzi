@@ -15,6 +15,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.core.view.WindowCompat
+import dev.shizzi.ui.requestIgnoreBatteryOptimizations
 import dev.shizzi.ui.theme.ShizziTheme
 import rikka.shizuku.Shizuku
 
@@ -84,6 +85,7 @@ class MainActivity : ComponentActivity() {
                             onSetExternalControlToken = viewModel::setExternalControlToken,
                             onRegenerateExternalControlToken =
                                 viewModel::regenerateExternalControlToken,
+                            onFixBackgroundStart = ::requestIgnoreBatteryOptimizations,
                         ),
                     )
                 }
@@ -125,6 +127,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         viewModel.refreshShizukuState()
+        viewModel.refreshBackgroundStart()
     }
 
     override fun onDestroy() {

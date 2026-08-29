@@ -24,6 +24,8 @@ data class SessionUiState(
     val lastError: String = "",
     val isVpnBound: Boolean = false,
 
+    val hasBackgroundStart: Boolean = true,
+
     val clientCount: Int = 0,
 
     val traffic: Traffic = Traffic(),

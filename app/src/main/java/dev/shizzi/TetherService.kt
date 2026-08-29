@@ -30,7 +30,7 @@ class TetherService : ITetherService.Stub {
         BackgroundStartPermit.grant(BuildConfig.APPLICATION_ID)
 
     override fun hasBackgroundStart(): Boolean =
-        BackgroundStartPermit.isHeld(BuildConfig.APPLICATION_ID)
+        BackgroundStartPermit.isHeld(shellContext)
 
     override fun start(logging: Boolean): String {
         SessionLog.setEnabled(logging)

@@ -16,9 +16,10 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - **Background starts.** Android 12 and up blocked intent-triggered sessions
   from starting the foreground service, so a command was accepted and then did
-  nothing. Enabling external control now grants the app op through Shizuku, and
-  a start that cannot be delivered reports the reason instead of failing
-  silently.
+  nothing. Enabling external control now exempts the app from battery
+  optimization through Shizuku, with a settings row to grant it by hand if that
+  fails, and a start that cannot be delivered reports the reason instead of
+  failing silently.
 
 ## [0.3.0] - 2026-08-22
 
