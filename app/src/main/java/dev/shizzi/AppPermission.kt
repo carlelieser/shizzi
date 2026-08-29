@@ -16,7 +16,7 @@ data class PermissionStatus(
 val AppPermission.title: String
     get() = when (this) {
         AppPermission.NOTIFICATIONS -> "Notifications"
-        AppPermission.BATTERY_EXEMPTION -> "Unrestricted battery"
+        AppPermission.BATTERY_EXEMPTION -> "Background activity"
     }
 
 val AppPermission.rationale: String
@@ -24,7 +24,7 @@ val AppPermission.rationale: String
         AppPermission.NOTIFICATIONS ->
             "Shows session status and lets you stop from the shade"
         AppPermission.BATTERY_EXEMPTION ->
-            "Lets other apps start a session while Shizzi is closed"
+            "Exempts Shizzi from battery optimisation so it can act while closed"
     }
 
 val AppPermission.manifestName: String?
