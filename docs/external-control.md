@@ -18,9 +18,9 @@ service, which is what an intent-triggered session needs. Exemption from
 battery optimization is the documented way out of that restriction, and only
 the user can grant it.
 
-Turning on external control adds **Unrestricted battery** to
-**Settings › Permissions**. Until you grant it, commands are accepted but no
-session starts, and the log says so.
+Grant **Unrestricted battery** in **Settings › Permissions**, or during
+onboarding. Until you do, commands are accepted but no session starts, and the
+log says so.
 
 ## Actions
 

@@ -80,8 +80,7 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun refreshPermissions() {
-        val current = settings.value ?: Settings()
-        localPermissions.value = permissions.observe(current)
+        localPermissions.value = permissions.observe()
     }
 
     fun openPermissionSettings(permission: AppPermission) {

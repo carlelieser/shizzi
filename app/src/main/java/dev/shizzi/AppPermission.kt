@@ -24,7 +24,7 @@ val AppPermission.rationale: String
         AppPermission.NOTIFICATIONS ->
             "Shows session status and lets you stop from the shade"
         AppPermission.BATTERY_EXEMPTION ->
-            "Required for other apps to start a session"
+            "Lets other apps start a session while Shizzi is closed"
     }
 
 val AppPermission.manifestName: String?
@@ -38,8 +38,3 @@ val AppPermission.isApplicable: Boolean
         AppPermission.NOTIFICATIONS -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
         AppPermission.BATTERY_EXEMPTION -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
     }
-
-fun AppPermission.isRequiredFor(settings: Settings): Boolean = when (this) {
-    AppPermission.BATTERY_EXEMPTION -> settings.isExternalControlEnabled
-    else -> true
-}

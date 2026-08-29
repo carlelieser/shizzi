@@ -11,8 +11,8 @@ class PermissionInspector(private val context: Context) {
         isGranted = isGranted(permission),
     )
 
-    fun observe(settings: Settings): List<PermissionStatus> = AppPermission.entries
-        .filter { it.isApplicable && it.isRequiredFor(settings) }
+    fun observe(): List<PermissionStatus> = AppPermission.entries
+        .filter { it.isApplicable }
         .map(::statusOf)
 
     fun isGranted(permission: AppPermission): Boolean {

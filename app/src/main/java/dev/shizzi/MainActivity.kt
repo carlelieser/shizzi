@@ -1,8 +1,6 @@
 package dev.shizzi
 
 import android.Manifest
-import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.view.ViewTreeObserver
@@ -39,7 +37,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         registerShizukuListeners()
-        requestNotificationPermission()
 
         setContent {
             val settings by viewModel.settings.collectAsState()

@@ -1,33 +1,16 @@
 package dev.shizzi
 
-import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AppPermissionTest {
 
     @Test
-    fun `battery exemption is only required once external control is on`() {
-        val off = Settings(isExternalControlEnabled = false)
-
-        assertFalse(AppPermission.BATTERY_EXEMPTION.isRequiredFor(off))
-    }
-
-    @Test
-    fun `battery exemption is required while external control is on`() {
-        val on = Settings(isExternalControlEnabled = true)
-
-        assertTrue(AppPermission.BATTERY_EXEMPTION.isRequiredFor(on))
-    }
-
-    @Test
-    fun `notifications are required regardless of external control`() {
-        assertTrue(AppPermission.NOTIFICATIONS.isRequiredFor(Settings()))
-        assertTrue(
-            AppPermission.NOTIFICATIONS.isRequiredFor(
-                Settings(isExternalControlEnabled = true),
-            ),
-        )
+    fun `every permission carries a manifest name or is granted another way`() {
+        assertNull(AppPermission.BATTERY_EXEMPTION.manifestName)
+        assertNotNull(AppPermission.NOTIFICATIONS.manifestName)
     }
 
     @Test
