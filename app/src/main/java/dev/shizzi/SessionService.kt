@@ -34,6 +34,8 @@ class SessionService : Service() {
 
     private var isStopping = false
 
+    private var reportTo: ExternalCommand? = null
+
     private var startJob: Job? = null
 
     private var generation = 0
@@ -48,6 +50,8 @@ class SessionService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         isStopping = intent?.action == ACTION_STOP
+        reportTo = intent?.getStringExtra(EXTRA_REPORT_AS)
+            ?.let { runCatching { ExternalCommand.valueOf(it) }.getOrNull() }
         startForeground(
             NOTIFICATION_ID,
             notification.build(
@@ -66,7 +70,10 @@ class SessionService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun startSession() {
-        if (internalState.value.isBusy) return
+        if (internalState.value.isBusy) {
+            announceOutcome()
+            return
+        }
         val attempt = ++generation
         internalState.update {
             it.copy(isBusy = true, status = UiStatus.LOADING, lastError = "", detail = "")
@@ -91,6 +98,7 @@ class SessionService : Service() {
 
             internalState.update { current -> current.applyOutcome(outcome) }
             publishState()
+            announceOutcome()
             followStatus()
         }
     }
@@ -131,6 +139,8 @@ class SessionService : Service() {
                 controller.unbindAndStopDaemon()
             }
 
+            announceOutcome()
+
             if (stopped == generation) stopSelf()
         }
     }
@@ -166,6 +176,12 @@ class SessionService : Service() {
         }
     }
 
+    private fun announceOutcome() {
+        val command = reportTo ?: return
+        reportTo = null
+        ExternalResult.announce(this, command, internalState.value)
+    }
+
     private fun publishState() {
         notificationManager().notify(
             NOTIFICATION_ID,
@@ -187,6 +203,7 @@ class SessionService : Service() {
     companion object {
         private const val NOTIFICATION_ID = 1
         const val ACTION_STOP = "dev.shizzi.STOP_SESSION"
+        const val EXTRA_REPORT_AS = "reportAs"
 
         private val sessionState = MutableStateFlow(SessionUiState())
 
@@ -196,14 +213,23 @@ class SessionService : Service() {
 
         val isRunning: Boolean get() = liveService != null
 
-        fun start(context: Context) {
-            context.startForegroundService(Intent(context, SessionService::class.java))
+        fun start(context: Context, reportAs: ExternalCommand? = null) {
+            context.startForegroundService(
+                Intent(context, SessionService::class.java).reporting(reportAs),
+            )
         }
 
-        fun stop(context: Context) {
+        fun stop(context: Context, reportAs: ExternalCommand? = null) {
             context.startForegroundService(
-                Intent(context, SessionService::class.java).setAction(ACTION_STOP),
+                Intent(context, SessionService::class.java)
+                    .setAction(ACTION_STOP)
+                    .reporting(reportAs),
             )
+        }
+
+        private fun Intent.reporting(command: ExternalCommand?): Intent = when (command) {
+            null -> this
+            else -> putExtra(EXTRA_REPORT_AS, command.name)
         }
     }
 }
