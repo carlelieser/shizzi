@@ -24,8 +24,6 @@ data class SessionUiState(
     val lastError: String = "",
     val isVpnBound: Boolean = false,
 
-    val hasBackgroundStart: Boolean = true,
-
     val clientCount: Int = 0,
 
     val traffic: Traffic = Traffic(),
@@ -213,15 +211,6 @@ class TetherClient {
 
     suspend fun stop(): String = withContext(Dispatchers.IO) {
         service().stop()
-    }
-
-    suspend fun grantBackgroundStart(): String? = withContext(Dispatchers.IO) {
-        runCatching {
-            val bound = service()
-
-            verifyContract(bound)
-            bound.grantBackgroundStart()
-        }.getOrElse { failure -> failure.message ?: "could not reach Shizuku" }
     }
 
     suspend fun clearLog(): String? = withContext(Dispatchers.IO) {

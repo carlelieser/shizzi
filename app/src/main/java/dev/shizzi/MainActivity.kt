@@ -15,7 +15,6 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.core.view.WindowCompat
-import dev.shizzi.ui.requestIgnoreBatteryOptimizations
 import dev.shizzi.ui.theme.ShizziTheme
 import rikka.shizuku.Shizuku
 
@@ -33,7 +32,9 @@ class MainActivity : ComponentActivity() {
         Shizuku.OnBinderDeadListener { viewModel.refreshShizukuState() }
 
     private val notificationPermission =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+            viewModel.refreshPermissions()
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,6 +55,7 @@ class MainActivity : ComponentActivity() {
 
                 Surface(color = colors.background) {
                     val state by viewModel.state.collectAsState()
+                    val permissions by viewModel.permissionState.collectAsState()
                     val diagnostics by viewModel.diagnosticsState.collectAsState()
                     val compatibility by viewModel.compatibilityState.collectAsState()
 
@@ -62,6 +64,7 @@ class MainActivity : ComponentActivity() {
                             session = state,
                             settings = loaded,
                             diagnostics = diagnostics,
+                            permissions = permissions,
                         ),
                         onboarding = OnboardingEntry(
                             compatibility = compatibility,
@@ -85,7 +88,7 @@ class MainActivity : ComponentActivity() {
                             onSetExternalControlToken = viewModel::setExternalControlToken,
                             onRegenerateExternalControlToken =
                                 viewModel::regenerateExternalControlToken,
-                            onFixBackgroundStart = ::requestIgnoreBatteryOptimizations,
+                            onGrantPermission = ::grantPermission,
                         ),
                     )
                 }
@@ -111,11 +114,17 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun requestNotificationPermission() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        if (!AppPermission.NOTIFICATIONS.isApplicable) return
+        if (PermissionInspector(this).isGranted(AppPermission.NOTIFICATIONS)) return
 
-        val granted = checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
-            PackageManager.PERMISSION_GRANTED
-        if (!granted) notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
+
+    private fun grantPermission(permission: AppPermission) {
+        when (permission) {
+            AppPermission.NOTIFICATIONS -> requestNotificationPermission()
+            else -> viewModel.openPermissionSettings(permission)
+        }
     }
 
     private fun registerShizukuListeners() {
@@ -127,7 +136,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         viewModel.refreshShizukuState()
-        viewModel.refreshBackgroundStart()
+        viewModel.refreshPermissions()
     }
 
     override fun onDestroy() {

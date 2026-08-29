@@ -27,6 +27,11 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
         initialValue = null,
     )
 
+    private val permissions = PermissionInspector(application)
+
+    private val localPermissions = MutableStateFlow<List<PermissionStatus>>(emptyList())
+    val permissionState: StateFlow<List<PermissionStatus>> = localPermissions.asStateFlow()
+
     private val localState = MutableStateFlow(SessionUiState())
     val state: StateFlow<SessionUiState> = localState.asStateFlow()
 
@@ -42,7 +47,7 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
 
     init {
         refreshShizukuState()
-        refreshBackgroundStart()
+        refreshPermissions()
         observeSession()
     }
 
@@ -51,12 +56,7 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
 
         sessionCollector = viewModelScope.launch {
             SessionService.liveState.collect { session ->
-                localState.update { local ->
-                    session.copy(
-                        shizukuState = local.shizukuState,
-                        hasBackgroundStart = local.hasBackgroundStart,
-                    )
-                }
+                localState.update { local -> session.copy(shizukuState = local.shizukuState) }
             }
         }
     }
@@ -76,26 +76,16 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun setExternalControl(isEnabled: Boolean) {
-        viewModelScope.launch {
-            settingsStore.setExternalControlEnabled(isEnabled)
-            if (isEnabled) permitBackgroundStart()
-        }
+        viewModelScope.launch { settingsStore.setExternalControlEnabled(isEnabled) }
     }
 
-    private suspend fun permitBackgroundStart() {
-        if (!BackgroundStartPermit.isRequired) return
-        if (BackgroundStartPermit.isHeld(getApplication())) return
-
-        val problem = diagnostics.grantBackgroundStart()
-        if (problem != null) SessionLog.error("could not permit background starts: $problem")
-
-        refreshBackgroundStart()
+    fun refreshPermissions() {
+        val current = settings.value ?: Settings()
+        localPermissions.value = permissions.observe(current)
     }
 
-    fun refreshBackgroundStart() {
-        localState.update {
-            it.copy(hasBackgroundStart = BackgroundStartPermit.isHeld(getApplication()))
-        }
+    fun openPermissionSettings(permission: AppPermission) {
+        PermissionRequest(getApplication()).open(permission)
     }
 
     fun setExternalControlToken(token: String) {
