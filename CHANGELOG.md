@@ -7,6 +7,8 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Permissions.** A permissions step in onboarding and a section in settings,
+  each listing what Shizzi needs, why, and whether it is granted.
 - **External control.** Other apps can start, stop, toggle, and query a session
   through intents, for automation from Tasker, MacroDroid, and the like. Off by
   default, with an optional token. See
@@ -16,10 +18,9 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - **Background starts.** Android 12 and up blocked intent-triggered sessions
   from starting the foreground service, so a command was accepted and then did
-  nothing. Enabling external control now exempts the app from battery
-  optimization through Shizuku, with a settings row to grant it by hand if that
-  fails, and a start that cannot be delivered reports the reason instead of
-  failing silently.
+  nothing. Battery optimization exemption lifts the restriction and is now
+  surfaced as a permission, and a start that cannot be delivered reports the
+  reason instead of failing silently.
 
 ## [0.3.0] - 2026-08-22
 

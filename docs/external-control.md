@@ -14,13 +14,13 @@ token, no caller is verified.
 ## Background starts
 
 Android 12 and up block an app in the background from starting a foreground
-service, which is what an intent-triggered session needs. Being exempt from
-battery optimization lifts that block, so enabling external control adds
-Shizzi to the device idle allowlist through Shizuku.
+service, which is what an intent-triggered session needs. Exemption from
+battery optimization is the documented way out of that restriction, and only
+the user can grant it.
 
-If that fails, **Settings › External control** shows an *Allow background
-starts* row that opens the system prompt instead. Until it is granted,
-commands are accepted but no session starts, and the log says so.
+Turning on external control adds **Unrestricted battery** to
+**Settings › Permissions**. Until you grant it, commands are accepted but no
+session starts, and the log says so.
 
 ## Actions
 
