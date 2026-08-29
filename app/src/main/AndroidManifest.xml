@@ -46,6 +46,17 @@
                     down the hotspot if the privileged helper process dies" />
         </service>
 
+        <receiver
+            android:name=".ExternalControlReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="dev.shizzi.action.START" />
+                <action android:name="dev.shizzi.action.STOP" />
+                <action android:name="dev.shizzi.action.TOGGLE" />
+                <action android:name="dev.shizzi.action.QUERY_STATUS" />
+            </intent-filter>
+        </receiver>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.exports"
