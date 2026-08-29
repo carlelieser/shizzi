@@ -5,15 +5,18 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import dev.shizzi.AppPermission
 import dev.shizzi.CompatibilityState
+import dev.shizzi.PermissionStatus
 import dev.shizzi.ShizukuState
 import dev.shizzi.isCompatible
 import dev.shizzi.isOnFixPath
 
-enum class OnboardingStep { WELCOME, SHIZUKU, COMPATIBILITY }
+enum class OnboardingStep { WELCOME, SHIZUKU, PERMISSIONS, COMPATIBILITY }
 
 data class OnboardingActions(
     val onRequestPermission: () -> Unit,
+    val onGrantPermission: (AppPermission) -> Unit,
     val onCheckCompatibility: () -> Unit,
     val onDownloadTetheringApex: () -> Unit,
     val onInstallTetheringApex: () -> Unit,
@@ -23,10 +26,12 @@ data class OnboardingActions(
 
 @Composable
 fun OnboardingFlow(
-    shizukuState: ShizukuState,
-    compatibility: CompatibilityState,
+    state: OnboardingState,
     actions: OnboardingActions,
 ) {
+    val shizukuState = state.shizuku
+    val compatibility = state.compatibility
+
     val current = rememberOnboardingStep()
 
     LaunchedEffect(current.value) {
@@ -39,6 +44,12 @@ fun OnboardingFlow(
         OnboardingStep.SHIZUKU -> shizukuStep(
             state = shizukuState,
             onGrant = actions.onRequestPermission,
+            onNext = { current.value = OnboardingStep.PERMISSIONS },
+        )
+
+        OnboardingStep.PERMISSIONS -> permissionsStep(
+            statuses = state.permissions,
+            onGrant = actions.onGrantPermission,
             onNext = { current.value = OnboardingStep.COMPATIBILITY },
         )
 
@@ -75,6 +86,19 @@ private fun shizukuStep(
     primary = WizardAction(
         label = "Continue",
         isEnabled = state is ShizukuState.Ready,
+        onClick = onNext,
+    ),
+)
+
+private fun permissionsStep(
+    statuses: List<PermissionStatus>,
+    onGrant: (AppPermission) -> Unit,
+    onNext: () -> Unit,
+) = WizardStep(
+    title = "Permissions",
+    content = { PermissionsStep(statuses = statuses, onGrant = onGrant) },
+    primary = WizardAction(
+        label = if (statuses.all { it.isGranted }) "Continue" else "Skip",
         onClick = onNext,
     ),
 )
