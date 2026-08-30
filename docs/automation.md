@@ -7,9 +7,9 @@ anything else that can send an intent.
 
 Off by default. Turn it on in **Settings › Automation**.
 
-Once enabled, any app on the device can control tethering. To restrict that,
-set a token in the same section and include it with every intent. Without a
-token, no caller is verified.
+A token is generated when you turn automation on, and every command must
+carry it. Commands without a matching token are refused, so an app that does
+not know the token cannot control tethering.
 
 ## Background starts
 
@@ -33,7 +33,7 @@ Sent to `dev.shizzi/.AutomationReceiver` as a broadcast.
 | `dev.shizzi.action.TOGGLE` | Stop if running, otherwise start |
 | `dev.shizzi.action.QUERY_STATUS` | Report state without changing it |
 
-Pass the token, when set, as the string extra `token`.
+Pass the token as the string extra `token`.
 
 ## Result
 
@@ -65,7 +65,7 @@ Add a **System › Send Intent** action:
 - Package: `dev.shizzi`
 - Class: `dev.shizzi.AutomationReceiver`
 - Target: `Broadcast Receiver`
-- Extra: `token:your-token` (only if you set one)
+- Extra: `token:your-token`
 
 To react to the result, add an **Event › System › Intent Received** profile
 with the action `dev.shizzi.action.SESSION_RESULT`. The extras above arrive as

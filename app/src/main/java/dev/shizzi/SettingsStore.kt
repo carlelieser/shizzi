@@ -2,6 +2,7 @@ package dev.shizzi
 
 import android.content.Context
 import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
@@ -30,6 +31,14 @@ class SettingsStore(private val context: Context) {
 
     val settings: Flow<Settings> = context.dataStore.data.map(::toSettings)
 
+    suspend fun backfillTokenIfEnabled() {
+        context.dataStore.edit { preferences ->
+            if (preferences[AUTOMATION] != true) return@edit
+
+            preferences.mintTokenIfAbsent()
+        }
+    }
+
     suspend fun setTheme(choice: ThemeChoice) {
         context.dataStore.edit { it[THEME] = choice.name }
     }
@@ -43,11 +52,20 @@ class SettingsStore(private val context: Context) {
     }
 
     suspend fun setAutomationEnabled(isEnabled: Boolean) {
-        context.dataStore.edit { it[AUTOMATION] = isEnabled }
+        context.dataStore.edit { preferences ->
+            preferences[AUTOMATION] = isEnabled
+            if (isEnabled) preferences.mintTokenIfAbsent()
+        }
     }
 
     suspend fun setAutomationToken(token: String) {
         context.dataStore.edit { it[AUTOMATION_TOKEN] = token }
+    }
+
+    private fun MutablePreferences.mintTokenIfAbsent() {
+        if (!this[AUTOMATION_TOKEN].isNullOrEmpty()) return
+
+        this[AUTOMATION_TOKEN] = AutomationToken.generate()
     }
 
     private fun toSettings(preferences: Preferences) = Settings(

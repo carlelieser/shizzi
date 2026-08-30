@@ -36,7 +36,6 @@ data class AppActions(
     val onClearLog: (onCleared: (String?) -> Unit) -> Unit,
     val onRestartOnboarding: () -> Unit,
     val onSetAutomation: (Boolean) -> Unit,
-    val onSetAutomationToken: (String) -> Unit,
     val onRegenerateAutomationToken: () -> Unit,
     val onGrantPermission: (AppPermission) -> Unit,
 )
@@ -96,7 +95,6 @@ fun HomeScreen(
                     automation = AutomationActions(
                         onSetEnabled = actions.onSetAutomation,
                         onRegenerateToken = actions.onRegenerateAutomationToken,
-                        onClearToken = { actions.onSetAutomationToken("") },
                     ),
                     onGrantPermission = actions.onGrantPermission,
                 ),

@@ -87,12 +87,8 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
         PermissionRequest(getApplication()).open(permission)
     }
 
-    fun setAutomationToken(token: String) {
-        viewModelScope.launch { settingsStore.setAutomationToken(token) }
-    }
-
     fun regenerateAutomationToken() {
-        setAutomationToken(AutomationToken.generate())
+        viewModelScope.launch { settingsStore.setAutomationToken(AutomationToken.generate()) }
     }
 
     fun setTheme(choice: ThemeChoice) {

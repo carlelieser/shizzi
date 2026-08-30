@@ -82,7 +82,6 @@ class MainActivity : ComponentActivity() {
                             onClearLog = viewModel::clearLog,
                             onRestartOnboarding = viewModel::restartOnboarding,
                             onSetAutomation = viewModel::setAutomation,
-                            onSetAutomationToken = viewModel::setAutomationToken,
                             onRegenerateAutomationToken =
                                 viewModel::regenerateAutomationToken,
                             onGrantPermission = ::grantPermission,

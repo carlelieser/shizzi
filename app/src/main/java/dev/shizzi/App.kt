@@ -17,15 +17,17 @@ class App : Application() {
         instance = this
 
         SessionLog.useAppStorage(filesDir)
-        applyLoggingSetting()
+        applyStoredSettings()
 
         liftHiddenApiRestrictions()
     }
 
-    private fun applyLoggingSetting() {
+    private fun applyStoredSettings() {
         CoroutineScope(Dispatchers.IO).launch {
             val isLogging = settingsStore.settings.first().isLogging
             SessionLog.setEnabled(isLogging)
+
+            settingsStore.backfillTokenIfEnabled()
         }
     }
 

@@ -28,8 +28,15 @@ class AutomationTest {
     }
 
     @Test
-    fun `accepts any caller when enabled without a token`() {
-        assertNull(Automation.refuse(enabledWithoutToken, presented = null))
+    fun `refuses every caller when no token has been set`() {
+        assertEquals(
+            AutomationRefusal.BadToken,
+            Automation.refuse(enabledWithoutToken, presented = null),
+        )
+        assertEquals(
+            AutomationRefusal.BadToken,
+            Automation.refuse(enabledWithoutToken, presented = "anything"),
+        )
     }
 
     @Test

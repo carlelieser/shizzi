@@ -18,7 +18,6 @@ data class AutomationState(
 data class AutomationActions(
     val onSetEnabled: (Boolean) -> Unit,
     val onRegenerateToken: () -> Unit,
-    val onClearToken: () -> Unit,
 )
 
 @Composable
@@ -63,11 +62,6 @@ private fun TokenRow(token: String, actions: AutomationActions) {
     SettingsAction(
         label = SettingsText(title = "Regenerate token"),
         onClick = actions.onRegenerateToken,
-    )
-
-    SettingsAction(
-        label = SettingsText(title = "Remove token"),
-        onClick = actions.onClearToken,
     )
 }
 

@@ -46,7 +46,7 @@ object Automation {
     }
 
     private fun isTokenAccepted(expected: String, presented: String?): Boolean {
-        if (expected.isEmpty()) return true
+        if (expected.isEmpty()) return false
         return presented != null && isEqualInConstantTime(expected, presented)
     }
 
