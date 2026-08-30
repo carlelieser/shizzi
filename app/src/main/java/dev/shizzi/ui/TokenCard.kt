@@ -35,7 +35,7 @@ fun TokenCard(token: String, actions: TokenActions) {
                 top = ShizziTheme.spacing.sm,
                 bottom = ShizziTheme.spacing.lg,
             ),
-        verticalArrangement = Arrangement.spacedBy(ShizziTheme.spacing.xs),
+        verticalArrangement = Arrangement.spacedBy(ShizziTheme.spacing.sm),
     ) {
         TokenHeader(actions)
 
