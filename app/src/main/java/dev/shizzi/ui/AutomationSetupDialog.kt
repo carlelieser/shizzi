@@ -77,7 +77,7 @@ private fun CopyableField(field: SetupField, toasts: ToastState) {
             verticalArrangement = Arrangement.spacedBy(ShizziTheme.spacing.xs),
         ) {
             Text(
-                text = field.label,
+                text = field.label.uppercase(),
                 style = ShizziTheme.typography.caption,
                 color = ShizziTheme.colors.onSurfaceMuted,
             )
@@ -89,7 +89,7 @@ private fun CopyableField(field: SetupField, toasts: ToastState) {
             )
         }
 
-        ShizziIconButton(
+        ShizziCompactIconButton(
             icon = Icons.Filled.ContentCopy,
             contentDescription = "Copy ${field.label.lowercase()}",
             onClick = {

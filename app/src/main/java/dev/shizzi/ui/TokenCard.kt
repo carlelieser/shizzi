@@ -29,8 +29,13 @@ fun TokenCard(token: String, actions: TokenActions) {
         modifier = Modifier
             .fillMaxWidth()
             .brutalSurface(fill = ShizziTheme.colors.surface)
-            .padding(ShizziTheme.spacing.lg),
-        verticalArrangement = Arrangement.spacedBy(ShizziTheme.spacing.sm),
+            .padding(
+                start = ShizziTheme.spacing.lg,
+                end = ShizziTheme.spacing.sm,
+                top = ShizziTheme.spacing.sm,
+                bottom = ShizziTheme.spacing.lg,
+            ),
+        verticalArrangement = Arrangement.spacedBy(ShizziTheme.spacing.xs),
     ) {
         TokenHeader(actions)
 
@@ -55,19 +60,19 @@ private fun TokenHeader(actions: TokenActions) {
             modifier = Modifier.weight(1f),
         )
 
-        ShizziIconButton(
+        ShizziCompactIconButton(
             icon = Icons.Filled.ContentCopy,
             contentDescription = "Copy token",
             onClick = actions.onCopy,
         )
 
-        ShizziIconButton(
+        ShizziCompactIconButton(
             icon = Icons.Filled.Refresh,
             contentDescription = "Regenerate token",
             onClick = actions.onRegenerate,
         )
 
-        ShizziIconButton(
+        ShizziCompactIconButton(
             icon = Icons.Filled.OpenInFull,
             contentDescription = "Set up an automation app",
             onClick = actions.onExpand,
