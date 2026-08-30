@@ -21,7 +21,10 @@ data class Settings(
     val automationToken: String = "",
 )
 
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore("settings")
+private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
+    name = "settings",
+    produceMigrations = { listOf(RenamedKeys.migration()) },
+)
 
 class SettingsStore(private val context: Context) {
 
@@ -40,11 +43,11 @@ class SettingsStore(private val context: Context) {
     }
 
     suspend fun setAutomationEnabled(isEnabled: Boolean) {
-        context.dataStore.edit { it[EXTERNAL_CONTROL] = isEnabled }
+        context.dataStore.edit { it[AUTOMATION] = isEnabled }
     }
 
     suspend fun setAutomationToken(token: String) {
-        context.dataStore.edit { it[EXTERNAL_TOKEN] = token }
+        context.dataStore.edit { it[AUTOMATION_TOKEN] = token }
     }
 
     private fun toSettings(preferences: Preferences) = Settings(
@@ -52,15 +55,15 @@ class SettingsStore(private val context: Context) {
             .getOrDefault(ThemeChoice.SYSTEM),
         isLogging = preferences[LOGGING] ?: true,
         hasCompletedOnboarding = preferences[ONBOARDED] ?: false,
-        isAutomationEnabled = preferences[EXTERNAL_CONTROL] ?: false,
-        automationToken = preferences[EXTERNAL_TOKEN].orEmpty(),
+        isAutomationEnabled = preferences[AUTOMATION] ?: false,
+        automationToken = preferences[AUTOMATION_TOKEN].orEmpty(),
     )
 
     private companion object {
         val THEME = stringPreferencesKey("theme")
         val LOGGING = booleanPreferencesKey("logging")
         val ONBOARDED = booleanPreferencesKey("onboarded")
-        val EXTERNAL_CONTROL = booleanPreferencesKey("external_control")
-        val EXTERNAL_TOKEN = stringPreferencesKey("external_control_token")
+        val AUTOMATION = booleanPreferencesKey("automation")
+        val AUTOMATION_TOKEN = stringPreferencesKey("automation_token")
     }
 }
