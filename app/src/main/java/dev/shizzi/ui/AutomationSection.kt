@@ -26,8 +26,8 @@ fun AutomationSection(
 ) {
     SettingsToggle(
         label = SettingsText(
-            title = "Allow automation",
-            subtitle = "Let other apps start and stop tethering",
+            title = "Automation",
+            subtitle = "Allows tasker apps to manage Shizzi",
         ),
         isChecked = state.isEnabled,
         onCheckedChange = actions.onSetEnabled,
@@ -46,9 +46,10 @@ fun AutomationSection(
                 toasts.show(copiedToast("Token"))
             },
             onRegenerate = actions.onRegenerateToken,
-            onExpand = { isExpanded = true },
         ),
     )
+
+    SetupButton(onClick = { isExpanded = true })
 
     if (!isExpanded) return
 

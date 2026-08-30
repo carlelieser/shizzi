@@ -79,14 +79,12 @@ fun SettingsPage(
                 onGrant = actions.onGrantPermission,
             )
 
-            SectionLabel("Automation")
+            SectionLabel("Advanced")
             AutomationSection(
                 state = state.automation,
                 actions = actions.automation,
                 toasts = toasts,
             )
-
-            SectionLabel("Developer")
             DeveloperSection(isLogging = state.isLogging, actions = actions)
 
             SectionLabel("About")

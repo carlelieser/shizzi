@@ -12,7 +12,8 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Automation.** Other apps can start, stop, toggle, and query a session
   through intents, for automation from Tasker, MacroDroid, and the like. Off by
   default, and every command carries a token. The token card copies and
-  regenerates it, and expands into the values an automation app needs. See
+  regenerates it, and a setup dialog lists the values an automation app needs
+  for each action. See
   [automation](docs/automation.md).
 
 ### Fixed

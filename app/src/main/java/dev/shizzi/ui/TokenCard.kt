@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.OpenInFull
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,7 +19,6 @@ import dev.shizzi.ui.theme.brutalSurface
 data class TokenActions(
     val onCopy: () -> Unit,
     val onRegenerate: () -> Unit,
-    val onExpand: () -> Unit,
 )
 
 @Composable
@@ -70,12 +68,6 @@ private fun TokenHeader(actions: TokenActions) {
             icon = Icons.Filled.Refresh,
             contentDescription = "Regenerate token",
             onClick = actions.onRegenerate,
-        )
-
-        ShizziCompactIconButton(
-            icon = Icons.Filled.OpenInFull,
-            contentDescription = "Set up an automation app",
-            onClick = actions.onExpand,
         )
     }
 }

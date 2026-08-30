@@ -31,6 +31,13 @@ object Automation {
     const val EXTRA_BYTES_UP = "bytesUp"
     const val EXTRA_BYTES_DOWN = "bytesDown"
 
+    fun actionFor(command: AutomationCommand): String = when (command) {
+        AutomationCommand.START -> ACTION_START
+        AutomationCommand.STOP -> ACTION_STOP
+        AutomationCommand.TOGGLE -> ACTION_TOGGLE
+        AutomationCommand.QUERY_STATUS -> ACTION_QUERY_STATUS
+    }
+
     fun commandFor(action: String?): AutomationCommand? = when (action) {
         ACTION_START -> AutomationCommand.START
         ACTION_STOP -> AutomationCommand.STOP
@@ -64,7 +71,7 @@ object Automation {
 
     fun describe(refusal: AutomationRefusal): String = when (refusal) {
         AutomationRefusal.Disabled ->
-            "automation is off; enable it in Settings › Automation"
+            "automation is off; enable it in Settings › Advanced"
         AutomationRefusal.BadToken -> "token does not match the one set in Settings"
         AutomationRefusal.UnknownAction -> "unrecognised action"
     }

@@ -2,6 +2,7 @@ package dev.shizzi.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -11,6 +12,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -18,6 +23,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.window.Dialog
 import dev.shizzi.Automation
+import dev.shizzi.AutomationCommand
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.brutalSurface
 
@@ -34,28 +40,36 @@ fun AutomationSetupDialog(token: String, toasts: ToastState, onDismiss: () -> Un
                 .padding(ShizziTheme.spacing.lg),
             verticalArrangement = Arrangement.spacedBy(ShizziTheme.spacing.md),
         ) {
-            Text(
-                text = "Set up an automation app",
-                style = ShizziTheme.typography.heading,
-                color = ShizziTheme.colors.onSurface,
-            )
-
-            Text(
-                text = "Send a broadcast intent with these values. " +
-                    "Swap the action for STOP, TOGGLE, or QUERY_STATUS.",
-                style = ShizziTheme.typography.body,
-                color = ShizziTheme.colors.onSurfaceMuted,
-            )
-
-            setupFields(token).forEach { field ->
-                CopyableField(field = field, toasts = toasts)
-            }
+            SetupContent(token = token, toasts = toasts)
         }
     }
 }
 
-private fun setupFields(token: String) = listOf(
-    SetupField("Action", Automation.ACTION_START),
+@Composable
+private fun ColumnScope.SetupContent(token: String, toasts: ToastState) {
+    var command by remember { mutableStateOf(AutomationCommand.START) }
+
+    Text(
+        text = "Setup",
+        style = ShizziTheme.typography.heading,
+        color = ShizziTheme.colors.onSurface,
+    )
+
+    Text(
+        text = "Send a broadcast intent with these values.",
+        style = ShizziTheme.typography.body,
+        color = ShizziTheme.colors.onSurfaceMuted,
+    )
+
+    CommandTabs(selected = command, onSelect = { command = it })
+
+    setupFields(command, token).forEach { field ->
+        CopyableField(field = field, toasts = toasts)
+    }
+}
+
+private fun setupFields(command: AutomationCommand, token: String) = listOf(
+    SetupField("Action", Automation.actionFor(command)),
     SetupField("Package", "dev.shizzi"),
     SetupField("Class", "dev.shizzi.AutomationReceiver"),
     SetupField("Target", "Broadcast receiver"),
