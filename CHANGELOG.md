@@ -9,10 +9,10 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - **Permissions.** A permissions step in onboarding and a section in settings,
   each listing what Shizzi needs, why, and whether it is granted.
-- **External control.** Other apps can start, stop, toggle, and query a session
+- **Automation.** Other apps can start, stop, toggle, and query a session
   through intents, for automation from Tasker, MacroDroid, and the like. Off by
   default, with an optional token. See
-  [external control](docs/external-control.md).
+  [automation](docs/automation.md).
 
 ### Fixed
 

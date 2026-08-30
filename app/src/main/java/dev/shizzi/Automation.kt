@@ -1,14 +1,14 @@
 package dev.shizzi
 
-enum class ExternalCommand { START, STOP, TOGGLE, QUERY_STATUS }
+enum class AutomationCommand { START, STOP, TOGGLE, QUERY_STATUS }
 
-sealed interface ExternalRefusal {
-    data object Disabled : ExternalRefusal
-    data object BadToken : ExternalRefusal
-    data object UnknownAction : ExternalRefusal
+sealed interface AutomationRefusal {
+    data object Disabled : AutomationRefusal
+    data object BadToken : AutomationRefusal
+    data object UnknownAction : AutomationRefusal
 }
 
-object ExternalControl {
+object Automation {
 
     const val ACTION_START = "dev.shizzi.action.START"
     const val ACTION_STOP = "dev.shizzi.action.STOP"
@@ -31,17 +31,17 @@ object ExternalControl {
     const val EXTRA_BYTES_UP = "bytesUp"
     const val EXTRA_BYTES_DOWN = "bytesDown"
 
-    fun commandFor(action: String?): ExternalCommand? = when (action) {
-        ACTION_START -> ExternalCommand.START
-        ACTION_STOP -> ExternalCommand.STOP
-        ACTION_TOGGLE -> ExternalCommand.TOGGLE
-        ACTION_QUERY_STATUS -> ExternalCommand.QUERY_STATUS
+    fun commandFor(action: String?): AutomationCommand? = when (action) {
+        ACTION_START -> AutomationCommand.START
+        ACTION_STOP -> AutomationCommand.STOP
+        ACTION_TOGGLE -> AutomationCommand.TOGGLE
+        ACTION_QUERY_STATUS -> AutomationCommand.QUERY_STATUS
         else -> null
     }
 
-    fun refuse(settings: Settings, presented: String?): ExternalRefusal? = when {
-        !settings.isExternalControlEnabled -> ExternalRefusal.Disabled
-        !isTokenAccepted(settings.externalControlToken, presented) -> ExternalRefusal.BadToken
+    fun refuse(settings: Settings, presented: String?): AutomationRefusal? = when {
+        !settings.isAutomationEnabled -> AutomationRefusal.Disabled
+        !isTokenAccepted(settings.automationToken, presented) -> AutomationRefusal.BadToken
         else -> null
     }
 
@@ -62,10 +62,10 @@ object ExternalControl {
         return difference == 0
     }
 
-    fun describe(refusal: ExternalRefusal): String = when (refusal) {
-        ExternalRefusal.Disabled ->
-            "external control is off; enable it in Settings › External control"
-        ExternalRefusal.BadToken -> "token does not match the one set in Settings"
-        ExternalRefusal.UnknownAction -> "unrecognised action"
+    fun describe(refusal: AutomationRefusal): String = when (refusal) {
+        AutomationRefusal.Disabled ->
+            "automation is off; enable it in Settings › Automation"
+        AutomationRefusal.BadToken -> "token does not match the one set in Settings"
+        AutomationRefusal.UnknownAction -> "unrecognised action"
     }
 }

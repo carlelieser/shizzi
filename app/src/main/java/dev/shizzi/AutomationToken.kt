@@ -2,7 +2,7 @@ package dev.shizzi
 
 import java.security.SecureRandom
 
-object ExternalControlToken {
+object AutomationToken {
 
     private const val LENGTH = 24
     private const val ALPHABET = "abcdefghijkmnopqrstuvwxyz23456789"

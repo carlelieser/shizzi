@@ -81,10 +81,10 @@ class MainActivity : ComponentActivity() {
                             onDismissDiagnostics = viewModel::dismissDiagnostics,
                             onClearLog = viewModel::clearLog,
                             onRestartOnboarding = viewModel::restartOnboarding,
-                            onSetExternalControl = viewModel::setExternalControl,
-                            onSetExternalControlToken = viewModel::setExternalControlToken,
-                            onRegenerateExternalControlToken =
-                                viewModel::regenerateExternalControlToken,
+                            onSetAutomation = viewModel::setAutomation,
+                            onSetAutomationToken = viewModel::setAutomationToken,
+                            onRegenerateAutomationToken =
+                                viewModel::regenerateAutomationToken,
                             onGrantPermission = ::grantPermission,
                         ),
                     )

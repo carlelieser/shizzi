@@ -34,7 +34,7 @@ class SessionService : Service() {
 
     private var isStopping = false
 
-    private var reportTo: ExternalCommand? = null
+    private var reportTo: AutomationCommand? = null
 
     private var startJob: Job? = null
 
@@ -51,7 +51,7 @@ class SessionService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         isStopping = intent?.action == ACTION_STOP
         reportTo = intent?.getStringExtra(EXTRA_REPORT_AS)
-            ?.let { runCatching { ExternalCommand.valueOf(it) }.getOrNull() }
+            ?.let { runCatching { AutomationCommand.valueOf(it) }.getOrNull() }
         startForeground(
             NOTIFICATION_ID,
             notification.build(
@@ -179,7 +179,7 @@ class SessionService : Service() {
     private fun announceOutcome() {
         val command = reportTo ?: return
         reportTo = null
-        ExternalResult.announce(this, command, internalState.value)
+        AutomationResult.announce(this, command, internalState.value)
     }
 
     private fun publishState() {
@@ -213,13 +213,13 @@ class SessionService : Service() {
 
         val isRunning: Boolean get() = liveService != null
 
-        fun start(context: Context, reportAs: ExternalCommand? = null) {
+        fun start(context: Context, reportAs: AutomationCommand? = null) {
             context.startForegroundService(
                 Intent(context, SessionService::class.java).reporting(reportAs),
             )
         }
 
-        fun stop(context: Context, reportAs: ExternalCommand? = null) {
+        fun stop(context: Context, reportAs: AutomationCommand? = null) {
             context.startForegroundService(
                 Intent(context, SessionService::class.java)
                     .setAction(ACTION_STOP)
@@ -227,7 +227,7 @@ class SessionService : Service() {
             )
         }
 
-        private fun Intent.reporting(command: ExternalCommand?): Intent = when (command) {
+        private fun Intent.reporting(command: AutomationCommand?): Intent = when (command) {
             null -> this
             else -> putExtra(EXTRA_REPORT_AS, command.name)
         }

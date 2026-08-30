@@ -10,25 +10,25 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import dev.shizzi.ui.theme.ShizziTheme
 
-data class ExternalControlState(
+data class AutomationState(
     val isEnabled: Boolean,
     val token: String,
 )
 
-data class ExternalControlActions(
+data class AutomationActions(
     val onSetEnabled: (Boolean) -> Unit,
     val onRegenerateToken: () -> Unit,
     val onClearToken: () -> Unit,
 )
 
 @Composable
-fun ExternalControlSection(
-    state: ExternalControlState,
-    actions: ExternalControlActions,
+fun AutomationSection(
+    state: AutomationState,
+    actions: AutomationActions,
 ) {
     SettingsToggle(
         label = SettingsText(
-            title = "Allow external control",
+            title = "Allow automation",
             subtitle = "Let automation apps start and stop tethering",
         ),
         isChecked = state.isEnabled,
@@ -41,7 +41,7 @@ fun ExternalControlSection(
 }
 
 @Composable
-private fun TokenRow(token: String, actions: ExternalControlActions) {
+private fun TokenRow(token: String, actions: AutomationActions) {
     val clipboard = LocalClipboardManager.current
 
     if (token.isEmpty()) {
@@ -72,9 +72,9 @@ private fun TokenRow(token: String, actions: ExternalControlActions) {
 }
 
 @Composable
-fun ExternalControlHint() {
+fun AutomationHint() {
     Text(
-        text = "Send dev.shizzi.action.TOGGLE to dev.shizzi/.ExternalControlReceiver.",
+        text = "Send dev.shizzi.action.TOGGLE to dev.shizzi/.AutomationReceiver.",
         style = ShizziTheme.typography.body,
         color = ShizziTheme.colors.onSurfaceMuted,
         modifier = Modifier.fillMaxWidth().padding(top = ShizziTheme.spacing.sm),

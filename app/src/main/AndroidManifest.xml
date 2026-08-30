@@ -49,7 +49,7 @@
         </service>
 
         <receiver
-            android:name=".ExternalControlReceiver"
+            android:name=".AutomationReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="dev.shizzi.action.START" />

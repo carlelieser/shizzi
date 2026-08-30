@@ -33,7 +33,7 @@ Download the APK from the
 - ⚙️ **Uses your existing hotspot.** No extra configuration required.
 - 🙌 **No root.** Shizuku is all it needs.
 - 🤖 **Automatable.** Start and stop from Tasker or MacroDroid. See
-  [external control](docs/external-control.md).
+  [automation](docs/automation.md).
 
 ## Build
 

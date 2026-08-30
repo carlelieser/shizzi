@@ -75,8 +75,8 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch { settingsStore.setLogging(enabled) }
     }
 
-    fun setExternalControl(isEnabled: Boolean) {
-        viewModelScope.launch { settingsStore.setExternalControlEnabled(isEnabled) }
+    fun setAutomation(isEnabled: Boolean) {
+        viewModelScope.launch { settingsStore.setAutomationEnabled(isEnabled) }
     }
 
     fun refreshPermissions() {
@@ -87,12 +87,12 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
         PermissionRequest(getApplication()).open(permission)
     }
 
-    fun setExternalControlToken(token: String) {
-        viewModelScope.launch { settingsStore.setExternalControlToken(token) }
+    fun setAutomationToken(token: String) {
+        viewModelScope.launch { settingsStore.setAutomationToken(token) }
     }
 
-    fun regenerateExternalControlToken() {
-        setExternalControlToken(ExternalControlToken.generate())
+    fun regenerateAutomationToken() {
+        setAutomationToken(AutomationToken.generate())
     }
 
     fun setTheme(choice: ThemeChoice) {

@@ -1,11 +1,11 @@
-# External control
+# Automation
 
 Shizzi can be started and stopped by other apps — Tasker, MacroDroid, or
 anything else that can send an intent.
 
 ## Enabling
 
-Off by default. Turn it on in **Settings › External control**.
+Off by default. Turn it on in **Settings › Automation**.
 
 Once enabled, any app on the device can control tethering. To restrict that,
 set a token in the same section and include it with every intent. Without a
@@ -24,7 +24,7 @@ log says so.
 
 ## Actions
 
-Sent to `dev.shizzi/.ExternalControlReceiver` as a broadcast.
+Sent to `dev.shizzi/.AutomationReceiver` as a broadcast.
 
 | Action | Effect |
 | --- | --- |
@@ -63,7 +63,7 @@ Add a **System › Send Intent** action:
 
 - Action: `dev.shizzi.action.TOGGLE`
 - Package: `dev.shizzi`
-- Class: `dev.shizzi.ExternalControlReceiver`
+- Class: `dev.shizzi.AutomationReceiver`
 - Target: `Broadcast Receiver`
 - Extra: `token:your-token` (only if you set one)
 
@@ -83,5 +83,5 @@ Useful for checking a setup:
 
 ```
 adb shell am broadcast -a dev.shizzi.action.QUERY_STATUS \
-  -n dev.shizzi/.ExternalControlReceiver --es token your-token
+  -n dev.shizzi/.AutomationReceiver --es token your-token
 ```

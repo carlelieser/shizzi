@@ -32,7 +32,7 @@ data class SettingsState(
     val theme: ThemeChoice,
     val isLogging: Boolean,
     val isRunningDiagnostics: Boolean,
-    val externalControl: ExternalControlState,
+    val automation: AutomationState,
     val permissions: List<PermissionStatus>,
 )
 
@@ -43,7 +43,7 @@ data class SettingsActions(
     val onRunProbes: () -> Unit,
     val onRequestPermission: () -> Unit,
     val onRestartOnboarding: () -> Unit,
-    val externalControl: ExternalControlActions,
+    val automation: AutomationActions,
     val onGrantPermission: (AppPermission) -> Unit,
 )
 
@@ -78,12 +78,12 @@ fun SettingsPage(
                 onGrant = actions.onGrantPermission,
             )
 
-            SectionLabel("External control")
-            ExternalControlSection(
-                state = state.externalControl,
-                actions = actions.externalControl,
+            SectionLabel("Automation")
+            AutomationSection(
+                state = state.automation,
+                actions = actions.automation,
             )
-            if (state.externalControl.isEnabled) ExternalControlHint()
+            if (state.automation.isEnabled) AutomationHint()
 
             SectionLabel("Developer")
             DeveloperSection(isLogging = state.isLogging, actions = actions)
