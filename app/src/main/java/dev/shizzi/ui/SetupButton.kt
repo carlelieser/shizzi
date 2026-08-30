@@ -13,12 +13,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.brutalSurface
 import dev.shizzi.ui.theme.isPressed
-
-private val ButtonHeight = 40.dp
 
 @Composable
 fun SetupButton(onClick: () -> Unit) {
@@ -30,9 +28,9 @@ fun SetupButton(onClick: () -> Unit) {
     ) {
         Box(
             modifier = Modifier
-                .height(ButtonHeight)
+                .height(ShizziTheme.spacing.xxl)
                 .brutalSurface(
-                    fill = ShizziTheme.colors.surface,
+                    fill = Color.Transparent,
                     isPressed = interaction.isPressed(),
                 )
                 .clickable(
@@ -40,12 +38,12 @@ fun SetupButton(onClick: () -> Unit) {
                     indication = null,
                     onClick = onClick,
                 )
-                .padding(horizontal = ShizziTheme.spacing.lg),
+                .padding(horizontal = ShizziTheme.spacing.md),
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 text = "Setup".uppercase(),
-                style = ShizziTheme.typography.title,
+                style = ShizziTheme.typography.caption,
                 color = ShizziTheme.colors.onSurface,
             )
         }

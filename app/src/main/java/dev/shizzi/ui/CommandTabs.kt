@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import dev.shizzi.AutomationCommand
 import dev.shizzi.ui.theme.ShizziTheme
@@ -54,7 +55,7 @@ private fun CommandTab(
         modifier = modifier
             .height(TabHeight)
             .brutalSurface(
-                fill = if (isSelected) colors.primary else colors.surface,
+                fill = if (isSelected) colors.primary else Color.Transparent,
                 isPressed = interaction.isPressed(),
             )
             .clickable(
