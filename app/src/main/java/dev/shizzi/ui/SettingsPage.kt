@@ -51,6 +51,7 @@ data class SettingsActions(
 fun SettingsPage(
     state: SettingsState,
     actions: SettingsActions,
+    toasts: ToastState,
     onBack: () -> Unit,
 ) {
     val isBusy = state.isRunningDiagnostics
@@ -82,8 +83,8 @@ fun SettingsPage(
             AutomationSection(
                 state = state.automation,
                 actions = actions.automation,
+                toasts = toasts,
             )
-            if (state.automation.isEnabled) AutomationHint()
 
             SectionLabel("Developer")
             DeveloperSection(isLogging = state.isLogging, actions = actions)

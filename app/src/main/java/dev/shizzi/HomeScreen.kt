@@ -98,6 +98,7 @@ fun HomeScreen(
                     ),
                     onGrantPermission = actions.onGrantPermission,
                 ),
+                toasts = toasts,
                 onBack = goHome,
             )
 

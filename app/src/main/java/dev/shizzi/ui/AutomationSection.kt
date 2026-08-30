@@ -1,14 +1,12 @@
 package dev.shizzi.ui
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
-import dev.shizzi.ui.theme.ShizziTheme
 
 data class AutomationState(
     val isEnabled: Boolean,
@@ -24,11 +22,12 @@ data class AutomationActions(
 fun AutomationSection(
     state: AutomationState,
     actions: AutomationActions,
+    toasts: ToastState,
 ) {
     SettingsToggle(
         label = SettingsText(
             title = "Allow automation",
-            subtitle = "Let automation apps start and stop tethering",
+            subtitle = "Let other apps start and stop tethering",
         ),
         isChecked = state.isEnabled,
         onCheckedChange = actions.onSetEnabled,
@@ -36,41 +35,26 @@ fun AutomationSection(
 
     if (!state.isEnabled) return
 
-    TokenRow(token = state.token, actions = actions)
-}
-
-@Composable
-private fun TokenRow(token: String, actions: AutomationActions) {
     val clipboard = LocalClipboardManager.current
+    var isExpanded by remember { mutableStateOf(false) }
 
-    if (token.isEmpty()) {
-        SettingsAction(
-            label = SettingsText(
-                title = "Require a token",
-                subtitle = "Any app on this device can trigger Shizzi until you set one",
-            ),
-            onClick = actions.onRegenerateToken,
-        )
-        return
-    }
-
-    SettingsAction(
-        label = SettingsText(title = "Copy token", subtitle = token),
-        onClick = { clipboard.setText(AnnotatedString(token)) },
+    TokenCard(
+        token = state.token,
+        actions = TokenActions(
+            onCopy = {
+                clipboard.setText(AnnotatedString(state.token))
+                toasts.show(copiedToast("Token"))
+            },
+            onRegenerate = actions.onRegenerateToken,
+            onExpand = { isExpanded = true },
+        ),
     )
 
-    SettingsAction(
-        label = SettingsText(title = "Regenerate token"),
-        onClick = actions.onRegenerateToken,
-    )
-}
+    if (!isExpanded) return
 
-@Composable
-fun AutomationHint() {
-    Text(
-        text = "Send dev.shizzi.action.TOGGLE to dev.shizzi/.AutomationReceiver.",
-        style = ShizziTheme.typography.body,
-        color = ShizziTheme.colors.onSurfaceMuted,
-        modifier = Modifier.fillMaxWidth().padding(top = ShizziTheme.spacing.sm),
+    AutomationSetupDialog(
+        token = state.token,
+        toasts = toasts,
+        onDismiss = { isExpanded = false },
     )
 }

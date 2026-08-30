@@ -8,7 +8,8 @@ anything else that can send an intent.
 Off by default. Turn it on in **Settings › Automation**.
 
 A token is generated when you turn automation on, and every command must
-carry it. Commands without a matching token are refused, so an app that does
+carry it. The token card in settings copies it, regenerates it, and expands
+into every value an automation app needs. Commands without a matching token are refused, so an app that does
 not know the token cannot control tethering.
 
 ## Background starts

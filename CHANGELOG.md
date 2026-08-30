@@ -11,7 +11,8 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   each listing what Shizzi needs, why, and whether it is granted.
 - **Automation.** Other apps can start, stop, toggle, and query a session
   through intents, for automation from Tasker, MacroDroid, and the like. Off by
-  default, with an optional token. See
+  default, and every command carries a token. The token card copies and
+  regenerates it, and expands into the values an automation app needs. See
   [automation](docs/automation.md).
 
 ### Fixed
