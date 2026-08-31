@@ -27,6 +27,11 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
         initialValue = null,
     )
 
+    private val permissions = PermissionInspector(application)
+
+    private val localPermissions = MutableStateFlow<List<PermissionStatus>>(emptyList())
+    val permissionState: StateFlow<List<PermissionStatus>> = localPermissions.asStateFlow()
+
     private val localState = MutableStateFlow(SessionUiState())
     val state: StateFlow<SessionUiState> = localState.asStateFlow()
 
@@ -42,6 +47,7 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
 
     init {
         refreshShizukuState()
+        refreshPermissions()
         observeSession()
     }
 
@@ -67,6 +73,22 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
         SessionLog.setEnabled(enabled)
         diagnostics.setLogging(enabled)
         viewModelScope.launch { settingsStore.setLogging(enabled) }
+    }
+
+    fun setAutomation(isEnabled: Boolean) {
+        viewModelScope.launch { settingsStore.setAutomationEnabled(isEnabled) }
+    }
+
+    fun refreshPermissions() {
+        localPermissions.value = permissions.observe()
+    }
+
+    fun openPermissionSettings(permission: AppPermission) {
+        PermissionRequest(getApplication()).open(permission)
+    }
+
+    fun regenerateAutomationToken() {
+        viewModelScope.launch { settingsStore.setAutomationToken(AutomationToken.generate()) }
     }
 
     fun setTheme(choice: ThemeChoice) {

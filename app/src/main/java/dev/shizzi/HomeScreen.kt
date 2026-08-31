@@ -15,6 +15,8 @@ import dev.shizzi.ui.LogPage
 import dev.shizzi.ui.Screen
 import dev.shizzi.ui.SessionToasts
 import dev.shizzi.ui.SettingsActions
+import dev.shizzi.ui.AutomationActions
+import dev.shizzi.ui.AutomationState
 import dev.shizzi.ui.SettingsPage
 import dev.shizzi.ui.SettingsState
 import dev.shizzi.ui.ToastHost
@@ -33,15 +35,21 @@ data class AppActions(
     val onDismissDiagnostics: () -> Unit,
     val onClearLog: (onCleared: (String?) -> Unit) -> Unit,
     val onRestartOnboarding: () -> Unit,
+    val onSetAutomation: (Boolean) -> Unit,
+    val onRegenerateAutomationToken: () -> Unit,
+    val onGrantPermission: (AppPermission) -> Unit,
 )
 
 @Composable
 fun HomeScreen(
-    state: SessionUiState,
-    settings: Settings,
-    diagnostics: DiagnosticsState,
+    state: AppState,
     actions: AppActions,
 ) {
+    val session = state.session
+    val settings = state.settings
+    val diagnostics = state.diagnostics
+    val permissions = state.permissions
+
     val current = rememberNavigator()
     val goHome = { current.value = Screen.HOME }
 
@@ -52,7 +60,7 @@ fun HomeScreen(
 
     val toasts = rememberToastState()
     SessionToasts(
-        state = state,
+        state = session,
         toasts = toasts,
         onRequestPermission = actions.onRequestPermission,
     )
@@ -67,10 +75,15 @@ fun HomeScreen(
         when (current.value) {
             Screen.SETTINGS -> SettingsPage(
                 state = SettingsState(
-                    shizuku = state.shizukuState,
+                    shizuku = session.shizukuState,
                     theme = settings.theme,
                     isLogging = settings.isLogging,
                     isRunningDiagnostics = diagnostics is DiagnosticsState.Running,
+                    automation = AutomationState(
+                        isEnabled = settings.isAutomationEnabled,
+                        token = settings.automationToken,
+                    ),
+                    permissions = permissions,
                 ),
                 actions = SettingsActions(
                     onSetTheme = actions.onSetTheme,
@@ -79,7 +92,13 @@ fun HomeScreen(
                     onRunProbes = actions.onRunProbes,
                     onRequestPermission = actions.onRequestPermission,
                     onRestartOnboarding = actions.onRestartOnboarding,
+                    automation = AutomationActions(
+                        onSetEnabled = actions.onSetAutomation,
+                        onRegenerateToken = actions.onRegenerateAutomationToken,
+                    ),
+                    onGrantPermission = actions.onGrantPermission,
                 ),
+                toasts = toasts,
                 onBack = goHome,
             )
 
@@ -100,7 +119,7 @@ fun HomeScreen(
             )
 
             Screen.HOME -> HomePage(
-                state = state,
+                state = session,
                 actions = HomeActions(
                     onToggle = actions.onToggle,
                     onCancel = actions.onCancel,

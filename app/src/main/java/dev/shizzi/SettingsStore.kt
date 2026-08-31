@@ -2,6 +2,7 @@ package dev.shizzi
 
 import android.content.Context
 import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
@@ -16,13 +17,27 @@ data class Settings(
     val isLogging: Boolean = true,
 
     val hasCompletedOnboarding: Boolean = false,
+
+    val isAutomationEnabled: Boolean = false,
+    val automationToken: String = "",
 )
 
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore("settings")
+private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
+    name = "settings",
+    produceMigrations = { listOf(RenamedKeys.migration()) },
+)
 
 class SettingsStore(private val context: Context) {
 
     val settings: Flow<Settings> = context.dataStore.data.map(::toSettings)
+
+    suspend fun backfillTokenIfEnabled() {
+        context.dataStore.edit { preferences ->
+            if (preferences[AUTOMATION] != true) return@edit
+
+            preferences.mintTokenIfAbsent()
+        }
+    }
 
     suspend fun setTheme(choice: ThemeChoice) {
         context.dataStore.edit { it[THEME] = choice.name }
@@ -36,16 +51,37 @@ class SettingsStore(private val context: Context) {
         context.dataStore.edit { it[ONBOARDED] = hasCompleted }
     }
 
+    suspend fun setAutomationEnabled(isEnabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[AUTOMATION] = isEnabled
+            if (isEnabled) preferences.mintTokenIfAbsent()
+        }
+    }
+
+    suspend fun setAutomationToken(token: String) {
+        context.dataStore.edit { it[AUTOMATION_TOKEN] = token }
+    }
+
+    private fun MutablePreferences.mintTokenIfAbsent() {
+        if (!this[AUTOMATION_TOKEN].isNullOrEmpty()) return
+
+        this[AUTOMATION_TOKEN] = AutomationToken.generate()
+    }
+
     private fun toSettings(preferences: Preferences) = Settings(
         theme = runCatching { ThemeChoice.valueOf(preferences[THEME].orEmpty()) }
             .getOrDefault(ThemeChoice.SYSTEM),
         isLogging = preferences[LOGGING] ?: true,
         hasCompletedOnboarding = preferences[ONBOARDED] ?: false,
+        isAutomationEnabled = preferences[AUTOMATION] ?: false,
+        automationToken = preferences[AUTOMATION_TOKEN].orEmpty(),
     )
 
     private companion object {
         val THEME = stringPreferencesKey("theme")
         val LOGGING = booleanPreferencesKey("logging")
         val ONBOARDED = booleanPreferencesKey("onboarded")
+        val AUTOMATION = booleanPreferencesKey("automation")
+        val AUTOMATION_TOKEN = stringPreferencesKey("automation_token")
     }
 }

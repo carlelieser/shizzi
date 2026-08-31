@@ -3,6 +3,27 @@
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Permissions.** A permissions step in onboarding and a section in settings,
+  each listing what Shizzi needs, why, and whether it is granted.
+- **Automation.** Other apps can start, stop, toggle, and query a session
+  through intents, for automation from Tasker, MacroDroid, and the like. Off by
+  default, and every command carries a token. The token card copies and
+  regenerates it, and a setup dialog lists the values an automation app needs
+  for each action. See
+  [automation](docs/automation.md).
+
+### Fixed
+
+- **Background starts.** Android 12 and up blocked intent-triggered sessions
+  from starting the foreground service, so a command was accepted and then did
+  nothing. Battery optimization exemption lifts the restriction and is now
+  surfaced as a permission, and a start that cannot be delivered reports the
+  reason instead of failing silently.
+
 ## [0.3.0] - 2026-08-22
 
 Adds support for Android 11 and 12 (API 30-32) by providing a tethering module update if necessary. Also adds an onboarding flow. Minor updates to the UI and better logging.

@@ -14,6 +14,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import dev.shizzi.AppPermission
+import dev.shizzi.PermissionStatus
 import dev.shizzi.ShizukuState
 import dev.shizzi.ui.theme.ScreenPadding
 import dev.shizzi.ui.theme.ShizziTheme
@@ -30,6 +32,8 @@ data class SettingsState(
     val theme: ThemeChoice,
     val isLogging: Boolean,
     val isRunningDiagnostics: Boolean,
+    val automation: AutomationState,
+    val permissions: List<PermissionStatus>,
 )
 
 data class SettingsActions(
@@ -39,12 +43,15 @@ data class SettingsActions(
     val onRunProbes: () -> Unit,
     val onRequestPermission: () -> Unit,
     val onRestartOnboarding: () -> Unit,
+    val automation: AutomationActions,
+    val onGrantPermission: (AppPermission) -> Unit,
 )
 
 @Composable
 fun SettingsPage(
     state: SettingsState,
     actions: SettingsActions,
+    toasts: ToastState,
     onBack: () -> Unit,
 ) {
     val isBusy = state.isRunningDiagnostics
@@ -66,7 +73,18 @@ fun SettingsPage(
             SectionLabel("Appearance")
             ThemePicker(selected = state.theme, onSelect = actions.onSetTheme)
 
-            SectionLabel("Developer")
+            SectionLabel("Permissions")
+            PermissionsSection(
+                statuses = state.permissions,
+                onGrant = actions.onGrantPermission,
+            )
+
+            SectionLabel("Advanced")
+            AutomationSection(
+                state = state.automation,
+                actions = actions.automation,
+                toasts = toasts,
+            )
             DeveloperSection(isLogging = state.isLogging, actions = actions)
 
             SectionLabel("About")

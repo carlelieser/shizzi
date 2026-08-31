@@ -15,6 +15,10 @@ import dev.shizzi.ui.theme.ShizziTheme
 
 private val IconSize = 24.dp
 
+private val CompactIconSize = 18.dp
+
+private val CompactTouchTarget = 32.dp
+
 @Composable
 fun ShizziIconButton(
     icon: ImageVector,
@@ -32,6 +36,25 @@ fun ShizziIconButton(
             contentDescription = contentDescription,
             tint = if (tint == Color.Unspecified) ShizziTheme.colors.onSurface else tint,
             modifier = Modifier.size(IconSize),
+        )
+    }
+}
+
+@Composable
+fun ShizziCompactIconButton(
+    icon: ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit,
+) {
+    IconButton(
+        onClick = onClick,
+        modifier = Modifier.size(CompactTouchTarget),
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = ShizziTheme.colors.onSurfaceMuted,
+            modifier = Modifier.size(CompactIconSize),
         )
     }
 }
