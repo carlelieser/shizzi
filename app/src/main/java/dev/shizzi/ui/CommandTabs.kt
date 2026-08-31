@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import dev.shizzi.AutomationCommand
 import dev.shizzi.ui.theme.ShizziTheme
 
@@ -15,13 +16,14 @@ fun CommandTabs(
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(ShizziTheme.spacing.xs),
+        horizontalArrangement = Arrangement.spacedBy(ShizziTheme.spacing.md),
     ) {
         AutomationCommand.entries.forEach { command ->
             GhostButton(
                 label = labelFor(command),
                 onClick = { onSelect(command) },
                 isActive = command == selected,
+                padding = 0.dp,
             )
         }
     }

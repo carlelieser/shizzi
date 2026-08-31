@@ -38,6 +38,11 @@ fun AutomationSection(
     val clipboard = LocalClipboardManager.current
     var isExpanded by remember { mutableStateOf(false) }
 
+    SettingsAction(
+        label = SettingsText(title = "View setup instructions"),
+        onClick = { isExpanded = true },
+    )
+
     TokenCard(
         token = state.token,
         actions = TokenActions(
@@ -48,8 +53,6 @@ fun AutomationSection(
             onRegenerate = actions.onRegenerateToken,
         ),
     )
-
-    SetupButton(onClick = { isExpanded = true })
 
     if (!isExpanded) return
 

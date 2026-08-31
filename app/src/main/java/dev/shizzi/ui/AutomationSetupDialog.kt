@@ -61,15 +61,19 @@ private fun ColumnScope.SetupContent(token: String, toasts: ToastState) {
         color = ShizziTheme.colors.onSurfaceMuted,
     )
 
+    CopyableField(
+        field = SetupField("Action", Automation.actionFor(command)),
+        toasts = toasts,
+    )
+
     CommandTabs(selected = command, onSelect = { command = it })
 
-    setupFields(command, token).forEach { field ->
+    connectionFields(token).forEach { field ->
         CopyableField(field = field, toasts = toasts)
     }
 }
 
-private fun setupFields(command: AutomationCommand, token: String) = listOf(
-    SetupField("Action", Automation.actionFor(command)),
+private fun connectionFields(token: String) = listOf(
     SetupField("Package", "dev.shizzi"),
     SetupField("Class", "dev.shizzi.AutomationReceiver"),
     SetupField("Target", "Broadcast receiver"),

@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.isPressed
 
@@ -19,6 +20,7 @@ fun GhostButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     isActive: Boolean = false,
+    padding: Dp = ShizziTheme.spacing.md,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val colors = ShizziTheme.colors
@@ -31,7 +33,7 @@ fun GhostButton(
                 indication = null,
                 onClick = onClick,
             )
-            .padding(horizontal = ShizziTheme.spacing.md),
+            .padding(horizontal = padding),
         contentAlignment = Alignment.Center,
     ) {
         Text(
