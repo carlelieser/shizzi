@@ -26,7 +26,7 @@ import dev.shizzi.ui.theme.Spacing
 
 private val RowIconSize = 20.dp
 
-private val RowPadding = Spacing.md
+val SettingsRowPadding = Spacing.md
 
 private val SwitchLayoutHeight = 24.dp
 
@@ -72,7 +72,7 @@ fun SettingsToggle(
     onCheckedChange: (Boolean) -> Unit,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = RowPadding),
+        modifier = Modifier.fillMaxWidth().padding(vertical = SettingsRowPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         SettingsLabel(
@@ -104,7 +104,7 @@ fun SettingsAction(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(vertical = RowPadding),
+            .padding(vertical = SettingsRowPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         SettingsLabel(
@@ -126,7 +126,7 @@ fun SettingsAction(
 @Composable
 fun SettingsStatusRow(label: SettingsText) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = RowPadding),
+        modifier = Modifier.fillMaxWidth().padding(vertical = SettingsRowPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         SettingsLabel(

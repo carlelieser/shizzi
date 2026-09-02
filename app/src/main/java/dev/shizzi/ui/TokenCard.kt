@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
+import dev.shizzi.ui.theme.ShadowOffset
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.brutalSurface
 
@@ -26,6 +27,10 @@ fun TokenCard(token: String, actions: TokenActions) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(
+                top = SettingsRowPadding,
+                bottom = SettingsRowPadding + ShadowOffset,
+            )
             .brutalSurface(fill = ShizziTheme.colors.surface)
             .padding(
                 start = ShizziTheme.spacing.lg,
