@@ -36,12 +36,11 @@ data class AppActions(
 )
 
 @Composable
-fun HomeScreen(
-    state: SessionUiState,
-    settings: Settings,
-    diagnostics: DiagnosticsState,
-    actions: AppActions,
-) {
+fun HomeScreen(state: AppState, actions: AppActions) {
+    val session = state.session
+    val settings = state.settings
+    val diagnostics = state.diagnostics
+
     val current = rememberNavigator()
     val goHome = { current.value = Screen.HOME }
 
@@ -52,7 +51,7 @@ fun HomeScreen(
 
     val toasts = rememberToastState()
     SessionToasts(
-        state = state,
+        state = session,
         toasts = toasts,
         onRequestPermission = actions.onRequestPermission,
     )
@@ -67,7 +66,7 @@ fun HomeScreen(
         when (current.value) {
             Screen.SETTINGS -> SettingsPage(
                 state = SettingsState(
-                    shizuku = state.shizukuState,
+                    shizuku = session.shizukuState,
                     theme = settings.theme,
                     isLogging = settings.isLogging,
                     isRunningDiagnostics = diagnostics is DiagnosticsState.Running,
@@ -100,7 +99,7 @@ fun HomeScreen(
             )
 
             Screen.HOME -> HomePage(
-                state = state,
+                state = session,
                 actions = HomeActions(
                     onToggle = actions.onToggle,
                     onCancel = actions.onCancel,

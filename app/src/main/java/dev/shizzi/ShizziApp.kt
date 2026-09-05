@@ -41,10 +41,5 @@ fun ShizziApp(
         return
     }
 
-    HomeScreen(
-        state = state.session,
-        settings = state.settings,
-        diagnostics = state.diagnostics,
-        actions = actions,
-    )
+    HomeScreen(state = state, actions = actions)
 }
