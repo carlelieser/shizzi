@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.ArrowOutward
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -119,6 +120,22 @@ fun SettingsAction(
                 Icons.AutoMirrored.Filled.ArrowForward
             },
         )
+    }
+}
+
+@Composable
+fun SettingsStatusRow(label: SettingsText) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = RowPadding),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        SettingsLabel(
+            title = label.title,
+            subtitle = label.subtitle,
+            modifier = Modifier.weight(1f),
+        )
+
+        TrailingIcon(icon = Icons.Filled.Check)
     }
 }
 

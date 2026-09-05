@@ -27,6 +27,9 @@ data class AppActions(
     val onToggle: () -> Unit,
     val onCancel: () -> Unit,
     val onRequestPermission: () -> Unit,
+    val onRequestAllPermissions: () -> Unit,
+    val onGrantPermission: (AppPermission) -> Unit,
+    val onShizukuAction: () -> Unit,
     val onSetTheme: (ThemeChoice) -> Unit,
     val onSetLogging: (Boolean) -> Unit,
     val onRunProbes: () -> Unit,
@@ -67,6 +70,7 @@ fun HomeScreen(state: AppState, actions: AppActions) {
             Screen.SETTINGS -> SettingsPage(
                 state = SettingsState(
                     shizuku = session.shizukuState,
+                    permissions = state.permissions,
                     theme = settings.theme,
                     isLogging = settings.isLogging,
                     isRunningDiagnostics = diagnostics is DiagnosticsState.Running,
@@ -76,7 +80,8 @@ fun HomeScreen(state: AppState, actions: AppActions) {
                     onSetLogging = actions.onSetLogging,
                     onOpenLog = { current.value = Screen.LOG },
                     onRunProbes = actions.onRunProbes,
-                    onRequestPermission = actions.onRequestPermission,
+                    onGrantPermission = actions.onGrantPermission,
+                    onShizukuAction = actions.onShizukuAction,
                     onRestartOnboarding = actions.onRestartOnboarding,
                 ),
                 onBack = goHome,

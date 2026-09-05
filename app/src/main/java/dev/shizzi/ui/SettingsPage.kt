@@ -14,6 +14,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import dev.shizzi.AppPermission
+import dev.shizzi.PermissionStatus
 import dev.shizzi.ShizukuState
 import dev.shizzi.ui.theme.ScreenPadding
 import dev.shizzi.ui.theme.ShizziTheme
@@ -27,6 +29,7 @@ private const val BusyAlpha = 0.4f
 
 data class SettingsState(
     val shizuku: ShizukuState,
+    val permissions: List<PermissionStatus>,
     val theme: ThemeChoice,
     val isLogging: Boolean,
     val isRunningDiagnostics: Boolean,
@@ -37,7 +40,8 @@ data class SettingsActions(
     val onSetLogging: (Boolean) -> Unit,
     val onOpenLog: () -> Unit,
     val onRunProbes: () -> Unit,
-    val onRequestPermission: () -> Unit,
+    val onGrantPermission: (AppPermission) -> Unit,
+    val onShizukuAction: () -> Unit,
     val onRestartOnboarding: () -> Unit,
 )
 
@@ -60,8 +64,15 @@ fun SettingsPage(
                 .inert(isBusy)
                 .padding(horizontal = ScreenPadding),
         ) {
-            SectionLabel("Shizuku")
-            ShizukuCard(state = state.shizuku, onGrant = actions.onRequestPermission)
+            SectionLabel("Permissions")
+            PermissionsSection(
+                state = PermissionsSectionState(
+                    shizuku = state.shizuku,
+                    permissions = state.permissions,
+                ),
+                onGrantPermission = actions.onGrantPermission,
+                onShizukuAction = actions.onShizukuAction,
+            )
 
             SectionLabel("Appearance")
             ThemePicker(selected = state.theme, onSelect = actions.onSetTheme)
