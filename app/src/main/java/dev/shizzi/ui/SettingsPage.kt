@@ -64,6 +64,9 @@ fun SettingsPage(
                 .inert(isBusy)
                 .padding(horizontal = ScreenPadding),
         ) {
+            SectionLabel("Appearance")
+            ThemePicker(selected = state.theme, onSelect = actions.onSetTheme)
+
             SectionLabel("Permissions")
             PermissionsSection(
                 state = PermissionsSectionState(
@@ -73,9 +76,6 @@ fun SettingsPage(
                 onGrantPermission = actions.onGrantPermission,
                 onShizukuAction = actions.onShizukuAction,
             )
-
-            SectionLabel("Appearance")
-            ThemePicker(selected = state.theme, onSelect = actions.onSetTheme)
 
             SectionLabel("Developer")
             DeveloperSection(isLogging = state.isLogging, actions = actions)
