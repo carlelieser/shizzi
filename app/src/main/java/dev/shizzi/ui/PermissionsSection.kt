@@ -38,10 +38,7 @@ fun PermissionsSection(
 
 @Composable
 private fun PermissionSettingsRow(row: PermissionRowState) {
-    val label = SettingsText(
-        title = row.title,
-        subtitle = if (row.isGranted) "Granted" else row.rationale,
-    )
+    val label = SettingsText(title = row.title, subtitle = row.rationale)
 
     if (row.isGranted) {
         SettingsStatusRow(label = label)

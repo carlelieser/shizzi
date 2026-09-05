@@ -19,8 +19,7 @@ val AppPermission.title: String
 
 val AppPermission.rationale: String
     get() = when (this) {
-        AppPermission.NOTIFICATIONS ->
-            "Shows session status and lets you stop from the shade"
+        AppPermission.NOTIFICATIONS -> "Required to keep your session running"
     }
 
 val AppPermission.manifestName: String

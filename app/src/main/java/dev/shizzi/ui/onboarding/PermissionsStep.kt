@@ -63,7 +63,7 @@ private fun PermissionCard(row: PermissionRowState) {
             )
 
             Text(
-                text = describe(row),
+                text = row.rationale,
                 style = ShizziTheme.typography.body,
                 color = ShizziTheme.colors.onSurfaceMuted,
             )
@@ -71,11 +71,6 @@ private fun PermissionCard(row: PermissionRowState) {
 
         PermissionMark(isGranted = row.isGranted)
     }
-}
-
-private fun describe(row: PermissionRowState): String = when {
-    row.isGranted -> row.rationale
-    else -> "${row.rationale} · Required"
 }
 
 @Composable
