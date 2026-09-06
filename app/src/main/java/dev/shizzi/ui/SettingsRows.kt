@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import dev.shizzi.ui.theme.DesignLanguage
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.Spacing
 
@@ -85,11 +86,7 @@ fun SettingsToggle(
             checked = isChecked,
             onCheckedChange = onCheckedChange,
             modifier = Modifier.requiredHeight(SwitchLayoutHeight),
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = ShizziTheme.colors.onPrimary,
-                checkedTrackColor = ShizziTheme.colors.primary,
-                checkedBorderColor = ShizziTheme.colors.border,
-            ),
+            colors = switchColors(),
         )
     }
 }
@@ -124,6 +121,32 @@ fun SettingsAction(
 }
 
 @Composable
+fun SettingsChoice(label: SettingsText, value: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = RowPadding),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        SettingsLabel(
+            title = label.title,
+            subtitle = label.subtitle,
+            modifier = Modifier.weight(1f),
+        )
+
+        Text(
+            text = value,
+            style = ShizziTheme.typography.body,
+            color = ShizziTheme.colors.onSurfaceMuted,
+            modifier = Modifier.padding(end = ShizziTheme.spacing.sm),
+        )
+
+        TrailingIcon(icon = Icons.AutoMirrored.Filled.ArrowForward)
+    }
+}
+
+@Composable
 fun SettingsStatusRow(label: SettingsText) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = RowPadding),
@@ -146,6 +169,16 @@ private fun TrailingIcon(icon: ImageVector) {
         contentDescription = null,
         tint = ShizziTheme.colors.onSurfaceMuted,
         modifier = Modifier.size(RowIconSize),
+    )
+}
+
+@Composable
+private fun switchColors() = when (ShizziTheme.design) {
+    DesignLanguage.MATERIAL_EXPRESSIVE -> SwitchDefaults.colors()
+    DesignLanguage.NEOBRUTALISM -> SwitchDefaults.colors(
+        checkedThumbColor = ShizziTheme.colors.onPrimary,
+        checkedTrackColor = ShizziTheme.colors.primary,
+        checkedBorderColor = ShizziTheme.colors.border,
     )
 }
 

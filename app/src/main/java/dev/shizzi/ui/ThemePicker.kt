@@ -21,8 +21,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import dev.shizzi.ui.theme.ShizziTheme
+import dev.shizzi.ui.theme.themedIndication
 import dev.shizzi.ui.theme.ThemeChoice
-import dev.shizzi.ui.theme.brutalSurface
+import dev.shizzi.ui.theme.themedSurface
 import dev.shizzi.ui.theme.isPressed
 
 private val OptionHeight = 44.dp
@@ -71,13 +72,13 @@ private fun ThemeOption(
     Box(
         modifier = modifier
             .height(OptionHeight)
-            .brutalSurface(
+            .themedSurface(
                 fill = if (isSelected) colors.primary else colors.surface,
                 isPressed = interaction.isPressed(),
             )
             .clickable(
                 interactionSource = interaction,
-                indication = null,
+                indication = themedIndication(),
                 onClick = onSelect,
             ),
         contentAlignment = Alignment.Center,

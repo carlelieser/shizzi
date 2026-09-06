@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.dp
+import dev.shizzi.ui.theme.DesignLanguage
 import dev.shizzi.ui.theme.HeaderHeight
 import dev.shizzi.ui.theme.ShizziTheme
 
@@ -26,6 +27,7 @@ fun ScreenHeader(
     action: @Composable () -> Unit = {},
 ) {
     val border = ShizziTheme.colors.border
+    val hasRule = ShizziTheme.design == DesignLanguage.NEOBRUTALISM
 
     Row(
         modifier = Modifier
@@ -33,6 +35,8 @@ fun ScreenHeader(
             .height(HeaderHeight)
 
             .drawBehind {
+                if (!hasRule) return@drawBehind
+
                 val thickness = HeaderRule.toPx()
                 drawLine(
                     color = border,

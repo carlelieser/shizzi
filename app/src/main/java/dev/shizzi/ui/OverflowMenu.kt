@@ -20,9 +20,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import dev.shizzi.ui.theme.ShadowOffset
+import dev.shizzi.ui.theme.DesignLanguage
 import dev.shizzi.ui.theme.ShizziTheme
-import dev.shizzi.ui.theme.brutalSurface
+import dev.shizzi.ui.theme.themedSurface
 
 private val MenuMinWidth = 180.dp
 
@@ -40,6 +40,7 @@ fun OverflowMenu(
     var isOpen by remember { mutableStateOf(false) }
     val colors = ShizziTheme.colors
     val scope = remember { OverflowScope { isOpen = false } }
+    val isBrutal = ShizziTheme.design == DesignLanguage.NEOBRUTALISM
 
     Box {
         ShizziIconButton(
@@ -50,27 +51,47 @@ fun OverflowMenu(
             tint = if (isMarked) colors.primary else colors.onSurface,
         )
 
-        DropdownMenu(
-            expanded = isOpen,
-            onDismissRequest = { isOpen = false },
-            offset = MenuOffset,
-            containerColor = Color.Transparent,
-            shape = SquareShape,
-            tonalElevation = 0.dp,
-            shadowElevation = 0.dp,
-            border = null,
-        ) {
-            Box(
-
-                modifier = Modifier.padding(end = ShadowOffset, bottom = ShadowOffset),
+        if (isBrutal) {
+            BrutalMenu(isOpen = isOpen, onDismiss = { isOpen = false }) { scope.items() }
+        } else {
+            DropdownMenu(
+                expanded = isOpen,
+                onDismissRequest = { isOpen = false },
+                offset = MenuOffset,
             ) {
-                Column(
-                    modifier = Modifier
-                        .widthIn(min = MenuMinWidth)
-                        .brutalSurface(fill = colors.surface),
-                ) {
-                    scope.items()
-                }
+                scope.items()
+            }
+        }
+    }
+}
+
+// Neobrutalism draws its own surface, so M3's container, shape and elevation are
+// stripped and the shadow offset is reclaimed as padding.
+@Composable
+private fun BrutalMenu(
+    isOpen: Boolean,
+    onDismiss: () -> Unit,
+    items: @Composable () -> Unit,
+) {
+    val shadowOffset = ShizziTheme.shapes.shadowOffset
+
+    DropdownMenu(
+        expanded = isOpen,
+        onDismissRequest = onDismiss,
+        offset = MenuOffset,
+        containerColor = Color.Transparent,
+        shape = SquareShape,
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp,
+        border = null,
+    ) {
+        Box(modifier = Modifier.padding(end = shadowOffset, bottom = shadowOffset)) {
+            Column(
+                modifier = Modifier
+                    .widthIn(min = MenuMinWidth)
+                    .themedSurface(fill = ShizziTheme.colors.surface),
+            ) {
+                items()
             }
         }
     }

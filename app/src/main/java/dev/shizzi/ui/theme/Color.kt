@@ -16,6 +16,12 @@ data class ShizziColors(
     val border: Color,
     val shadow: Color,
     val isDark: Boolean,
+    val primaryContainer: Color = primary,
+    val onPrimaryContainer: Color = onPrimary,
+    val secondary: Color = primary,
+    val tertiary: Color = primaryBright,
+    val surfaceVariant: Color = surface,
+    val surfaceContainer: Color = surface,
 )
 
 private val OnPrimary = Color(0xFF000000)

@@ -16,9 +16,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import dev.shizzi.ui.theme.ScreenPadding
 import dev.shizzi.ui.theme.ShizziTheme
-import dev.shizzi.ui.theme.brutalSurface
+import dev.shizzi.ui.theme.DesignLanguage
+import dev.shizzi.ui.theme.SurfaceElevation
+import dev.shizzi.ui.theme.themedSurface
 
 private val ProgressDotSize = 10.dp
+
+private const val InactiveDotAlpha = 0.6f
 
 data class WizardStep(
     val title: String,
@@ -76,14 +80,27 @@ private fun ProgressDots(currentIndex: Int, stepCount: Int, modifier: Modifier =
     }
 }
 
+// Neobrutalism renders an inactive dot as an outline, which its border supplies,
+// and casts the active dot into its own shadow. Expressive draws neither, so an
+// inactive dot is drawn from the muted foreground: the container roles track the
+// background too closely to read against it, and a dot this small casts no shadow.
 @Composable
 private fun ProgressDot(isCurrent: Boolean) {
     val colors = ShizziTheme.colors
+    val isBrutal = ShizziTheme.design == DesignLanguage.NEOBRUTALISM
+    val inactiveFill = when {
+        isBrutal -> Color.Transparent
+        else -> colors.onSurfaceMuted.copy(alpha = InactiveDotAlpha)
+    }
+    val hasShadow = isBrutal && isCurrent
 
     Box(
         modifier = Modifier
             .size(ProgressDotSize)
-            .brutalSurface(fill = if (isCurrent) colors.primary else Color.Transparent),
+            .themedSurface(
+                fill = if (isCurrent) colors.primary else inactiveFill,
+                elevation = if (hasShadow) SurfaceElevation.RAISED else SurfaceElevation.FLAT,
+            ),
     )
 }
 

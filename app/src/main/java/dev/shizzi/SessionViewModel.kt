@@ -3,6 +3,8 @@ package dev.shizzi
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import dev.shizzi.ui.theme.AccentChoice
+import dev.shizzi.ui.theme.DesignLanguage
 import dev.shizzi.ui.theme.ThemeChoice
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -102,6 +104,18 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
 
     fun setTheme(choice: ThemeChoice) {
         viewModelScope.launch { settingsStore.setTheme(choice) }
+    }
+
+    fun setDesign(design: DesignLanguage) {
+        viewModelScope.launch { settingsStore.setDesign(design) }
+    }
+
+    fun setAccent(accent: AccentChoice) {
+        viewModelScope.launch { settingsStore.setAccent(accent) }
+    }
+
+    fun addCustomAccent(argb: Int) {
+        viewModelScope.launch { settingsStore.addCustomAccent(argb) }
     }
 
     fun toggle() {

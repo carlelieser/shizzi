@@ -29,6 +29,7 @@ import dev.shizzi.SessionUiState
 import dev.shizzi.UiStatus
 import dev.shizzi.ui.theme.ScreenPadding
 import dev.shizzi.ui.theme.ShizziTheme
+import dev.shizzi.ui.theme.themedIndication
 
 private val DividerWidth = 1.dp
 private val DividerHeight = 12.dp
@@ -95,7 +96,7 @@ private fun TunnelSegment(name: String) {
         textAlign = TextAlign.Center,
         modifier = Modifier.clickable(
             interactionSource = interaction,
-            indication = null,
+            indication = themedIndication(),
         ) {
             isShowingName = !isShowingName
         },

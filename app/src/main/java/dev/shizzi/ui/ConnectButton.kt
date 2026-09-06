@@ -15,7 +15,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.shizzi.ui.theme.MinTouchTarget
 import dev.shizzi.ui.theme.ShizziTheme
-import dev.shizzi.ui.theme.brutalSurface
+import dev.shizzi.ui.theme.themedLabel
+import dev.shizzi.ui.theme.themedIndication
+import dev.shizzi.ui.theme.themedSurface
 import dev.shizzi.ui.theme.isPressed
 
 private val ButtonWidth = 200.dp
@@ -37,7 +39,7 @@ fun ConnectButton(
         modifier = Modifier
             .width(ButtonWidth)
             .height(ButtonHeight)
-            .brutalSurface(
+            .themedSurface(
                 fill = when (state) {
                     ConnectButtonState.START -> colors.primary
                     else -> colors.surface
@@ -47,7 +49,7 @@ fun ConnectButton(
             .clickable(
                 enabled = isEnabled,
                 interactionSource = interaction,
-                indication = null,
+                indication = themedIndication(),
                 onClick = onClick,
             ),
         contentAlignment = Alignment.Center,
@@ -60,7 +62,7 @@ fun ConnectButton(
             )
 
             else -> Text(
-                text = label.uppercase(),
+                text = themedLabel(label),
                 style = ShizziTheme.typography.title,
 
                 color = when (state) {

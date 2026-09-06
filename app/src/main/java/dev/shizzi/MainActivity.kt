@@ -13,6 +13,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.core.view.WindowCompat
+import dev.shizzi.ui.theme.Appearance
 import dev.shizzi.ui.theme.ShizziTheme
 import rikka.shizuku.Shizuku
 
@@ -53,7 +54,13 @@ class MainActivity : ComponentActivity() {
             val settings by viewModel.settings.collectAsState()
             val loaded = settings ?: return@setContent
 
-            ShizziTheme(choice = loaded.theme) {
+            val appearance = Appearance(
+                theme = loaded.theme,
+                design = loaded.design,
+                accent = loaded.accent,
+            )
+
+            ShizziTheme(appearance = appearance) {
                 val colors = ShizziTheme.colors
 
                 SideEffect {
@@ -90,6 +97,9 @@ class MainActivity : ComponentActivity() {
                             onGrantPermission = ::grantPermission,
                             onShizukuAction = viewModel::actOnShizuku,
                             onSetTheme = viewModel::setTheme,
+                            onSetDesign = viewModel::setDesign,
+                            onSetAccent = viewModel::setAccent,
+                            onAddCustomAccent = viewModel::addCustomAccent,
                             onSetLogging = viewModel::setLogging,
                             onRunProbes = viewModel::runProbes,
                             onDismissDiagnostics = viewModel::dismissDiagnostics,
