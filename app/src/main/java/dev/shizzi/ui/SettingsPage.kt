@@ -17,6 +17,8 @@ import androidx.compose.ui.platform.LocalContext
 import dev.shizzi.AppPermission
 import dev.shizzi.PermissionStatus
 import dev.shizzi.ShizukuState
+import dev.shizzi.ui.theme.AccentChoice
+import dev.shizzi.ui.theme.DesignLanguage
 import dev.shizzi.ui.theme.ScreenPadding
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.ThemeChoice
@@ -31,6 +33,9 @@ data class SettingsState(
     val shizuku: ShizukuState,
     val permissions: List<PermissionStatus>,
     val theme: ThemeChoice,
+    val design: DesignLanguage,
+    val accent: AccentChoice,
+    val customAccents: List<Int>,
     val isLogging: Boolean,
     val isRunningDiagnostics: Boolean,
     val automation: AutomationState,
@@ -38,6 +43,9 @@ data class SettingsState(
 
 data class SettingsActions(
     val onSetTheme: (ThemeChoice) -> Unit,
+    val onSetDesign: (DesignLanguage) -> Unit,
+    val onSetAccent: (AccentChoice) -> Unit,
+    val onAddCustomAccent: (Int) -> Unit,
     val onSetLogging: (Boolean) -> Unit,
     val onOpenLog: () -> Unit,
     val onRunProbes: () -> Unit,
@@ -68,7 +76,20 @@ fun SettingsPage(
                 .padding(horizontal = ScreenPadding),
         ) {
             SectionLabel("Appearance")
-            ThemePicker(selected = state.theme, onSelect = actions.onSetTheme)
+            AppearanceSection(
+                state = AppearanceState(
+                    theme = state.theme,
+                    design = state.design,
+                    accent = state.accent,
+                    customAccents = state.customAccents,
+                ),
+                actions = AppearanceActions(
+                    onSetTheme = actions.onSetTheme,
+                    onSetDesign = actions.onSetDesign,
+                    onSetAccent = actions.onSetAccent,
+                    onAddCustomAccent = actions.onAddCustomAccent,
+                ),
+            )
 
             SectionLabel("Permissions")
             PermissionsSection(

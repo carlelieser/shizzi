@@ -54,7 +54,13 @@ class MainActivity : ComponentActivity() {
             val settings by viewModel.settings.collectAsState()
             val loaded = settings ?: return@setContent
 
-            ShizziTheme(appearance = Appearance(theme = loaded.theme)) {
+            val appearance = Appearance(
+                theme = loaded.theme,
+                design = loaded.design,
+                accent = loaded.accent,
+            )
+
+            ShizziTheme(appearance = appearance) {
                 val colors = ShizziTheme.colors
 
                 SideEffect {
@@ -91,6 +97,9 @@ class MainActivity : ComponentActivity() {
                             onGrantPermission = ::grantPermission,
                             onShizukuAction = viewModel::actOnShizuku,
                             onSetTheme = viewModel::setTheme,
+                            onSetDesign = viewModel::setDesign,
+                            onSetAccent = viewModel::setAccent,
+                            onAddCustomAccent = viewModel::addCustomAccent,
                             onSetLogging = viewModel::setLogging,
                             onRunProbes = viewModel::runProbes,
                             onDismissDiagnostics = viewModel::dismissDiagnostics,

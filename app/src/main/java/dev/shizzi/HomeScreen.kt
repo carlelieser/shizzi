@@ -23,6 +23,8 @@ import dev.shizzi.ui.ToastHost
 import dev.shizzi.ui.rememberLogEntries
 import dev.shizzi.ui.rememberNavigator
 import dev.shizzi.ui.rememberToastState
+import dev.shizzi.ui.theme.AccentChoice
+import dev.shizzi.ui.theme.DesignLanguage
 import dev.shizzi.ui.theme.ThemeChoice
 
 data class AppActions(
@@ -33,6 +35,9 @@ data class AppActions(
     val onGrantPermission: (AppPermission) -> Unit,
     val onShizukuAction: () -> Unit,
     val onSetTheme: (ThemeChoice) -> Unit,
+    val onSetDesign: (DesignLanguage) -> Unit,
+    val onSetAccent: (AccentChoice) -> Unit,
+    val onAddCustomAccent: (Int) -> Unit,
     val onSetLogging: (Boolean) -> Unit,
     val onRunProbes: () -> Unit,
     val onDismissDiagnostics: () -> Unit,
@@ -76,6 +81,9 @@ fun HomeScreen(state: AppState, actions: AppActions) {
                     shizuku = session.shizukuState,
                     permissions = state.permissions,
                     theme = settings.theme,
+                    design = settings.design,
+                    accent = settings.accent,
+                    customAccents = settings.customAccents,
                     isLogging = settings.isLogging,
                     isRunningDiagnostics = diagnostics is DiagnosticsState.Running,
                     automation = AutomationState(
@@ -85,6 +93,9 @@ fun HomeScreen(state: AppState, actions: AppActions) {
                 ),
                 actions = SettingsActions(
                     onSetTheme = actions.onSetTheme,
+                    onSetDesign = actions.onSetDesign,
+                    onSetAccent = actions.onSetAccent,
+                    onAddCustomAccent = actions.onAddCustomAccent,
                     onSetLogging = actions.onSetLogging,
                     onOpenLog = { current.value = Screen.LOG },
                     onRunProbes = actions.onRunProbes,
