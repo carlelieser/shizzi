@@ -2,6 +2,38 @@ package dev.shizzi
 
 import android.content.Context
 
+/**
+ * Stops the hotspot, retrying while it stays tethered.
+ *
+ * stopTethering lands asynchronously, so a single immediate read can still see
+ * the downstream up. See https://github.com/carlelieser/shizzi/issues/22
+ */
+fun releaseDownstreamWith(
+    stop: () -> Boolean,
+    findTethered: () -> String?,
+    onRetry: (String) -> Unit = {},
+): String? {
+    var didAccept = false
+
+    for (attempt in 1..DOWNSTREAM_STOP_ATTEMPTS) {
+        didAccept = stop() || didAccept
+
+        val stillTethered = findTethered()
+        if (stillTethered == null) {
+            return when {
+                didAccept -> null
+                else -> "stopTethering was rejected, but no downstream remains tethered"
+            }
+        }
+        if (attempt == DOWNSTREAM_STOP_ATTEMPTS) return stillTethered
+
+        onRetry("$stillTethered; retrying stopTethering")
+    }
+    return "downstream did not release after $DOWNSTREAM_STOP_ATTEMPTS attempts"
+}
+
+const val DOWNSTREAM_STOP_ATTEMPTS = 3
+
 class SessionTeardown(private val context: Context) {
 
     private val inspector = UpstreamInspector()
@@ -53,22 +85,24 @@ class SessionTeardown(private val context: Context) {
 
     fun releaseDownstream(): String? {
         val control = DownstreamControl(context)
+        val inspector = DownstreamInspector()
 
-        val didAccept = runCatching { control.stopWifiTethering() }
+        return releaseDownstreamWith(
+            stop = { attemptStop(control) },
+            findTethered = {
+                runCatching { inspector.findTetheredDownstream() }
+                    .getOrElse { failure -> "could not verify downstream: ${failure.message}" }
+            },
+            onRetry = SessionLog::warn,
+        )
+    }
+
+    private fun attemptStop(control: DownstreamControl): Boolean =
+        runCatching { control.stopWifiTethering() }
             .getOrElse { failure ->
                 SessionLog.error("stopping the hotspot failed: ${failure.message}")
                 false
             }
-
-        val stillTethered = runCatching { DownstreamInspector().findTetheredDownstream() }
-            .getOrElse { failure -> "could not verify downstream: ${failure.message}" }
-
-        return when {
-            stillTethered != null -> stillTethered
-            didAccept -> null
-            else -> "stopTethering was rejected, but no downstream remains tethered"
-        }
-    }
 
     private companion object {
         const val UPSTREAM_POLL_MS = 500L

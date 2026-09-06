@@ -12,7 +12,10 @@ class SessionWatchdog(
     private val isRunning = AtomicBoolean(false)
     private var thread: Thread? = null
 
-    private var consecutiveFailures = 0
+    private val tolerance = UpstreamTolerance(expectedInterface) { strike ->
+        Log.i(TAG, strike)
+        SessionLog.warn(strike)
+    }
 
     fun start() {
         if (!isRunning.compareAndSet(false, true)) return
@@ -48,38 +51,14 @@ class SessionWatchdog(
 
     private fun checkUpstream(): String? {
         val observation = inspector.observe()
-
         val names = observation.liveInterfaceNames(expectedInterface)
+        val reading = classifyUpstream(names, expectedInterface, observation.didTimeout)
 
-        val isHealthy = !observation.didTimeout &&
-            names.isNotEmpty() &&
-            names.all { it == expectedInterface }
-
-        if (isHealthy) {
-            consecutiveFailures = 0
-            return null
-        }
-
-        consecutiveFailures++
-        if (consecutiveFailures < FAILURES_BEFORE_TEARDOWN) {
-            Log.i(TAG, "upstream reads $names (strike $consecutiveFailures)")
-            SessionLog.warn(
-                "watchdog strike $consecutiveFailures/$FAILURES_BEFORE_TEARDOWN: " +
-                    "upstream reads $names, expected $expectedInterface",
-            )
-            return null
-        }
-
-        return when {
-            observation.didTimeout -> "upstream check timed out $consecutiveFailures times"
-            else -> "upstream drifted from $expectedInterface to $names"
-        }
+        return tolerance.judge(reading, names)
     }
 
     private companion object {
         const val TAG = "SessionWatchdog"
         const val POLL_INTERVAL_MS = 5_000L
-
-        const val FAILURES_BEFORE_TEARDOWN = 2
     }
 }
