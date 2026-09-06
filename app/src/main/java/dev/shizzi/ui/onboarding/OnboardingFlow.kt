@@ -5,15 +5,20 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import dev.shizzi.AppPermission
 import dev.shizzi.CompatibilityState
-import dev.shizzi.ShizukuState
 import dev.shizzi.isCompatible
 import dev.shizzi.isOnFixPath
+import dev.shizzi.ui.PermissionRowSources
+import dev.shizzi.ui.PermissionRowState
+import dev.shizzi.ui.permissionRows
 
-enum class OnboardingStep { WELCOME, SHIZUKU, COMPATIBILITY }
+enum class OnboardingStep { WELCOME, PERMISSIONS, COMPATIBILITY }
 
 data class OnboardingActions(
-    val onRequestPermission: () -> Unit,
+    val onRequestAllPermissions: () -> Unit,
+    val onGrantPermission: (AppPermission) -> Unit,
+    val onShizukuAction: () -> Unit,
     val onCheckCompatibility: () -> Unit,
     val onDownloadTetheringApex: () -> Unit,
     val onInstallTetheringApex: () -> Unit,
@@ -22,11 +27,7 @@ data class OnboardingActions(
 )
 
 @Composable
-fun OnboardingFlow(
-    shizukuState: ShizukuState,
-    compatibility: CompatibilityState,
-    actions: OnboardingActions,
-) {
+fun OnboardingFlow(state: OnboardingState, actions: OnboardingActions) {
     val current = rememberOnboardingStep()
 
     LaunchedEffect(current.value) {
@@ -34,16 +35,17 @@ fun OnboardingFlow(
     }
 
     val step = when (current.value) {
-        OnboardingStep.WELCOME -> welcomeStep(onNext = { current.value = OnboardingStep.SHIZUKU })
+        OnboardingStep.WELCOME ->
+            welcomeStep(onNext = { current.value = OnboardingStep.PERMISSIONS })
 
-        OnboardingStep.SHIZUKU -> shizukuStep(
-            state = shizukuState,
-            onGrant = actions.onRequestPermission,
+        OnboardingStep.PERMISSIONS -> permissionsStep(
+            state = state,
+            actions = actions,
             onNext = { current.value = OnboardingStep.COMPATIBILITY },
         )
 
         OnboardingStep.COMPATIBILITY -> compatibilityStep(
-            state = compatibility,
+            state = state.compatibility,
             actions = actions,
         )
     }
@@ -65,19 +67,42 @@ private fun welcomeStep(onNext: () -> Unit) = WizardStep(
     primary = WizardAction(label = "Get started", onClick = onNext),
 )
 
-private fun shizukuStep(
-    state: ShizukuState,
-    onGrant: () -> Unit,
+private fun permissionsStep(
+    state: OnboardingState,
+    actions: OnboardingActions,
     onNext: () -> Unit,
-) = WizardStep(
-    title = "Shizuku",
-    content = { ShizukuStep(state = state, onGrant = onGrant) },
-    primary = WizardAction(
-        label = "Continue",
-        isEnabled = state is ShizukuState.Ready,
-        onClick = onNext,
-    ),
-)
+): WizardStep {
+    val rows = permissionRows(
+        sources = PermissionRowSources(
+            shizuku = state.shizuku,
+            permissions = state.permissions,
+        ),
+        onGrantPermission = actions.onGrantPermission,
+        onShizukuAction = actions.onShizukuAction,
+    )
+
+    return WizardStep(
+        title = "Permissions",
+        content = {
+            PermissionsStep(
+                shizuku = state.shizuku,
+                rows = rows,
+                onShizukuAction = actions.onShizukuAction,
+            )
+        },
+        primary = permissionsAction(rows = rows, actions = actions, onNext = onNext),
+    )
+}
+
+private fun permissionsAction(
+    rows: List<PermissionRowState>,
+    actions: OnboardingActions,
+    onNext: () -> Unit,
+): WizardAction {
+    if (rows.all { it.isGranted }) return WizardAction(label = "Continue", onClick = onNext)
+
+    return WizardAction(label = "Grant permissions", onClick = actions.onRequestAllPermissions)
+}
 
 private fun compatibilityStep(
     state: CompatibilityState,

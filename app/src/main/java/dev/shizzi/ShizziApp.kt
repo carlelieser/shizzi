@@ -3,6 +3,7 @@ package dev.shizzi
 import androidx.compose.runtime.Composable
 import dev.shizzi.ui.onboarding.OnboardingActions
 import dev.shizzi.ui.onboarding.OnboardingFlow
+import dev.shizzi.ui.onboarding.OnboardingState
 
 data class OnboardingEntry(
     val compatibility: CompatibilityState,
@@ -17,6 +18,7 @@ data class AppState(
     val session: SessionUiState,
     val settings: Settings,
     val diagnostics: DiagnosticsState,
+    val permissions: List<PermissionStatus>,
 )
 
 @Composable
@@ -27,10 +29,15 @@ fun ShizziApp(
 ) {
     if (!state.settings.hasCompletedOnboarding) {
         OnboardingFlow(
-            shizukuState = state.session.shizukuState,
-            compatibility = onboarding.compatibility,
+            state = OnboardingState(
+                shizuku = state.session.shizukuState,
+                compatibility = onboarding.compatibility,
+                permissions = state.permissions,
+            ),
             actions = OnboardingActions(
-                onRequestPermission = actions.onRequestPermission,
+                onRequestAllPermissions = actions.onRequestAllPermissions,
+                onGrantPermission = actions.onGrantPermission,
+                onShizukuAction = actions.onShizukuAction,
                 onCheckCompatibility = onboarding.onCheckCompatibility,
                 onDownloadTetheringApex = onboarding.onDownloadTetheringApex,
                 onInstallTetheringApex = onboarding.onInstallTetheringApex,
@@ -41,10 +48,5 @@ fun ShizziApp(
         return
     }
 
-    HomeScreen(
-        state = state.session,
-        settings = state.settings,
-        diagnostics = state.diagnostics,
-        actions = actions,
-    )
+    HomeScreen(state = state, actions = actions)
 }
