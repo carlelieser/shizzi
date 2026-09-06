@@ -137,12 +137,13 @@ dependencies {
 
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 
-    val composeBom = platform("androidx.compose:compose-bom:2025.08.00")
+    val composeBom = platform("androidx.compose:compose-bom:2025.11.00")
     implementation(composeBom)
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material3:material3")
 
     implementation("androidx.compose.material:material-icons-extended")
+    implementation("com.materialkolor:material-color-utilities:2.1.1")
     implementation("androidx.compose.ui:ui-tooling-preview")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
