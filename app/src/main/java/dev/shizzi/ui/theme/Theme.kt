@@ -36,6 +36,9 @@ private val LocalShizziShapes: ProvidableCompositionLocal<ShizziShapes> =
 private val LocalShizziDesign: ProvidableCompositionLocal<DesignLanguage> =
     staticCompositionLocalOf { DesignLanguage.MATERIAL_EXPRESSIVE }
 
+private val LocalShizziMotion: ProvidableCompositionLocal<ShizziMotion> =
+    staticCompositionLocalOf { ExpressiveMotion }
+
 object ShizziTheme {
     val colors: ShizziColors
         @Composable @ReadOnlyComposable get() = LocalShizziColors.current
@@ -51,6 +54,9 @@ object ShizziTheme {
 
     val design: DesignLanguage
         @Composable @ReadOnlyComposable get() = LocalShizziDesign.current
+
+    val motion: ShizziMotion
+        @Composable @ReadOnlyComposable get() = LocalShizziMotion.current
 }
 
 @Composable
@@ -69,14 +75,24 @@ fun ShizziTheme(
         accentPalette(appearance.accent, isDark, context)
     }
 
-    val isExpressive = appearance.design == DesignLanguage.MATERIAL_EXPRESSIVE
+    DesignScope(design = appearance.design, palette = palette, content = content)
+}
+
+@Composable
+private fun DesignScope(
+    design: DesignLanguage,
+    palette: AccentPalette,
+    content: @Composable () -> Unit,
+) {
+    val isExpressive = design == DesignLanguage.MATERIAL_EXPRESSIVE
 
     CompositionLocalProvider(
         LocalShizziColors provides palette.colors,
         LocalShizziTypography provides if (isExpressive) ExpressiveTypography else Typography,
         LocalShizziSpacing provides Spacing,
         LocalShizziShapes provides if (isExpressive) ExpressiveShapes else BrutalShapes,
-        LocalShizziDesign provides appearance.design,
+        LocalShizziDesign provides design,
+        LocalShizziMotion provides if (isExpressive) ExpressiveMotion else BrutalMotion,
         LocalContentColor provides palette.colors.onSurface,
     ) {
         MaterialTheme(

@@ -14,6 +14,8 @@ import dev.shizzi.ui.HomePage
 import dev.shizzi.ui.LogActions
 import dev.shizzi.ui.LogPage
 import dev.shizzi.ui.Screen
+import dev.shizzi.ui.ScreenHost
+import dev.shizzi.ui.ToastState
 import dev.shizzi.ui.SessionToasts
 import dev.shizzi.ui.AutomationActions
 import dev.shizzi.ui.AutomationState
@@ -48,12 +50,10 @@ data class AppActions(
     val onRegenerateAutomationToken: () -> Unit,
 )
 
+
+/** Routes the navigator's current screen and hosts the toast overlay. */
 @Composable
 fun HomeScreen(state: AppState, actions: AppActions) {
-    val session = state.session
-    val settings = state.settings
-    val diagnostics = state.diagnostics
-
     val current = rememberNavigator()
     val goHome = { current.value = Screen.HOME }
 
@@ -63,82 +63,26 @@ fun HomeScreen(state: AppState, actions: AppActions) {
     HandleBack(current.value, goBack)
 
     val toasts = rememberToastState()
+    val navigation = Navigation(goHome = goHome, goBack = goBack, open = { current.value = it })
+
     SessionToasts(
-        state = session,
+        state = state.session,
         toasts = toasts,
         onRequestPermission = actions.onRequestPermission,
     )
 
     DiagnosticsToast(
-        state = diagnostics,
+        state = state.diagnostics,
         toasts = toasts,
         onDismiss = actions.onDismissDiagnostics,
     )
 
     Box(modifier = Modifier.fillMaxSize()) {
-        when (current.value) {
-            Screen.SETTINGS -> SettingsPage(
-                state = SettingsState(
-                    shizuku = session.shizukuState,
-                    permissions = state.permissions,
-                    theme = settings.theme,
-                    design = settings.design,
-                    accent = settings.accent,
-                    customAccents = settings.customAccents,
-                    isLogging = settings.isLogging,
-                    isRunningDiagnostics = diagnostics is DiagnosticsState.Running,
-                    automation = AutomationState(
-                        isEnabled = settings.isAutomationEnabled,
-                        token = settings.automationToken,
-                    ),
-                ),
-                actions = SettingsActions(
-                    onSetTheme = actions.onSetTheme,
-                    onSetDesign = actions.onSetDesign,
-                    onSetAccent = actions.onSetAccent,
-                    onAddCustomAccent = actions.onAddCustomAccent,
-                    onSetLogging = actions.onSetLogging,
-                    onOpenLog = { current.value = Screen.LOG },
-                    onRunProbes = actions.onRunProbes,
-                    onGrantPermission = actions.onGrantPermission,
-                    onShizukuAction = actions.onShizukuAction,
-                    onRestartOnboarding = actions.onRestartOnboarding,
-                    automation = AutomationActions(
-                        onSetEnabled = actions.onSetAutomation,
-                        onRegenerateToken = actions.onRegenerateAutomationToken,
-                    ),
-                ),
-                toasts = toasts,
-                onBack = goHome,
+        ScreenHost(current = current.value) { screen ->
+            ScreenBody(
+                screen = screen,
+                context = ScreenContext(state, actions, toasts, navigation),
             )
-
-            Screen.LOG -> LogPage(
-                log = rememberLogEntries(),
-                toasts = toasts,
-                isLogging = settings.isLogging,
-                actions = LogActions(
-                    onClear = actions.onClearLog,
-                    onEnableLogging = { actions.onSetLogging(true) },
-
-                    onStartSession = {
-                        goHome()
-                        actions.onToggle()
-                    },
-                    onBack = goBack,
-                ),
-            )
-
-            Screen.HOME -> HomePage(
-                state = session,
-                actions = HomeActions(
-                    onToggle = actions.onToggle,
-                    onCancel = actions.onCancel,
-                    onOpenSettings = { current.value = Screen.SETTINGS },
-                    onOpenEasterEgg = { current.value = Screen.EASTER_EGG },
-                ),
-            )
-
-            Screen.EASTER_EGG -> EasterEggPage(onDismiss = goHome)
         }
 
         ToastHost(
@@ -146,4 +90,113 @@ fun HomeScreen(state: AppState, actions: AppActions) {
             modifier = Modifier.align(Alignment.BottomCenter).systemBarsPadding(),
         )
     }
+}
+
+private data class Navigation(
+    val goHome: () -> Unit,
+    val goBack: () -> Unit,
+    val open: (Screen) -> Unit,
+)
+
+private data class ScreenContext(
+    val state: AppState,
+    val actions: AppActions,
+    val toasts: ToastState,
+    val navigation: Navigation,
+)
+
+@Composable
+private fun ScreenBody(screen: Screen, context: ScreenContext) {
+    when (screen) {
+        Screen.HOME -> HomeRoute(context)
+        Screen.SETTINGS -> SettingsRoute(context)
+        Screen.LOG -> LogRoute(context)
+        Screen.EASTER_EGG -> EasterEggPage(onDismiss = context.navigation.goHome)
+    }
+}
+
+@Composable
+private fun HomeRoute(context: ScreenContext) {
+    val actions = context.actions
+
+    HomePage(
+        state = context.state.session,
+        actions = HomeActions(
+            onToggle = actions.onToggle,
+            onCancel = actions.onCancel,
+            onOpenSettings = { context.navigation.open(Screen.SETTINGS) },
+            onOpenEasterEgg = { context.navigation.open(Screen.EASTER_EGG) },
+        ),
+    )
+}
+
+@Composable
+private fun SettingsRoute(context: ScreenContext) {
+    SettingsPage(
+        state = settingsState(context.state),
+        actions = settingsActions(context),
+        toasts = context.toasts,
+        onBack = context.navigation.goHome,
+    )
+}
+
+private fun settingsState(state: AppState): SettingsState {
+    val settings = state.settings
+
+    return SettingsState(
+        shizuku = state.session.shizukuState,
+        permissions = state.permissions,
+        theme = settings.theme,
+        design = settings.design,
+        accent = settings.accent,
+        customAccents = settings.customAccents,
+        isLogging = settings.isLogging,
+        isRunningDiagnostics = state.diagnostics is DiagnosticsState.Running,
+        automation = AutomationState(
+            isEnabled = settings.isAutomationEnabled,
+            token = settings.automationToken,
+        ),
+    )
+}
+
+private fun settingsActions(context: ScreenContext): SettingsActions {
+    val actions = context.actions
+
+    return SettingsActions(
+        onSetTheme = actions.onSetTheme,
+        onSetDesign = actions.onSetDesign,
+        onSetAccent = actions.onSetAccent,
+        onAddCustomAccent = actions.onAddCustomAccent,
+        onSetLogging = actions.onSetLogging,
+        onOpenLog = { context.navigation.open(Screen.LOG) },
+        onRunProbes = actions.onRunProbes,
+        onGrantPermission = actions.onGrantPermission,
+        onShizukuAction = actions.onShizukuAction,
+        onRestartOnboarding = actions.onRestartOnboarding,
+        automation = AutomationActions(
+            onSetEnabled = actions.onSetAutomation,
+            onRegenerateToken = actions.onRegenerateAutomationToken,
+        ),
+    )
+}
+
+@Composable
+private fun LogRoute(context: ScreenContext) {
+    val actions = context.actions
+    val navigation = context.navigation
+
+    LogPage(
+        log = rememberLogEntries(),
+        toasts = context.toasts,
+        isLogging = context.state.settings.isLogging,
+        actions = LogActions(
+            onClear = actions.onClearLog,
+            onEnableLogging = { actions.onSetLogging(true) },
+            onStartSession = {
+                navigation.goHome()
+                actions.onToggle()
+            },
+            onBack = navigation.goBack,
+        ),
+    )
 }

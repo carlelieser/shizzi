@@ -1,5 +1,12 @@
 package dev.shizzi.ui
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -29,6 +36,7 @@ import dev.shizzi.SessionUiState
 import dev.shizzi.UiStatus
 import dev.shizzi.ui.theme.ScreenPadding
 import dev.shizzi.ui.theme.ShizziTheme
+import dev.shizzi.ui.theme.standardTween
 import dev.shizzi.ui.theme.themedIndication
 
 private val DividerWidth = 1.dp
@@ -50,9 +58,15 @@ fun StatusRow(
     ) {
         StatusLabel(statusWord(state.status))
 
-        if (state.status == UiStatus.CONNECTED && state.interfaceName.isNotEmpty()) {
-            StatusDivider()
-            TunnelSegment(state.interfaceName)
+        AnimatedVisibility(
+            visible = hasTunnel(state),
+            enter = fadeIn(standardTween()) + expandHorizontally(standardTween()),
+            exit = fadeOut(standardTween()) + shrinkHorizontally(standardTween()),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                StatusDivider()
+                TunnelSegment(state.interfaceName)
+            }
         }
 
         StatusDivider()
@@ -70,23 +84,33 @@ private fun StatusText(text: String) {
     )
 }
 
+private fun hasTunnel(state: SessionUiState): Boolean =
+    state.status == UiStatus.CONNECTED && state.interfaceName.isNotEmpty()
+
 @Composable
 private fun StatusLabel(status: String) {
     val colors = ShizziTheme.colors
+    val fadeSpec = standardTween<Float>()
 
-    Text(
-        text = buildAnnotatedString {
-            append("STATUS ")
-            withStyle(
-                SpanStyle(color = colors.onSurface, fontWeight = FontWeight.W700),
-            ) {
-                append(status.uppercase())
-            }
-        },
-        style = ShizziTheme.typography.caption,
-        color = colors.onSurfaceMuted,
-        textAlign = TextAlign.Center,
-    )
+    AnimatedContent(
+        targetState = status,
+        transitionSpec = { fadeIn(fadeSpec) togetherWith fadeOut(fadeSpec) },
+        label = "statusWord",
+    ) { word ->
+        Text(
+            text = buildAnnotatedString {
+                append("STATUS ")
+                withStyle(
+                    SpanStyle(color = colors.onSurface, fontWeight = FontWeight.W700),
+                ) {
+                    append(word.uppercase())
+                }
+            },
+            style = ShizziTheme.typography.caption,
+            color = colors.onSurfaceMuted,
+            textAlign = TextAlign.Center,
+        )
+    }
 }
 
 @Composable

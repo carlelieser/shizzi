@@ -1,5 +1,10 @@
 package dev.shizzi.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,11 +36,15 @@ import dev.shizzi.ui.theme.DefaultAccentColor
 import dev.shizzi.ui.theme.PresetAccents
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.SurfaceElevation
+import dev.shizzi.ui.theme.emphasizedSpring
+import dev.shizzi.ui.theme.standardTween
 import dev.shizzi.ui.theme.themedSurface
 
 private val SwatchSize = 48.dp
 
 private val SwatchIconSize = 20.dp
+
+private const val MarkEnterScale = 0.4f
 
 private const val ContrastThreshold = 0.5f
 
@@ -164,10 +173,37 @@ private fun Swatch(style: SwatchStyle, onClick: () -> Unit) {
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        val icon = if (style.isSelected) Icons.Filled.Check else style.glyph ?: return@Box
+        SwatchMark(style)
+    }
+}
 
+@Composable
+private fun SwatchMark(style: SwatchStyle) {
+    val scaleSpec = emphasizedSpring<Float>()
+    val fadeSpec = standardTween<Float>()
+
+    AnimatedVisibility(
+        visible = !style.isSelected && style.glyph != null,
+        enter = fadeIn(fadeSpec),
+        exit = fadeOut(fadeSpec),
+    ) {
+        style.glyph?.let { glyph ->
+            Icon(
+                imageVector = glyph,
+                contentDescription = null,
+                tint = contrastAgainst(style.fill),
+                modifier = Modifier.size(SwatchIconSize),
+            )
+        }
+    }
+
+    AnimatedVisibility(
+        visible = style.isSelected,
+        enter = fadeIn(fadeSpec) + scaleIn(scaleSpec, initialScale = MarkEnterScale),
+        exit = fadeOut(fadeSpec) + scaleOut(scaleSpec, targetScale = MarkEnterScale),
+    ) {
         Icon(
-            imageVector = icon,
+            imageVector = Icons.Filled.Check,
             contentDescription = null,
             tint = contrastAgainst(style.fill),
             modifier = Modifier.size(SwatchIconSize),

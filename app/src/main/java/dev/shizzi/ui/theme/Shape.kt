@@ -1,7 +1,7 @@
 package dev.shizzi.ui.theme
 
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -62,18 +62,23 @@ private fun Modifier.brutalSurface(
     val colors = ShizziTheme.colors
     val shapes = ShizziTheme.shapes
     val hasShadow = elevation == SurfaceElevation.RAISED
-    val shift = if (isPressed && hasShadow) shapes.shadowOffset else 0.dp
+    val shift by animateDpAsState(
+        targetValue = if (isPressed && hasShadow) shapes.shadowOffset else 0.dp,
+        animationSpec = fastSpring(),
+        label = "surfaceShift",
+    )
 
     return this
         .offset(x = shift, y = shift)
         .drawBehind {
             val stroke = shapes.border.toPx()
             val shadow = shapes.shadowOffset.toPx()
+            val gap = shadow - shift.toPx()
 
-            if (!isPressed && hasShadow) {
+            if (hasShadow && gap > 0f) {
                 drawRect(
                     color = colors.shadow,
-                    topLeft = Offset(shadow, shadow),
+                    topLeft = Offset(gap, gap),
                     size = size,
                 )
             }
@@ -98,7 +103,7 @@ private fun Modifier.expressiveSurface(
     val shape = RoundedCornerShape(ShizziTheme.shapes.corner)
     val scale by animateFloatAsState(
         targetValue = if (isPressed) PressedScale else 1f,
-        animationSpec = spring(),
+        animationSpec = fastSpring(),
         label = "surfaceScale",
     )
 

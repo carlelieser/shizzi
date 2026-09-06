@@ -1,8 +1,11 @@
 package dev.shizzi.ui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -51,22 +54,13 @@ import dev.shizzi.SessionLog
 import dev.shizzi.ui.theme.MinTouchTarget
 import dev.shizzi.ui.theme.ScreenPadding
 import dev.shizzi.ui.theme.ShizziTheme
+import dev.shizzi.ui.theme.standardSpring
+import dev.shizzi.ui.theme.standardTween
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-private val GutterWidth = 44.dp
-
-private val SelectionEdge = 3.dp
-private val RuleWidth = 1.dp
-
-private const val SelectionTint = 0.12f
-
-private val JumpBandHeight = 96.dp
-
-private val EmptyIconSize = 64.dp
-
-private const val JumpThreshold = 8
+private const val EmptyRiseDivisor = 8
 
 @Immutable
 data class LogEntries(
@@ -171,11 +165,17 @@ fun LogPage(
         if (!log.isLoaded) return@Column
 
         if (entries.isEmpty()) {
-            EmptyLog(
-                isLogging = isLogging,
-                onEnableLogging = actions.onEnableLogging,
-                onStartSession = actions.onStartSession,
-            )
+            AnimatedVisibility(
+                visible = true,
+                enter = fadeIn(standardTween()) +
+                    slideInVertically(standardSpring()) { it / EmptyRiseDivisor },
+            ) {
+                EmptyLog(
+                    isLogging = isLogging,
+                    onEnableLogging = actions.onEnableLogging,
+                    onStartSession = actions.onStartSession,
+                )
+            }
             return@Column
         }
 
@@ -183,9 +183,12 @@ fun LogPage(
             LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
                 itemsIndexed(entries) { index, entry ->
                     LogRow(
-                        number = index + 1,
-                        entry = entry,
-                        isSelected = index in selected,
+                        row = LogRowState(
+                            number = index + 1,
+                            entry = entry,
+                            isSelected = index in selected,
+                        ),
+                        modifier = Modifier.animateItem(),
                         onToggle = {
                             selected = if (index in selected) {
                                 selected - index
@@ -214,203 +217,6 @@ fun LogPage(
     }
 }
 
-private enum class JumpEdge { TOP, BOTTOM }
-
-@Composable
-private fun JumpBand(
-    edge: JumpEdge,
-    listState: LazyListState,
-    count: Int,
-    modifier: Modifier = Modifier,
-) {
-    val scope = rememberCoroutineScope()
-    val colors = ShizziTheme.colors
-    val isTop = edge == JumpEdge.TOP
-
-    val isShowing by remember(count, edge) {
-        derivedStateOf {
-            val visible = listState.layoutInfo.visibleItemsInfo
-            val distance = when {
-
-                isTop -> visible.firstOrNull()?.index ?: 0
-                else -> count - 1 - (visible.lastOrNull()?.index ?: 0)
-            }
-            distance > JumpThreshold
-        }
-    }
-
-    val fade = listOf(colors.background, colors.background.copy(alpha = 0f))
-
-    AnimatedVisibility(
-        visible = isShowing,
-        enter = fadeIn(),
-        exit = fadeOut(),
-        modifier = modifier,
-    ) {
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(JumpBandHeight)
-                .background(
-                    Brush.verticalGradient(if (isTop) fade else fade.asReversed()),
-                ),
-            contentAlignment = if (isTop) Alignment.TopCenter else Alignment.BottomCenter,
-        ) {
-
-            Text(
-                text = if (isTop) "SCROLL TO TOP" else "SCROLL TO BOTTOM",
-                style = ShizziTheme.typography.label,
-                color = colors.onSurface,
-                modifier = Modifier
-
-                    .padding(
-                        top = if (isTop) ShizziTheme.spacing.lg else 0.dp,
-                        bottom = if (isTop) 0.dp else ShizziTheme.spacing.lg,
-                    )
-                    .clickable {
-
-                        scope.launch {
-                            listState.animateScrollToItem(if (isTop) 0 else count - 1)
-                        }
-                    }
-                    .padding(ShizziTheme.spacing.sm),
-            )
-        }
-    }
-}
-
-@Composable
-private fun LogRow(
-    number: Int,
-    entry: LogEntry,
-    isSelected: Boolean,
-    onToggle: () -> Unit,
-) {
-    val colors = ShizziTheme.colors
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                if (isSelected) colors.primary.copy(alpha = SelectionTint) else colors.background,
-            )
-            .clickable(onClick = onToggle)
-
-            .drawBehind {
-                val rule = GutterWidth.toPx()
-                drawLine(
-                    color = colors.onSurfaceMuted.copy(alpha = 0.3f),
-                    start = Offset(rule, 0f),
-                    end = Offset(rule, size.height),
-                    strokeWidth = RuleWidth.toPx(),
-                )
-
-                if (isSelected) {
-                    drawRect(
-                        color = colors.primary,
-                        size = size.copy(width = SelectionEdge.toPx()),
-                    )
-                }
-            }
-            .padding(vertical = ShizziTheme.spacing.xs),
-    ) {
-        Text(
-            text = "$number",
-            style = ShizziTheme.typography.log,
-            color = colors.onSurfaceMuted,
-            textAlign = TextAlign.End,
-            modifier = Modifier
-                .width(GutterWidth)
-                .padding(end = ShizziTheme.spacing.sm),
-        )
-
-        LogText(entry = entry, modifier = Modifier.padding(horizontal = ShizziTheme.spacing.sm))
-    }
-}
-
-@Composable
-private fun LogText(entry: LogEntry, modifier: Modifier = Modifier) {
-    val colors = ShizziTheme.colors
-    val style = ShizziTheme.typography.log
-
-    Text(
-        text = buildString {
-
-            append(entry.timestamp.substringAfter(' ').ifEmpty { entry.timestamp })
-            if (isNotEmpty()) append("  ")
-            append(entry.message)
-        },
-        style = style.copy(
-            fontWeight = if (entry.level == LogLevel.INFO) FontWeight.W400 else FontWeight.W700,
-        ),
-        color = if (entry.level == LogLevel.INFO) colors.onSurfaceMuted else colors.onSurface,
-        modifier = modifier,
-    )
-}
-
-@Composable
-private fun EmptyLog(
-    isLogging: Boolean,
-    onEnableLogging: () -> Unit,
-    onStartSession: () -> Unit,
-) {
-    Column(
-        modifier = Modifier.fillMaxSize().padding(ScreenPadding),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.TextSnippet,
-            contentDescription = null,
-            tint = ShizziTheme.colors.onSurfaceMuted,
-            modifier = Modifier.size(EmptyIconSize),
-        )
-
-        Spacer(Modifier.height(ShizziTheme.spacing.xl))
-
-        Text(
-            text = if (isLogging) "No logs yet" else "Logging is disabled",
-            style = ShizziTheme.typography.subheading,
-            color = ShizziTheme.colors.onSurface,
-        )
-
-        if (isLogging) {
-            Spacer(Modifier.height(ShizziTheme.spacing.sm))
-
-            Text(
-                text = "Logs will appear here",
-                style = ShizziTheme.typography.body,
-                color = ShizziTheme.colors.onSurfaceMuted,
-                textAlign = TextAlign.Center,
-            )
-        }
-
-        Spacer(Modifier.height(ShizziTheme.spacing.sm))
-
-        EmptyAction(
-            label = if (isLogging) "Start a session" else "Enable logging",
-            onClick = if (isLogging) onStartSession else onEnableLogging,
-        )
-    }
-}
-
-@Composable
-private fun EmptyAction(label: String, onClick: () -> Unit) {
-    Box(
-
-        modifier = Modifier
-            .height(MinTouchTarget)
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = label.uppercase(),
-            style = ShizziTheme.typography.label,
-            color = ShizziTheme.colors.primary,
-        )
-    }
-}
 
 private fun copyLabel(count: Int, total: Int): String = when {
     count == 0 || count == total -> "COPY ALL"
