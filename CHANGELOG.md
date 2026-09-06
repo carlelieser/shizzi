@@ -5,39 +5,44 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.4.0-rc.1] - 2026-09-06
+
+Adds a quick settings tile and an intent API for starting and stopping sessions
+from other apps. New permissions screen in onboarding flow. Adds accent and
+design language pickers. Minor bug fixes.
+
 ### Added
 
-- **Permissions** now have one surface. Onboarding gains a Permissions step,
-  replacing the Shizuku one, that lists everything the app needs and blocks
-  until it is granted; one button requests each outstanding item in turn.
-  Settings gains a matching Permissions section, which absorbs the Shizuku
-  card and its former section.
-- **Shizuku** can be acted on from any state: not installed opens its releases
-  page, not running launches it, and ungranted requests permission.
-- **Automation.** Other apps can start, stop, toggle, and query a session
-  through intents, for automation from Tasker, MacroDroid, and the like. Off by
-  default, and every command carries a token. The token card copies and
-  regenerates it, and a setup dialog lists the values an automation app needs
-  for each action. See [automation](docs/automation.md).
-- **Quick settings tile.** Sharing can be started and stopped from the notification
-  shade. The tile follows the session — it reads how many devices are connected
-  while sharing, says why it cannot start when Shizuku is not ready, and opens
-  the app so that can be fixed.
+- **Quick settings tile.** Start and stop sharing from the notification shade.
+- **Intent API.** Start, stop, toggle, and query a session from another app.
+  Off by default, token-authenticated. See [automation](docs/automation.md).
+- **Permissions screen** in onboarding, replacing the Shizuku step. Also in
+  settings.
+- **Accent and design language pickers** in settings.
+
+### Changed
+
+- Material Expressive is the new default design language. Neobrutalism is still
+  available.
+- Compose moved to a BOM carrying Material3 1.4.0.
 
 ### Fixed
 
-- The notification permission dialog no longer appears over the welcome screen
-  on first launch. It is asked for in the Permissions step, where it is
-  explained, and a denial is now visible and recoverable instead of silent.
-- **Background starts.** Android 12 and up blocked intent-triggered sessions
-  from starting the foreground service, so a command was accepted and then did
-  nothing. Battery optimization exemption lifts the restriction and is now
-  surfaced as a permission, and a start that cannot be delivered reports the
-  reason instead of failing silently.
-- **Toggling mid-start.** An automation toggle sent while a session was still
-  coming up tore down the session it was meant to leave alone, because it read
-  the service as running before it had connected. Every toggle — the app, the
-  tile, and automation — now agrees on what a running session is.
+- A VPN reconnect or radio handoff left the tethering upstream empty for a few
+  seconds, which killed the session. Only real drift onto another interface
+  ends it now.
+  ([#22](https://github.com/carlelieser/shizzi/issues/22))
+- Stopping a session could leave the hotspot on, because stopTethering lands
+  asynchronously. It now retries.
+  ([#22](https://github.com/carlelieser/shizzi/issues/22))
+- Intent-triggered starts silently did nothing on Android 12+, which blocks
+  foreground service starts from the background. Battery optimization exemption
+  is now requested as a permission, and an undeliverable start says why.
+- An automation toggle sent mid-startup tore down the session it meant to leave
+  alone, having read the service as running before it had connected.
+- The notification permission dialog appeared over the welcome screen on first
+  launch. It's asked for in the Permissions step now, and a denial is visible
+  instead of silent.
 
 ## [0.3.0] - 2026-08-22
 
@@ -122,6 +127,7 @@ First public build.
 - IPv6 was not suppressed on the downstream; v6 traffic could bypass the
   tunnel. Fixed in 0.2.0.
 
+[0.4.0-rc.1]: https://github.com/carlelieser/shizzi/releases/tag/v0.4.0-rc.1
 [0.3.0]: https://github.com/carlelieser/shizzi/releases/tag/v0.3.0
 [0.2.0]: https://github.com/carlelieser/shizzi/releases/tag/v0.2.0
 [0.1.0]: https://github.com/carlelieser/shizzi/releases/tag/v0.1.0
