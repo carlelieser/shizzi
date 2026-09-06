@@ -7,31 +7,50 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import dev.shizzi.R
 import dev.shizzi.ShizukuGate
 import dev.shizzi.ShizukuState
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.brutalSurface
 
+private val BrandIconSize = 40.dp
+
 @Composable
 fun ShizukuCard(state: ShizukuState, onGrant: () -> Unit) {
-    Column(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .brutalSurface(fill = ShizziTheme.colors.surface)
             .padding(ShizziTheme.spacing.lg),
-        verticalArrangement = Arrangement.spacedBy(ShizziTheme.spacing.sm),
+        horizontalArrangement = Arrangement.spacedBy(ShizziTheme.spacing.lg),
     ) {
-        StatusRow(name = "Status", value = statusText(state))
-        StatusRow(name = "Service", value = serviceText(state))
-        StatusRow(name = "Version", value = ShizukuGate.installedVersion() ?: "Not installed")
+        Icon(
+            painter = painterResource(R.drawable.ic_shizuku),
+            contentDescription = null,
+            tint = ShizziTheme.colors.onSurface,
+            modifier = Modifier.size(BrandIconSize),
+        )
 
-        if (state is ShizukuState.PermissionRequired) {
-            GrantButton(onGrant)
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(ShizziTheme.spacing.sm),
+        ) {
+            StatusRow(name = "Status", value = statusText(state))
+            StatusRow(name = "Service", value = serviceText(state))
+            StatusRow(name = "Version", value = ShizukuGate.installedVersion() ?: "Not installed")
+
+            if (state is ShizukuState.PermissionRequired) {
+                GrantButton(onGrant)
+            }
         }
     }
 }
