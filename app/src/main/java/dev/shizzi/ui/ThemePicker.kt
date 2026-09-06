@@ -2,7 +2,10 @@ package dev.shizzi.ui
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,15 +22,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import dev.shizzi.ui.theme.ShizziTheme
-import dev.shizzi.ui.theme.emphasizedSpring
 import dev.shizzi.ui.theme.standardSpring
 import dev.shizzi.ui.theme.themedIndication
 import dev.shizzi.ui.theme.ThemeChoice
@@ -79,7 +81,7 @@ private fun ThemeOption(
     val interaction = remember { MutableInteractionSource() }
     val colors = ShizziTheme.colors
     val isPressed = interaction.isPressed()
-    val spin = rememberPressSpin(isPressed)
+    val spin = rememberPressSpin(interaction)
 
     val fill by animateColorAsState(
         targetValue = if (isSelected) colors.primary else colors.surface,
@@ -116,21 +118,30 @@ private fun ThemeOption(
     }
 }
 
-/** Spins the glyph a full turn on each press, including a re-press of the active mode. */
+/**
+ * Spins the glyph a full turn on each press, including a re-press of the active
+ * mode. A tap emits press and release inside one frame, so this collects the
+ * press event itself rather than a recomposed boolean, which never reads true.
+ */
 @Composable
-private fun rememberPressSpin(isPressed: Boolean): Float {
+private fun rememberPressSpin(interaction: InteractionSource): Float {
     val rotation = remember { Animatable(0f) }
-    val turns = remember { mutableIntStateOf(0) }
-    val spinSpec = emphasizedSpring<Float>()
+    val spinSpec = tween<Float>(
+        durationMillis = ShizziTheme.motion.slowMillis,
+        easing = ShizziTheme.motion.easing,
+    )
 
-    LaunchedEffect(isPressed) {
-        if (!isPressed) return@LaunchedEffect
+    LaunchedEffect(interaction) {
+        var turns = 0
 
-        turns.intValue += 1
-        rotation.animateTo(
-            targetValue = turns.intValue * PressSpin,
-            animationSpec = spinSpec,
-        )
+        interaction.interactions.collect { event ->
+            if (event !is PressInteraction.Press) return@collect
+
+            turns += 1
+            val target = turns * PressSpin
+
+            launch { rotation.animateTo(targetValue = target, animationSpec = spinSpec) }
+        }
     }
 
     return rotation.value
