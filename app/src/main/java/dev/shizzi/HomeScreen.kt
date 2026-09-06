@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import dev.shizzi.ui.DiagnosticsToast
+import dev.shizzi.ui.EasterEggPage
 import dev.shizzi.ui.HandleBack
 import dev.shizzi.ui.HomeActions
 import dev.shizzi.ui.HomePage
@@ -133,8 +134,11 @@ fun HomeScreen(state: AppState, actions: AppActions) {
                     onToggle = actions.onToggle,
                     onCancel = actions.onCancel,
                     onOpenSettings = { current.value = Screen.SETTINGS },
+                    onOpenEasterEgg = { current.value = Screen.EASTER_EGG },
                 ),
             )
+
+            Screen.EASTER_EGG -> EasterEggPage(onDismiss = goHome)
         }
 
         ToastHost(
