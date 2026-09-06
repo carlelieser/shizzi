@@ -1,5 +1,7 @@
 package dev.shizzi.ui.theme
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -75,14 +77,33 @@ fun ShizziTheme(
         accentPalette(appearance.accent, isDark, context)
     }
 
-    val isExpressive = appearance.design == DesignLanguage.MATERIAL_EXPRESSIVE
+    // Each layer renders with the design it is fading between, so the outgoing
+    // language keeps its own tokens for the length of the transition.
+    Crossfade(
+        targetState = appearance.design,
+        animationSpec = tween(durationMillis = DesignSwapMillis),
+        label = "designLanguage",
+    ) { design ->
+        DesignScope(design = design, palette = palette, content = content)
+    }
+}
+
+private const val DesignSwapMillis = 260
+
+@Composable
+private fun DesignScope(
+    design: DesignLanguage,
+    palette: AccentPalette,
+    content: @Composable () -> Unit,
+) {
+    val isExpressive = design == DesignLanguage.MATERIAL_EXPRESSIVE
 
     CompositionLocalProvider(
         LocalShizziColors provides palette.colors,
         LocalShizziTypography provides if (isExpressive) ExpressiveTypography else Typography,
         LocalShizziSpacing provides Spacing,
         LocalShizziShapes provides if (isExpressive) ExpressiveShapes else BrutalShapes,
-        LocalShizziDesign provides appearance.design,
+        LocalShizziDesign provides design,
         LocalShizziMotion provides if (isExpressive) ExpressiveMotion else BrutalMotion,
         LocalContentColor provides palette.colors.onSurface,
     ) {

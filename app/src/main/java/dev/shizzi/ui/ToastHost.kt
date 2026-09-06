@@ -1,6 +1,7 @@
 package dev.shizzi.ui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -35,6 +36,8 @@ import androidx.compose.ui.unit.dp
 import dev.shizzi.ui.theme.ScreenPadding
 import dev.shizzi.ui.theme.DesignLanguage
 import dev.shizzi.ui.theme.ShizziTheme
+import dev.shizzi.ui.theme.standardSpring
+import dev.shizzi.ui.theme.standardTween
 import dev.shizzi.ui.theme.themedLabel
 import dev.shizzi.ui.theme.themedSurface
 import kotlinx.coroutines.delay
@@ -53,6 +56,7 @@ fun ToastHost(state: ToastState, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .animateContentSize(animationSpec = standardSpring())
             .padding(ScreenPadding),
         verticalArrangement = Arrangement.spacedBy(ShizziTheme.spacing.sm),
     ) {
@@ -81,8 +85,8 @@ private fun ToastRow(toast: Toast, onExpire: () -> Unit) {
 
     AnimatedVisibility(
         visible = true,
-        enter = slideInVertically { it } + fadeIn(),
-        exit = slideOutVertically { it } + fadeOut(),
+        enter = slideInVertically(standardSpring()) { it } + fadeIn(standardTween()),
+        exit = slideOutVertically(standardSpring()) { it } + fadeOut(standardTween()),
     ) {
         ToastSurface(
             toast = toast,
