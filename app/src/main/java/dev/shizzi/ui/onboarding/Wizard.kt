@@ -22,6 +22,8 @@ import dev.shizzi.ui.theme.themedSurface
 
 private val ProgressDotSize = 10.dp
 
+private const val InactiveDotAlpha = 0.6f
+
 data class WizardStep(
     val title: String,
     val content: @Composable () -> Unit,
@@ -78,20 +80,26 @@ private fun ProgressDots(currentIndex: Int, stepCount: Int, modifier: Modifier =
     }
 }
 
-// Neobrutalism renders an inactive dot as an outline, which its border supplies.
-// Expressive draws no border, so an inactive dot needs a fill of its own.
+// Neobrutalism renders an inactive dot as an outline, which its border supplies,
+// and casts the active dot into its own shadow. Expressive draws neither, so an
+// inactive dot is drawn from the muted foreground: the container roles track the
+// background too closely to read against it, and a dot this small casts no shadow.
 @Composable
 private fun ProgressDot(isCurrent: Boolean) {
     val colors = ShizziTheme.colors
     val isBrutal = ShizziTheme.design == DesignLanguage.NEOBRUTALISM
-    val inactiveFill = if (isBrutal) Color.Transparent else colors.surfaceContainer
+    val inactiveFill = when {
+        isBrutal -> Color.Transparent
+        else -> colors.onSurfaceMuted.copy(alpha = InactiveDotAlpha)
+    }
+    val hasShadow = isBrutal && isCurrent
 
     Box(
         modifier = Modifier
             .size(ProgressDotSize)
             .themedSurface(
                 fill = if (isCurrent) colors.primary else inactiveFill,
-                elevation = if (isCurrent) SurfaceElevation.RAISED else SurfaceElevation.FLAT,
+                elevation = if (hasShadow) SurfaceElevation.RAISED else SurfaceElevation.FLAT,
             ),
     )
 }
