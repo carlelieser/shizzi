@@ -1,5 +1,7 @@
 package dev.shizzi
 
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -14,9 +16,8 @@ class AppPermissionTest {
     }
 
     @Test
-    fun `every permission names the manifest permission it maps to`() {
-        AppPermission.entries.forEach { permission ->
-            assertTrue(permission.name, permission.manifestName.isNotBlank())
-        }
+    fun `every permission carries a manifest name or is granted another way`() {
+        assertNotNull(AppPermission.NOTIFICATIONS.manifestName)
+        assertNull(AppPermission.BATTERY_EXEMPTION.manifestName)
     }
 }

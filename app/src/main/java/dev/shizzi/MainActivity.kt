@@ -95,6 +95,9 @@ class MainActivity : ComponentActivity() {
                             onDismissDiagnostics = viewModel::dismissDiagnostics,
                             onClearLog = viewModel::clearLog,
                             onRestartOnboarding = viewModel::restartOnboarding,
+                            onSetAutomation = viewModel::setAutomation,
+                            onRegenerateAutomationToken =
+                                viewModel::regenerateAutomationToken,
                         ),
                     )
                 }
@@ -150,15 +153,20 @@ class MainActivity : ComponentActivity() {
         return true
     }
 
+    // A permission with no manifest name is granted on a settings screen in
+    // another app, so there is no dialog to launch and no result to wait for.
     private fun grantPermission(permission: AppPermission) {
-        if (isDialogSuppressed(permission)) {
+        val name = permission.manifestName
+
+        if (name == null || isDialogSuppressed(permission)) {
+            stopChain()
             viewModel.openPermissionSettings(permission)
             return
         }
 
         requested = permission
         asked += permission
-        permissionLauncher.launch(permission.manifestName)
+        permissionLauncher.launch(name)
     }
 
     private fun onPermissionResult() {
@@ -183,9 +191,10 @@ class MainActivity : ComponentActivity() {
     // shouldShowRequestPermissionRationale is also false before the first ask, so
     // only a permission this process has already requested can be suppressed.
     private fun isDialogSuppressed(permission: AppPermission): Boolean {
+        val name = permission.manifestName ?: return false
         if (permission !in asked) return false
 
-        return !shouldShowRequestPermissionRationale(permission.manifestName)
+        return !shouldShowRequestPermissionRationale(name)
     }
 
     private fun registerShizukuListeners() {

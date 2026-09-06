@@ -11,6 +11,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
     <uses-permission
         android:name="android.permission.MANAGE_TEST_NETWORKS"
         tools:ignore="ProtectedPermissions" />
@@ -45,6 +47,17 @@
                 android:value="Maintains a protected tethering session and tears
                     down the hotspot if the privileged helper process dies" />
         </service>
+
+        <receiver
+            android:name=".AutomationReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="dev.shizzi.action.START" />
+                <action android:name="dev.shizzi.action.STOP" />
+                <action android:name="dev.shizzi.action.TOGGLE" />
+                <action android:name="dev.shizzi.action.QUERY_STATUS" />
+            </intent-filter>
+        </receiver>
 
         <provider
             android:name="androidx.core.content.FileProvider"

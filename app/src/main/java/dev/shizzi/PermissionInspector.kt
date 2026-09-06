@@ -2,6 +2,7 @@ package dev.shizzi
 
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.PowerManager
 
 class PermissionInspector(private val context: Context) {
 
@@ -17,7 +18,19 @@ class PermissionInspector(private val context: Context) {
     fun isGranted(permission: AppPermission): Boolean {
         if (!permission.isApplicable) return true
 
-        return context.checkSelfPermission(permission.manifestName) ==
-            PackageManager.PERMISSION_GRANTED
+        return when (permission) {
+            AppPermission.BATTERY_EXEMPTION -> isIgnoringBatteryOptimizations()
+            else -> isManifestPermissionGranted(permission)
+        }
     }
+
+    private fun isManifestPermissionGranted(permission: AppPermission): Boolean {
+        val name = permission.manifestName ?: return true
+
+        return context.checkSelfPermission(name) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun isIgnoringBatteryOptimizations(): Boolean = context
+        .getSystemService(PowerManager::class.java)
+        .isIgnoringBatteryOptimizations(context.packageName)
 }

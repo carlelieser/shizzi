@@ -14,12 +14,22 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   card and its former section.
 - **Shizuku** can be acted on from any state: not installed opens its releases
   page, not running launches it, and ungranted requests permission.
+- **Automation.** Other apps can start, stop, toggle, and query a session
+  through intents, for automation from Tasker, MacroDroid, and the like. Off by
+  default, and every command carries a token. The token card copies and
+  regenerates it, and a setup dialog lists the values an automation app needs
+  for each action. See [automation](docs/automation.md).
 
 ### Fixed
 
 - The notification permission dialog no longer appears over the welcome screen
   on first launch. It is asked for in the Permissions step, where it is
   explained, and a denial is now visible and recoverable instead of silent.
+- **Background starts.** Android 12 and up blocked intent-triggered sessions
+  from starting the foreground service, so a command was accepted and then did
+  nothing. Battery optimization exemption lifts the restriction and is now
+  surfaced as a permission, and a start that cannot be delivered reports the
+  reason instead of failing silently.
 
 ## [0.3.0] - 2026-08-22
 
