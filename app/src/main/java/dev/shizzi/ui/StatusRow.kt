@@ -34,8 +34,15 @@ import dev.shizzi.ui.theme.themedIndication
 private val DividerWidth = 1.dp
 private val DividerHeight = 12.dp
 
+private const val RevealTapCount = 3
+private const val RevealWindowMillis = 1200L
+
 @Composable
-fun StatusRow(state: SessionUiState, modifier: Modifier = Modifier) {
+fun StatusRow(
+    state: SessionUiState,
+    onVersionClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Row(
         modifier = modifier.fillMaxWidth().padding(ScreenPadding),
         horizontalArrangement = Arrangement.Center,
@@ -49,7 +56,7 @@ fun StatusRow(state: SessionUiState, modifier: Modifier = Modifier) {
         }
 
         StatusDivider()
-        StatusText("v${BuildConfig.VERSION_NAME}")
+        VersionSegment(onReveal = onVersionClick)
     }
 }
 
@@ -80,6 +87,39 @@ private fun StatusLabel(status: String) {
         color = colors.onSurfaceMuted,
         textAlign = TextAlign.Center,
     )
+}
+
+@Composable
+private fun VersionSegment(onReveal: () -> Unit) {
+    val interaction = remember { MutableInteractionSource() }
+    val taps = remember { TapCounter(RevealTapCount, RevealWindowMillis) }
+
+    Box(
+        modifier = Modifier.clickable(
+            interactionSource = interaction,
+            indication = themedIndication(),
+        ) {
+            if (taps.record(System.currentTimeMillis())) onReveal()
+        },
+    ) {
+        StatusText("v${BuildConfig.VERSION_NAME}")
+    }
+}
+
+/** Counts taps toward [target], resetting once [windowMillis] lapses between them. */
+private class TapCounter(private val target: Int, private val windowMillis: Long) {
+    private var count = 0
+    private var lastTapAt = 0L
+
+    fun record(now: Long): Boolean {
+        count = if (now - lastTapAt > windowMillis) 1 else count + 1
+        lastTapAt = now
+
+        if (count < target) return false
+
+        count = 0
+        return true
+    }
 }
 
 @Composable

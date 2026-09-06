@@ -60,7 +60,7 @@ fun HomePage(
                 if (isShowingVpn(state)) VpnChip()
             }
 
-            StatusRow(state = state)
+            StatusRow(state = state, onVersionClick = actions.onOpenEasterEgg)
         }
     }
 }
@@ -69,6 +69,7 @@ data class HomeActions(
     val onToggle: () -> Unit,
     val onCancel: () -> Unit,
     val onOpenSettings: () -> Unit,
+    val onOpenEasterEgg: () -> Unit,
 )
 
 @Composable

@@ -7,7 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 
-enum class Screen { HOME, LOG, SETTINGS }
+enum class Screen { HOME, LOG, SETTINGS, EASTER_EGG }
 
 private val ScreenSaver = Saver<MutableState<Screen>, String>(
     save = { it.value.name },
