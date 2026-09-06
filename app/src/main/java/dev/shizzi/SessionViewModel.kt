@@ -38,10 +38,18 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
 
     val compatibilityState: StateFlow<CompatibilityState> = compatibility.state
 
+    private val permissions = PermissionInspector(application)
+
+    private val permissionRequest = PermissionRequest(application)
+
+    private val localPermissions = MutableStateFlow(emptyList<PermissionStatus>())
+    val permissionState: StateFlow<List<PermissionStatus>> = localPermissions.asStateFlow()
+
     private var sessionCollector: Job? = null
 
     init {
         refreshShizukuState()
+        refreshPermissions()
         observeSession()
     }
 
@@ -61,6 +69,21 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
 
     fun requestPermission() {
         ShizukuGate.requestPermission()
+    }
+
+    fun actOnShizuku() {
+        ShizukuGate.remedy(localState.value.shizukuState)
+    }
+
+    fun refreshPermissions() {
+        localPermissions.value = permissions.observe()
+    }
+
+    fun isPermissionGranted(permission: AppPermission): Boolean =
+        permissions.isGranted(permission)
+
+    fun openPermissionSettings(permission: AppPermission) {
+        permissionRequest.open(permission)
     }
 
     fun setLogging(enabled: Boolean) {

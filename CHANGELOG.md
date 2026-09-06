@@ -3,6 +3,24 @@
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Permissions** now have one surface. Onboarding gains a Permissions step,
+  replacing the Shizuku one, that lists everything the app needs and blocks
+  until it is granted; one button requests each outstanding item in turn.
+  Settings gains a matching Permissions section, which absorbs the Shizuku
+  card and its former section.
+- **Shizuku** can be acted on from any state: not installed opens its releases
+  page, not running launches it, and ungranted requests permission.
+
+### Fixed
+
+- The notification permission dialog no longer appears over the welcome screen
+  on first launch. It is asked for in the Permissions step, where it is
+  explained, and a denial is now visible and recoverable instead of silent.
+
 ## [0.3.0] - 2026-08-22
 
 Adds support for Android 11 and 12 (API 30-32) by providing a tethering module update if necessary. Also adds an onboarding flow. Minor updates to the UI and better logging.

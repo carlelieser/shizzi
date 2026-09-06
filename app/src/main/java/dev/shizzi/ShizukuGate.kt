@@ -1,6 +1,8 @@
 package dev.shizzi
 
+import android.content.Intent
 import android.content.pm.PackageManager
+import dev.shizzi.ui.openUrl
 import rikka.shizuku.Shizuku
 
 sealed interface ShizukuState {
@@ -52,6 +54,29 @@ object ShizukuGate {
         Shizuku.requestPermission(PERMISSION_REQUEST_CODE)
     }
 
+    fun remedy(state: ShizukuState) {
+        when (state) {
+            ShizukuState.NotInstalled -> openReleasesPage()
+            ShizukuState.NotRunning -> launchShizuku()
+            ShizukuState.PermissionRequired -> requestPermission()
+            is ShizukuState.Ready -> Unit
+        }
+    }
+
+    private fun launchShizuku() {
+        val packageManager = App.instance.packageManager
+
+        val launch = SHIZUKU_PACKAGES.firstNotNullOfOrNull { candidate ->
+            packageManager.getLaunchIntentForPackage(candidate)
+        } ?: return openReleasesPage()
+
+        App.instance.startActivity(launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    }
+
+    private fun openReleasesPage() {
+        App.instance.openUrl(RELEASES_URL)
+    }
+
     fun describeUid(uid: Int): String = when (uid) {
         SHELL_UID -> "shell (2000) — the path under test"
         ROOT_UID -> "root (0) — Sui; behaviour may differ (P-5)"
@@ -72,6 +97,8 @@ object ShizukuGate {
             }.getOrNull()
         }
     }
+
+    private const val RELEASES_URL = "https://github.com/RikkaApps/Shizuku/releases"
 
     private val SHIZUKU_PACKAGES = listOf("moe.shizuku.privileged.api", "moe.shizuku.redirect")
 }
