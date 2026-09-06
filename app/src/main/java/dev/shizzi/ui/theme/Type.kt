@@ -83,3 +83,35 @@ val Typography = ShizziTypography(
     log = TextStyle(fontFamily = Mono, fontSize = 13.sp, fontWeight = FontWeight.W400),
     body = TextStyle(fontFamily = Sans, fontSize = 14.sp, fontWeight = FontWeight.W400),
 )
+
+val ExpressiveTypography = ShizziTypography(
+
+    display = TextStyle(
+        fontFamily = Display,
+        fontSize = 32.sp,
+        fontWeight = FontWeight.W700,
+        letterSpacing = (-0.02).em,
+    ),
+
+    heading = TextStyle(
+        fontFamily = Display,
+        fontSize = 22.sp,
+        fontWeight = FontWeight.W700,
+        letterSpacing = (-0.01).em,
+    ),
+
+    subheading = TextStyle(
+        fontFamily = Display,
+        fontSize = 17.sp,
+        fontWeight = FontWeight.W500,
+    ),
+
+    title = TextStyle(fontFamily = Sans, fontSize = 18.sp, fontWeight = FontWeight.W500),
+
+    label = TextStyle(fontFamily = Sans, fontSize = 14.sp, fontWeight = FontWeight.W500),
+
+    caption = TextStyle(fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.W500),
+
+    log = TextStyle(fontFamily = Mono, fontSize = 13.sp, fontWeight = FontWeight.W400),
+    body = TextStyle(fontFamily = Sans, fontSize = 14.sp, fontWeight = FontWeight.W400),
+)

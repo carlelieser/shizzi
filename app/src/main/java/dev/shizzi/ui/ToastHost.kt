@@ -34,7 +34,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import dev.shizzi.ui.theme.ScreenPadding
 import dev.shizzi.ui.theme.ShizziTheme
-import dev.shizzi.ui.theme.brutalSurface
+import dev.shizzi.ui.theme.themedSurface
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.material3.Text
@@ -133,7 +133,7 @@ private fun ToastSurface(toast: Toast, onDismiss: () -> Unit, modifier: Modifier
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .brutalSurface(fill = ShizziTheme.colors.surface)
+            .themedSurface(fill = ShizziTheme.colors.surface)
 
             .clickable(enabled = !toast.isBusy, onClick = onDismiss)
             .padding(ShizziTheme.spacing.lg),

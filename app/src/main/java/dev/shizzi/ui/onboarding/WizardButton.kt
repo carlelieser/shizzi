@@ -12,7 +12,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.shizzi.ui.theme.ShizziTheme
-import dev.shizzi.ui.theme.brutalSurface
+import dev.shizzi.ui.theme.themedIndication
+import dev.shizzi.ui.theme.themedSurface
 import dev.shizzi.ui.theme.isPressed
 
 private val ButtonHeight = 56.dp
@@ -27,14 +28,14 @@ fun WizardButton(action: WizardAction, isPrimary: Boolean) {
         modifier = Modifier
             .fillMaxWidth()
             .height(ButtonHeight)
-            .brutalSurface(
+            .themedSurface(
                 fill = if (isFilled) colors.primary else colors.surface,
                 isPressed = action.isEnabled && interaction.isPressed(),
             )
             .clickable(
                 enabled = action.isEnabled,
                 interactionSource = interaction,
-                indication = null,
+                indication = themedIndication(),
                 onClick = action.onClick,
             ),
         contentAlignment = Alignment.Center,

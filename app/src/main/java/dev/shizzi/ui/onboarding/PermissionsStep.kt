@@ -21,7 +21,7 @@ import dev.shizzi.ShizukuState
 import dev.shizzi.ui.PermissionRowState
 import dev.shizzi.ui.ShizukuCard
 import dev.shizzi.ui.theme.ShizziTheme
-import dev.shizzi.ui.theme.brutalSurface
+import dev.shizzi.ui.theme.themedSurface
 
 private val MarkSize = 20.dp
 
@@ -46,7 +46,7 @@ private fun PermissionCard(row: PermissionRowState) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .brutalSurface(fill = ShizziTheme.colors.surface)
+            .themedSurface(fill = ShizziTheme.colors.surface)
             .clickable(enabled = !row.isGranted, onClick = row.onAct)
             .padding(ShizziTheme.spacing.lg),
         verticalAlignment = Alignment.Top,

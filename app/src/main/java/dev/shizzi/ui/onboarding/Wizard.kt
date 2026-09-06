@@ -16,7 +16,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import dev.shizzi.ui.theme.ScreenPadding
 import dev.shizzi.ui.theme.ShizziTheme
-import dev.shizzi.ui.theme.brutalSurface
+import dev.shizzi.ui.theme.SurfaceElevation
+import dev.shizzi.ui.theme.themedSurface
 
 private val ProgressDotSize = 10.dp
 
@@ -83,7 +84,10 @@ private fun ProgressDot(isCurrent: Boolean) {
     Box(
         modifier = Modifier
             .size(ProgressDotSize)
-            .brutalSurface(fill = if (isCurrent) colors.primary else Color.Transparent),
+            .themedSurface(
+                fill = if (isCurrent) colors.primary else Color.Transparent,
+                elevation = if (isCurrent) SurfaceElevation.RAISED else SurfaceElevation.FLAT,
+            ),
     )
 }
 

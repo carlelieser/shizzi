@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import dev.shizzi.ui.theme.ShizziTheme
+import dev.shizzi.ui.theme.themedIndication
 import dev.shizzi.ui.theme.isPressed
 
 @Composable
@@ -30,7 +31,7 @@ fun GhostButton(
             .height(ShizziTheme.spacing.xxl)
             .clickable(
                 interactionSource = interaction,
-                indication = null,
+                indication = themedIndication(),
                 onClick = onClick,
             )
             .padding(horizontal = padding),

@@ -19,7 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.shizzi.Capability
 import dev.shizzi.ui.theme.ShizziTheme
-import dev.shizzi.ui.theme.brutalSurface
+import dev.shizzi.ui.theme.themedSurface
 
 private val MarkSize = 20.dp
 
@@ -32,7 +32,7 @@ fun CapabilityCard(capability: Capability, status: CapabilityStatus, detail: Str
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .brutalSurface(fill = ShizziTheme.colors.surface)
+            .themedSurface(fill = ShizziTheme.colors.surface)
             .padding(ShizziTheme.spacing.lg),
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(ShizziTheme.spacing.md),

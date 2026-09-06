@@ -11,14 +11,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import dev.shizzi.CompatibilityState
 import dev.shizzi.ui.theme.ShizziTheme
-import dev.shizzi.ui.theme.brutalSurface
+import dev.shizzi.ui.theme.themedSurface
 
 @Composable
 fun TetheringProviderInstallCard(state: CompatibilityState) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .brutalSurface(fill = ShizziTheme.colors.surface)
+            .themedSurface(fill = ShizziTheme.colors.surface)
             .padding(ShizziTheme.spacing.lg),
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(ShizziTheme.spacing.md),

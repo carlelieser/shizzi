@@ -3,15 +3,23 @@ package dev.shizzi.ui.theme
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.platform.LocalContext
 
 enum class ThemeChoice { SYSTEM, LIGHT, DARK }
+
+@Immutable
+data class Appearance(
+    val theme: ThemeChoice = ThemeChoice.SYSTEM,
+    val design: DesignLanguage = DesignLanguage.NEOBRUTALISM,
+    val accent: AccentChoice = AccentChoice.Default,
+)
 
 private val LocalShizziColors: ProvidableCompositionLocal<ShizziColors> =
     staticCompositionLocalOf { LightColors }
@@ -22,6 +30,12 @@ private val LocalShizziTypography: ProvidableCompositionLocal<ShizziTypography> 
 private val LocalShizziSpacing: ProvidableCompositionLocal<ShizziSpacing> =
     staticCompositionLocalOf { Spacing }
 
+private val LocalShizziShapes: ProvidableCompositionLocal<ShizziShapes> =
+    staticCompositionLocalOf { BrutalShapes }
+
+private val LocalShizziDesign: ProvidableCompositionLocal<DesignLanguage> =
+    staticCompositionLocalOf { DesignLanguage.NEOBRUTALISM }
+
 object ShizziTheme {
     val colors: ShizziColors
         @Composable @ReadOnlyComposable get() = LocalShizziColors.current
@@ -31,51 +45,43 @@ object ShizziTheme {
 
     val spacing: ShizziSpacing
         @Composable @ReadOnlyComposable get() = LocalShizziSpacing.current
+
+    val shapes: ShizziShapes
+        @Composable @ReadOnlyComposable get() = LocalShizziShapes.current
+
+    val design: DesignLanguage
+        @Composable @ReadOnlyComposable get() = LocalShizziDesign.current
 }
 
 @Composable
 fun ShizziTheme(
-    choice: ThemeChoice = ThemeChoice.SYSTEM,
+    appearance: Appearance = Appearance(),
     content: @Composable () -> Unit,
 ) {
-    val isDark = when (choice) {
+    val isDark = when (appearance.theme) {
         ThemeChoice.SYSTEM -> isSystemInDarkTheme()
         ThemeChoice.LIGHT -> false
         ThemeChoice.DARK -> true
     }
-    val colors = if (isDark) DarkColors else LightColors
+
+    val context = LocalContext.current
+    val palette = remember(appearance.accent, isDark, context) {
+        accentPalette(appearance.accent, isDark, context)
+    }
+
+    val isExpressive = appearance.design == DesignLanguage.MATERIAL_EXPRESSIVE
 
     CompositionLocalProvider(
-        LocalShizziColors provides colors,
-        LocalShizziTypography provides Typography,
+        LocalShizziColors provides palette.colors,
+        LocalShizziTypography provides if (isExpressive) ExpressiveTypography else Typography,
         LocalShizziSpacing provides Spacing,
-        LocalContentColor provides colors.onSurface,
+        LocalShizziShapes provides if (isExpressive) ExpressiveShapes else BrutalShapes,
+        LocalShizziDesign provides appearance.design,
+        LocalContentColor provides palette.colors.onSurface,
     ) {
         MaterialTheme(
-            colorScheme = materialSchemeFrom(colors, isDark),
+            colorScheme = palette.scheme,
             content = content,
         )
     }
-}
-
-private fun materialSchemeFrom(colors: ShizziColors, isDark: Boolean) = when {
-    isDark -> darkColorScheme(
-        primary = colors.primary,
-        onPrimary = colors.onPrimary,
-        background = colors.background,
-        surface = colors.surface,
-        onSurface = colors.onSurface,
-        onSurfaceVariant = colors.onSurfaceMuted,
-        outline = colors.border,
-    )
-
-    else -> lightColorScheme(
-        primary = colors.primary,
-        onPrimary = colors.onPrimary,
-        background = colors.background,
-        surface = colors.surface,
-        onSurface = colors.onSurface,
-        onSurfaceVariant = colors.onSurfaceMuted,
-        outline = colors.border,
-    )
 }

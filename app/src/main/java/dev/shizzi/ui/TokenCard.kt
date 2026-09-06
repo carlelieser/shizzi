@@ -14,7 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import dev.shizzi.ui.theme.ShizziTheme
-import dev.shizzi.ui.theme.brutalSurface
+import dev.shizzi.ui.theme.themedSurface
 
 data class TokenActions(
     val onCopy: () -> Unit,
@@ -26,7 +26,7 @@ fun TokenCard(token: String, actions: TokenActions) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .brutalSurface(fill = ShizziTheme.colors.surface)
+            .themedSurface(fill = ShizziTheme.colors.surface)
             .padding(
                 start = ShizziTheme.spacing.lg,
                 end = ShizziTheme.spacing.sm,

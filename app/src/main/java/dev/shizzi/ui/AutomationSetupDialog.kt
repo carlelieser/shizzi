@@ -25,7 +25,7 @@ import androidx.compose.ui.window.Dialog
 import dev.shizzi.Automation
 import dev.shizzi.AutomationCommand
 import dev.shizzi.ui.theme.ShizziTheme
-import dev.shizzi.ui.theme.brutalSurface
+import dev.shizzi.ui.theme.themedSurface
 
 private data class SetupField(val label: String, val value: String)
 
@@ -35,7 +35,7 @@ fun AutomationSetupDialog(token: String, toasts: ToastState, onDismiss: () -> Un
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .brutalSurface(fill = ShizziTheme.colors.surface)
+                .themedSurface(fill = ShizziTheme.colors.surface)
                 .verticalScroll(rememberScrollState())
                 .padding(ShizziTheme.spacing.lg),
             verticalArrangement = Arrangement.spacedBy(ShizziTheme.spacing.md),

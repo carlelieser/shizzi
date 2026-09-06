@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.dp
 import dev.shizzi.ShizukuState
 import dev.shizzi.UiStatus
 import dev.shizzi.ui.theme.ShizziTheme
-import dev.shizzi.ui.theme.brutalSurface
+import dev.shizzi.ui.theme.themedSurface
 
 private val StatusIconSize = 280.dp
 
@@ -64,7 +64,7 @@ fun ShizukuBadge(state: ShizukuState) {
         style = ShizziTheme.typography.caption,
         color = ShizziTheme.colors.onSurfaceMuted,
         modifier = Modifier
-            .brutalSurface(fill = ShizziTheme.colors.surface)
+            .themedSurface(fill = ShizziTheme.colors.surface)
             .padding(
                 horizontal = ShizziTheme.spacing.sm,
                 vertical = ShizziTheme.spacing.xs,

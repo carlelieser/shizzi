@@ -20,7 +20,7 @@ import dev.shizzi.R
 import dev.shizzi.ShizukuGate
 import dev.shizzi.ShizukuState
 import dev.shizzi.ui.theme.ShizziTheme
-import dev.shizzi.ui.theme.brutalSurface
+import dev.shizzi.ui.theme.themedSurface
 
 private val BrandIconSize = 40.dp
 
@@ -29,7 +29,7 @@ fun ShizukuCard(state: ShizukuState, onGrant: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .brutalSurface(fill = ShizziTheme.colors.surface)
+            .themedSurface(fill = ShizziTheme.colors.surface)
             .padding(ShizziTheme.spacing.lg),
         horizontalArrangement = Arrangement.spacedBy(ShizziTheme.spacing.lg),
     ) {
@@ -80,7 +80,7 @@ private fun GrantButton(onGrant: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = ShizziTheme.spacing.sm)
-            .brutalSurface(fill = ShizziTheme.colors.primary)
+            .themedSurface(fill = ShizziTheme.colors.primary)
             .clickable(onClick = onGrant)
             .padding(vertical = ShizziTheme.spacing.md),
         contentAlignment = Alignment.Center,
