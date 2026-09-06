@@ -5,11 +5,12 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-## [0.4.0-rc.1] - 2026-09-06
+## [0.4.0-rc.2] - 2026-09-06
 
 Adds a quick settings tile and an intent API for starting and stopping sessions
-from other apps. New permissions screen in onboarding flow. Adds accent and
-design language pickers. Minor bug fixes.
+from other apps. New permissions screen in onboarding. Adds accent and design
+language pickers, and animates screen changes and controls throughout.
+Supersedes 0.4.0-rc.1.
 
 ### Added
 
@@ -19,11 +20,25 @@ design language pickers. Minor bug fixes.
 - **Permissions screen** in onboarding, replacing the Shizuku step. Also in
   settings.
 - **Accent and design language pickers** in settings.
+- **Motion tokens.** Durations, springs, and easing are theme values, so
+  Neobrutalism moves mechanically while Material Expressive settles with a
+  bounce.
+- **Screen transitions.** Navigation slides and fades by screen depth, and
+  onboarding fades into the home screen instead of cutting to it.
+- **Press feedback in Neobrutalism**, which had none. Surfaces settle onto
+  their shadow when pressed, covering every button, card, toggle, and swatch.
+- Appearance glyphs spin a full turn on each press.
+- **Version tap easter egg.** Three taps on the version label open a
+  full-screen tethering icon pattern.
 
 ### Changed
 
 - Material Expressive is the new default design language. Neobrutalism is still
   available.
+- The connect button, status icon, settings sections, log rows, toasts, accent
+  swatches, and the onboarding wizard animate their state changes.
+- The tethering glyph accepts a brush, so it can carry a gradient. Icon only
+  takes a flat tint.
 - Compose moved to a BOM carrying Material3 1.4.0.
 
 ### Fixed
@@ -43,6 +58,8 @@ design language pickers. Minor bug fixes.
 - The notification permission dialog appeared over the welcome screen on first
   launch. It's asked for in the Permissions step now, and a denial is visible
   instead of silent.
+- The onboarding wizard drew the incoming step in both transition layers, so
+  the slide animated identical content.
 
 ## [0.3.0] - 2026-08-22
 
@@ -127,7 +144,7 @@ First public build.
 - IPv6 was not suppressed on the downstream; v6 traffic could bypass the
   tunnel. Fixed in 0.2.0.
 
-[0.4.0-rc.1]: https://github.com/carlelieser/shizzi/releases/tag/v0.4.0-rc.1
+[0.4.0-rc.2]: https://github.com/carlelieser/shizzi/releases/tag/v0.4.0-rc.2
 [0.3.0]: https://github.com/carlelieser/shizzi/releases/tag/v0.3.0
 [0.2.0]: https://github.com/carlelieser/shizzi/releases/tag/v0.2.0
 [0.1.0]: https://github.com/carlelieser/shizzi/releases/tag/v0.1.0
