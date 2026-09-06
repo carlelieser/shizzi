@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.shizzi.ui.theme.MinTouchTarget
 import dev.shizzi.ui.theme.ShizziTheme
+import dev.shizzi.ui.theme.themedLabel
 import dev.shizzi.ui.theme.themedIndication
 import dev.shizzi.ui.theme.themedSurface
 import dev.shizzi.ui.theme.isPressed
@@ -61,7 +62,7 @@ fun ConnectButton(
             )
 
             else -> Text(
-                text = label.uppercase(),
+                text = themedLabel(label),
                 style = ShizziTheme.typography.title,
 
                 color = when (state) {

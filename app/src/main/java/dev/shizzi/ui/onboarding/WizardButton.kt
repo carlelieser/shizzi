@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.shizzi.ui.theme.ShizziTheme
+import dev.shizzi.ui.theme.themedLabel
 import dev.shizzi.ui.theme.themedIndication
 import dev.shizzi.ui.theme.themedSurface
 import dev.shizzi.ui.theme.isPressed
@@ -41,7 +42,7 @@ fun WizardButton(action: WizardAction, isPrimary: Boolean) {
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = action.label.uppercase(),
+            text = themedLabel(action.label),
             style = ShizziTheme.typography.title,
             color = when {
                 isFilled -> colors.onPrimary

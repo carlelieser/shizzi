@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import dev.shizzi.ui.theme.ShizziTheme
+import dev.shizzi.ui.theme.themedLabel
 import dev.shizzi.ui.theme.isPressed
 import dev.shizzi.ui.theme.themedIndication
 import dev.shizzi.ui.theme.themedSurface
@@ -92,7 +93,7 @@ private fun AddColorButton(onClick: () -> Unit) {
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = "Add color".uppercase(),
+            text = themedLabel("Add color"),
             style = ShizziTheme.typography.title,
             color = colors.onPrimary,
         )

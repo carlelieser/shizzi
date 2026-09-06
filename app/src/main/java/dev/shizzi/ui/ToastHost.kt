@@ -33,7 +33,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import dev.shizzi.ui.theme.ScreenPadding
+import dev.shizzi.ui.theme.DesignLanguage
 import dev.shizzi.ui.theme.ShizziTheme
+import dev.shizzi.ui.theme.themedLabel
 import dev.shizzi.ui.theme.themedSurface
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -182,11 +184,18 @@ private fun ToastSpinner() {
     )
 }
 
+// Expressive keeps button text at medium; Neobrutalism bolds it.
+@Composable
+private fun actionWeight(): FontWeight = when (ShizziTheme.design) {
+    DesignLanguage.NEOBRUTALISM -> FontWeight.W700
+    DesignLanguage.MATERIAL_EXPRESSIVE -> FontWeight.W500
+}
+
 @Composable
 private fun ToastActionButton(action: ToastAction, onDismiss: () -> Unit) {
     Text(
-        text = action.label.uppercase(),
-        style = ShizziTheme.typography.label.copy(fontWeight = FontWeight.W700),
+        text = themedLabel(action.label),
+        style = ShizziTheme.typography.label.copy(fontWeight = actionWeight()),
         color = ShizziTheme.colors.onSurface,
         textAlign = TextAlign.End,
         modifier = Modifier

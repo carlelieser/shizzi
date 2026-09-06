@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import dev.shizzi.ui.theme.ScreenPadding
 import dev.shizzi.ui.theme.ShizziTheme
+import dev.shizzi.ui.theme.DesignLanguage
 import dev.shizzi.ui.theme.SurfaceElevation
 import dev.shizzi.ui.theme.themedSurface
 
@@ -77,15 +78,19 @@ private fun ProgressDots(currentIndex: Int, stepCount: Int, modifier: Modifier =
     }
 }
 
+// Neobrutalism renders an inactive dot as an outline, which its border supplies.
+// Expressive draws no border, so an inactive dot needs a fill of its own.
 @Composable
 private fun ProgressDot(isCurrent: Boolean) {
     val colors = ShizziTheme.colors
+    val isBrutal = ShizziTheme.design == DesignLanguage.NEOBRUTALISM
+    val inactiveFill = if (isBrutal) Color.Transparent else colors.surfaceContainer
 
     Box(
         modifier = Modifier
             .size(ProgressDotSize)
             .themedSurface(
-                fill = if (isCurrent) colors.primary else Color.Transparent,
+                fill = if (isCurrent) colors.primary else inactiveFill,
                 elevation = if (isCurrent) SurfaceElevation.RAISED else SurfaceElevation.FLAT,
             ),
     )
