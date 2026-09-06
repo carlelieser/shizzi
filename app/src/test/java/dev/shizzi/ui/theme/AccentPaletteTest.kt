@@ -42,6 +42,18 @@ class AccentPaletteTest {
         assertEquals(0xFFFFFFFF.toInt(), brutalEdgeArgb(isDark = true))
     }
 
+    @Test
+    fun `cards contrast with the background under a custom accent`() {
+        listOf(false, true).forEach { isDark ->
+            val scheme = schemeFor(AccentChoice.Custom(blue), isDark)
+
+            assertTrue(
+                "card surface matched the background in isDark=$isDark",
+                scheme.roleArgb { surfaceContainerLow() } != scheme.roleArgb { background() },
+            )
+        }
+    }
+
     private fun hueGap(first: Double, second: Double): Double {
         val gap = abs(first - second) % 360.0
 

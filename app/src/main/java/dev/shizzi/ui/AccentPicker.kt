@@ -23,9 +23,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import dev.shizzi.ui.theme.AccentChoice
+import dev.shizzi.ui.theme.DefaultAccentColor
 import dev.shizzi.ui.theme.PresetAccents
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.SurfaceElevation
@@ -34,6 +36,8 @@ import dev.shizzi.ui.theme.themedSurface
 private val SwatchSize = 48.dp
 
 private val SwatchIconSize = 20.dp
+
+private const val ContrastThreshold = 0.5f
 
 fun accentLabel(accent: AccentChoice): String = when (accent) {
     AccentChoice.Default -> "Default"
@@ -103,7 +107,7 @@ private fun AccentSwatches(
     ) {
         Swatch(
             style = SwatchStyle(
-                fill = colors.primary,
+                fill = DefaultAccentColor,
                 isSelected = state.selected == AccentChoice.Default,
             ),
             onClick = { onSelect(AccentChoice.Default) },
@@ -111,7 +115,7 @@ private fun AccentSwatches(
 
         Swatch(
             style = SwatchStyle(
-                fill = colors.surfaceVariant,
+                fill = colors.surfaceContainer,
                 isSelected = state.selected == AccentChoice.Expressive,
                 glyph = Icons.Filled.Palette,
             ),
@@ -139,6 +143,11 @@ private fun AccentSwatches(
     }
 }
 
+// A swatch carries an arbitrary color, so its glyph takes whichever of black or
+// white reads against that fill rather than a fixed theme role.
+private fun contrastAgainst(fill: Color): Color =
+    if (fill.luminance() > ContrastThreshold) Color.Black else Color.White
+
 @Immutable
 private data class SwatchStyle(
     val fill: Color,
@@ -160,7 +169,7 @@ private fun Swatch(style: SwatchStyle, onClick: () -> Unit) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = ShizziTheme.colors.onPrimary,
+            tint = contrastAgainst(style.fill),
             modifier = Modifier.size(SwatchIconSize),
         )
     }

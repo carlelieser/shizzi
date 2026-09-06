@@ -17,6 +17,10 @@ import com.materialkolor.scheme.SchemeTonalSpot
 
 private const val DefaultSeed = 0xFF14B8A6.toInt()
 
+// The Default swatch shows the app's own teal, which does not move with the
+// active accent.
+val DefaultAccentColor = Color(DefaultSeed)
+
 private const val StandardContrast = 0.0
 
 private val Roles = MaterialDynamicColors()
@@ -94,7 +98,7 @@ private fun shizziColorsFrom(scheme: DynamicScheme, isDark: Boolean) = ShizziCol
     onPrimary = scheme.role { onPrimary() },
     primaryBright = scheme.role { primaryContainer() },
     background = scheme.role { background() },
-    surface = scheme.role { surface() },
+    surface = scheme.role { surfaceContainerLow() },
     onSurface = scheme.role { onSurface() },
     onSurfaceMuted = scheme.role { onSurfaceVariant() },
     border = hardEdge(isDark),
@@ -105,7 +109,7 @@ private fun shizziColorsFrom(scheme: DynamicScheme, isDark: Boolean) = ShizziCol
     secondary = scheme.role { secondary() },
     tertiary = scheme.role { tertiary() },
     surfaceVariant = scheme.role { surfaceVariant() },
-    surfaceContainer = scheme.role { surfaceContainer() },
+    surfaceContainer = scheme.role { surfaceContainerHigh() },
 )
 
 private fun shizziColorsFrom(scheme: ColorScheme, isDark: Boolean) = ShizziColors(
@@ -113,7 +117,7 @@ private fun shizziColorsFrom(scheme: ColorScheme, isDark: Boolean) = ShizziColor
     onPrimary = scheme.onPrimary,
     primaryBright = scheme.primaryContainer,
     background = scheme.background,
-    surface = scheme.surface,
+    surface = scheme.surfaceContainerLow,
     onSurface = scheme.onSurface,
     onSurfaceMuted = scheme.onSurfaceVariant,
     border = hardEdge(isDark),
@@ -124,7 +128,7 @@ private fun shizziColorsFrom(scheme: ColorScheme, isDark: Boolean) = ShizziColor
     secondary = scheme.secondary,
     tertiary = scheme.tertiary,
     surfaceVariant = scheme.surfaceVariant,
-    surfaceContainer = scheme.surfaceContainer,
+    surfaceContainer = scheme.surfaceContainerHigh,
 )
 
 private fun hardEdge(isDark: Boolean) = Color(brutalEdgeArgb(isDark))
