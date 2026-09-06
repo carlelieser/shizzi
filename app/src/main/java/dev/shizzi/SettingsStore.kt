@@ -22,7 +22,10 @@ data class Settings(
     val automationToken: String = "",
 )
 
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore("settings")
+private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
+    name = "settings",
+    produceMigrations = { listOf(RenamedKeys.migration()) },
+)
 
 class SettingsStore(private val context: Context) {
 
