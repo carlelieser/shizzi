@@ -1,5 +1,10 @@
 package dev.shizzi.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +25,8 @@ import dev.shizzi.UiStatus
 import dev.shizzi.ui.theme.HeaderHeight
 import dev.shizzi.ui.theme.ScreenPadding
 import dev.shizzi.ui.theme.ShizziTheme
+import dev.shizzi.ui.theme.standardSpring
+import dev.shizzi.ui.theme.standardTween
 
 private fun buttonLabel(status: UiStatus): String =
     if (status == UiStatus.CONNECTED) "Stop" else "Start"
@@ -57,7 +64,7 @@ fun HomePage(
                 modifier = Modifier.height(ShizziTheme.spacing.xxxl),
                 contentAlignment = Alignment.BottomCenter,
             ) {
-                if (isShowingVpn(state)) VpnChip()
+                RiseIn(isVisible = isShowingVpn(state)) { VpnChip() }
             }
 
             StatusRow(state = state, onVersionClick = actions.onOpenEasterEgg)
@@ -102,6 +109,18 @@ private fun HomeHeader(
 private fun isShowingVpn(state: SessionUiState): Boolean =
     state.isVpnBound && state.status == UiStatus.CONNECTED
 
+/** Fades content up into a slot the layout already reserves. */
+@Composable
+private fun RiseIn(isVisible: Boolean, content: @Composable () -> Unit) {
+    AnimatedVisibility(
+        visible = isVisible,
+        enter = fadeIn(standardTween()) + slideInVertically(standardSpring()) { it / 2 },
+        exit = fadeOut(standardTween()) + slideOutVertically(standardSpring()) { it / 2 },
+    ) {
+        content()
+    }
+}
+
 @Composable
 private fun HomeBody(state: SessionUiState, actions: HomeActions) {
     val isStarting = state.status == UiStatus.LOADING
@@ -125,7 +144,9 @@ private fun HomeBody(state: SessionUiState, actions: HomeActions) {
         )
 
         Box(modifier = Modifier.height(ShizziTheme.spacing.xxxl)) {
-            if (isStarting) CancelButton(onClick = actions.onCancel)
+            RiseIn(isVisible = isStarting) {
+                CancelButton(onClick = actions.onCancel)
+            }
         }
     }
 }
