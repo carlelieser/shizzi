@@ -35,16 +35,11 @@ fun permissionRows(
     }
 }
 
+private const val SHIZUKU_RATIONALE = "Required for core functionality"
+
 private fun shizukuRow(state: ShizukuState, onAct: () -> Unit) = PermissionRowState(
     title = "Shizuku",
-    rationale = shizukuRationale(state),
+    rationale = SHIZUKU_RATIONALE,
     isGranted = state is ShizukuState.Ready,
     onAct = onAct,
 )
-
-private fun shizukuRationale(state: ShizukuState): String = when (state) {
-    ShizukuState.NotInstalled -> "Required for core functionality · Not installed"
-    ShizukuState.NotRunning -> "Required for core functionality · Not running"
-    ShizukuState.PermissionRequired -> "Required for core functionality"
-    is ShizukuState.Ready -> "Ready"
-}
