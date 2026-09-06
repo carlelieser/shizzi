@@ -33,6 +33,7 @@ data class SettingsState(
     val theme: ThemeChoice,
     val isLogging: Boolean,
     val isRunningDiagnostics: Boolean,
+    val automation: AutomationState,
 )
 
 data class SettingsActions(
@@ -43,12 +44,14 @@ data class SettingsActions(
     val onGrantPermission: (AppPermission) -> Unit,
     val onShizukuAction: () -> Unit,
     val onRestartOnboarding: () -> Unit,
+    val automation: AutomationActions,
 )
 
 @Composable
 fun SettingsPage(
     state: SettingsState,
     actions: SettingsActions,
+    toasts: ToastState,
     onBack: () -> Unit,
 ) {
     val isBusy = state.isRunningDiagnostics
@@ -75,6 +78,13 @@ fun SettingsPage(
                 ),
                 onGrantPermission = actions.onGrantPermission,
                 onShizukuAction = actions.onShizukuAction,
+            )
+
+            SectionLabel("Advanced")
+            AutomationSection(
+                state = state.automation,
+                actions = actions.automation,
+                toasts = toasts,
             )
 
             SectionLabel("Developer")

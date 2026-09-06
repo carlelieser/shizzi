@@ -14,6 +14,8 @@ import dev.shizzi.ui.LogActions
 import dev.shizzi.ui.LogPage
 import dev.shizzi.ui.Screen
 import dev.shizzi.ui.SessionToasts
+import dev.shizzi.ui.AutomationActions
+import dev.shizzi.ui.AutomationState
 import dev.shizzi.ui.SettingsActions
 import dev.shizzi.ui.SettingsPage
 import dev.shizzi.ui.SettingsState
@@ -36,6 +38,8 @@ data class AppActions(
     val onDismissDiagnostics: () -> Unit,
     val onClearLog: (onCleared: (String?) -> Unit) -> Unit,
     val onRestartOnboarding: () -> Unit,
+    val onSetAutomation: (Boolean) -> Unit,
+    val onRegenerateAutomationToken: () -> Unit,
 )
 
 @Composable
@@ -74,6 +78,10 @@ fun HomeScreen(state: AppState, actions: AppActions) {
                     theme = settings.theme,
                     isLogging = settings.isLogging,
                     isRunningDiagnostics = diagnostics is DiagnosticsState.Running,
+                    automation = AutomationState(
+                        isEnabled = settings.isAutomationEnabled,
+                        token = settings.automationToken,
+                    ),
                 ),
                 actions = SettingsActions(
                     onSetTheme = actions.onSetTheme,
@@ -83,7 +91,12 @@ fun HomeScreen(state: AppState, actions: AppActions) {
                     onGrantPermission = actions.onGrantPermission,
                     onShizukuAction = actions.onShizukuAction,
                     onRestartOnboarding = actions.onRestartOnboarding,
+                    automation = AutomationActions(
+                        onSetEnabled = actions.onSetAutomation,
+                        onRegenerateToken = actions.onRegenerateAutomationToken,
+                    ),
                 ),
+                toasts = toasts,
                 onBack = goHome,
             )
 

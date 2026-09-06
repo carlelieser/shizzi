@@ -95,6 +95,9 @@ class MainActivity : ComponentActivity() {
                             onDismissDiagnostics = viewModel::dismissDiagnostics,
                             onClearLog = viewModel::clearLog,
                             onRestartOnboarding = viewModel::restartOnboarding,
+                            onSetAutomation = viewModel::setAutomation,
+                            onRegenerateAutomationToken =
+                                viewModel::regenerateAutomationToken,
                         ),
                     )
                 }

@@ -86,6 +86,14 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
         permissionRequest.open(permission)
     }
 
+    fun setAutomation(isEnabled: Boolean) {
+        viewModelScope.launch { settingsStore.setAutomationEnabled(isEnabled) }
+    }
+
+    fun regenerateAutomationToken() {
+        viewModelScope.launch { settingsStore.setAutomationToken(AutomationToken.generate()) }
+    }
+
     fun setLogging(enabled: Boolean) {
         SessionLog.setEnabled(enabled)
         diagnostics.setLogging(enabled)
