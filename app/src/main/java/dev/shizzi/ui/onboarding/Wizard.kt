@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -63,7 +64,10 @@ fun Wizard(step: WizardStep, currentIndex: Int, stepCount: Int) {
             .systemBarsPadding()
             .padding(ScreenPadding),
     ) {
-        StepContent(step = step, currentIndex = currentIndex, modifier = Modifier.weight(1f))
+        StepContent(
+            state = StepContentState(step = step, index = currentIndex),
+            modifier = Modifier.weight(1f),
+        )
 
         ProgressDots(
             currentIndex = currentIndex,
@@ -75,17 +79,25 @@ fun Wizard(step: WizardStep, currentIndex: Int, stepCount: Int) {
     }
 }
 
-/** Slides step content horizontally in the direction the wizard is travelling. */
+@Immutable
+private data class StepContentState(val step: WizardStep, val index: Int)
+
+/**
+ * Slides step content horizontally in the direction the wizard is travelling.
+ * Each layer renders the step it captured, so the outgoing content stays put
+ * for the length of the transition.
+ */
 @Composable
-private fun StepContent(step: WizardStep, currentIndex: Int, modifier: Modifier = Modifier) {
+private fun StepContent(state: StepContentState, modifier: Modifier = Modifier) {
     val slideSpec = standardTween<IntOffset>()
     val fadeSpec = standardTween<Float>()
 
     AnimatedContent(
-        targetState = currentIndex,
+        targetState = state,
         modifier = modifier,
+        contentKey = { it.index },
         transitionSpec = {
-            val direction = if (targetState > initialState) 1 else -1
+            val direction = if (targetState.index > initialState.index) 1 else -1
             val shift = { width: Int -> width * direction / StepSlideFraction }
 
             val enter = slideInHorizontally(slideSpec, shift) + fadeIn(fadeSpec)
@@ -94,11 +106,11 @@ private fun StepContent(step: WizardStep, currentIndex: Int, modifier: Modifier 
             enter togetherWith exit
         },
         label = "wizardStep",
-    ) { _ ->
+    ) { target ->
         Box(contentAlignment = Alignment.Center) {
             Column {
-                if (step.title.isNotEmpty()) StepTitle(step.title)
-                step.content()
+                if (target.step.title.isNotEmpty()) StepTitle(target.step.title)
+                target.step.content()
             }
         }
     }
