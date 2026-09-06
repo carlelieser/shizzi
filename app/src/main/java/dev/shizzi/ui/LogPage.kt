@@ -1,8 +1,11 @@
 package dev.shizzi.ui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -51,6 +54,8 @@ import dev.shizzi.SessionLog
 import dev.shizzi.ui.theme.MinTouchTarget
 import dev.shizzi.ui.theme.ScreenPadding
 import dev.shizzi.ui.theme.ShizziTheme
+import dev.shizzi.ui.theme.standardSpring
+import dev.shizzi.ui.theme.standardTween
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -67,6 +72,8 @@ private val JumpBandHeight = 96.dp
 private val EmptyIconSize = 64.dp
 
 private const val JumpThreshold = 8
+
+private const val EmptyRiseDivisor = 8
 
 @Immutable
 data class LogEntries(
@@ -171,11 +178,17 @@ fun LogPage(
         if (!log.isLoaded) return@Column
 
         if (entries.isEmpty()) {
-            EmptyLog(
-                isLogging = isLogging,
-                onEnableLogging = actions.onEnableLogging,
-                onStartSession = actions.onStartSession,
-            )
+            AnimatedVisibility(
+                visible = true,
+                enter = fadeIn(standardTween()) +
+                    slideInVertically(standardSpring()) { it / EmptyRiseDivisor },
+            ) {
+                EmptyLog(
+                    isLogging = isLogging,
+                    onEnableLogging = actions.onEnableLogging,
+                    onStartSession = actions.onStartSession,
+                )
+            }
             return@Column
         }
 
@@ -183,9 +196,12 @@ fun LogPage(
             LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
                 itemsIndexed(entries) { index, entry ->
                     LogRow(
-                        number = index + 1,
-                        entry = entry,
-                        isSelected = index in selected,
+                        row = LogRowState(
+                            number = index + 1,
+                            entry = entry,
+                            isSelected = index in selected,
+                        ),
+                        modifier = Modifier.animateItem(),
                         onToggle = {
                             selected = if (index in selected) {
                                 selected - index
@@ -280,21 +296,40 @@ private fun JumpBand(
     }
 }
 
+@Immutable
+private data class LogRowState(
+    val number: Int,
+    val entry: LogEntry,
+    val isSelected: Boolean,
+)
+
 @Composable
 private fun LogRow(
-    number: Int,
-    entry: LogEntry,
-    isSelected: Boolean,
+    row: LogRowState,
+    modifier: Modifier = Modifier,
     onToggle: () -> Unit,
 ) {
     val colors = ShizziTheme.colors
 
+    val fill by animateColorAsState(
+        targetValue = when {
+            row.isSelected -> colors.primary.copy(alpha = SelectionTint)
+            else -> colors.background
+        },
+        animationSpec = standardSpring(),
+        label = "logRowFill",
+    )
+
+    val edge by animateDpAsState(
+        targetValue = if (row.isSelected) SelectionEdge else 0.dp,
+        animationSpec = standardSpring(),
+        label = "logRowEdge",
+    )
+
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .background(
-                if (isSelected) colors.primary.copy(alpha = SelectionTint) else colors.background,
-            )
+            .background(fill)
             .clickable(onClick = onToggle)
 
             .drawBehind {
@@ -306,17 +341,18 @@ private fun LogRow(
                     strokeWidth = RuleWidth.toPx(),
                 )
 
-                if (isSelected) {
+                val edgeWidth = edge.toPx()
+                if (edgeWidth > 0f) {
                     drawRect(
                         color = colors.primary,
-                        size = size.copy(width = SelectionEdge.toPx()),
+                        size = size.copy(width = edgeWidth),
                     )
                 }
             }
             .padding(vertical = ShizziTheme.spacing.xs),
     ) {
         Text(
-            text = "$number",
+            text = "${row.number}",
             style = ShizziTheme.typography.log,
             color = colors.onSurfaceMuted,
             textAlign = TextAlign.End,
@@ -325,7 +361,10 @@ private fun LogRow(
                 .padding(end = ShizziTheme.spacing.sm),
         )
 
-        LogText(entry = entry, modifier = Modifier.padding(horizontal = ShizziTheme.spacing.sm))
+        LogText(
+            entry = row.entry,
+            modifier = Modifier.padding(horizontal = ShizziTheme.spacing.sm),
+        )
     }
 }
 
