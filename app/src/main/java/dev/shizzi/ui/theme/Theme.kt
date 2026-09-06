@@ -17,7 +17,7 @@ enum class ThemeChoice { SYSTEM, LIGHT, DARK }
 @Immutable
 data class Appearance(
     val theme: ThemeChoice = ThemeChoice.SYSTEM,
-    val design: DesignLanguage = DesignLanguage.NEOBRUTALISM,
+    val design: DesignLanguage = DesignLanguage.MATERIAL_EXPRESSIVE,
     val accent: AccentChoice = AccentChoice.Default,
 )
 
@@ -25,16 +25,16 @@ private val LocalShizziColors: ProvidableCompositionLocal<ShizziColors> =
     staticCompositionLocalOf { LightColors }
 
 private val LocalShizziTypography: ProvidableCompositionLocal<ShizziTypography> =
-    staticCompositionLocalOf { Typography }
+    staticCompositionLocalOf { ExpressiveTypography }
 
 private val LocalShizziSpacing: ProvidableCompositionLocal<ShizziSpacing> =
     staticCompositionLocalOf { Spacing }
 
 private val LocalShizziShapes: ProvidableCompositionLocal<ShizziShapes> =
-    staticCompositionLocalOf { BrutalShapes }
+    staticCompositionLocalOf { ExpressiveShapes }
 
 private val LocalShizziDesign: ProvidableCompositionLocal<DesignLanguage> =
-    staticCompositionLocalOf { DesignLanguage.NEOBRUTALISM }
+    staticCompositionLocalOf { DesignLanguage.MATERIAL_EXPRESSIVE }
 
 object ShizziTheme {
     val colors: ShizziColors

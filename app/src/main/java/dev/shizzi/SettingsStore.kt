@@ -20,7 +20,7 @@ import kotlinx.coroutines.flow.map
 
 data class Settings(
     val theme: ThemeChoice = ThemeChoice.SYSTEM,
-    val design: DesignLanguage = DesignLanguage.NEOBRUTALISM,
+    val design: DesignLanguage = DesignLanguage.MATERIAL_EXPRESSIVE,
     val accent: AccentChoice = AccentChoice.Default,
     val customAccents: List<Int> = emptyList(),
     val isLogging: Boolean = true,
@@ -94,27 +94,26 @@ class SettingsStore(private val context: Context) {
         this[AUTOMATION_TOKEN] = AutomationToken.generate()
     }
 
-    private fun toSettings(preferences: Preferences) = Settings(
-        theme = runCatching { ThemeChoice.valueOf(preferences[THEME].orEmpty()) }
-            .getOrDefault(ThemeChoice.SYSTEM),
-        design = runCatching { DesignLanguage.valueOf(preferences[DESIGN].orEmpty()) }
-            .getOrDefault(DesignLanguage.NEOBRUTALISM),
-        accent = parseAccent(preferences[ACCENT]),
-        customAccents = parseAccents(preferences[CUSTOM_ACCENTS]),
-        isLogging = preferences[LOGGING] ?: true,
-        hasCompletedOnboarding = preferences[ONBOARDED] ?: false,
-        isAutomationEnabled = preferences[AUTOMATION] ?: false,
-        automationToken = preferences[AUTOMATION_TOKEN].orEmpty(),
-    )
-
-    private companion object {
-        val THEME = stringPreferencesKey("theme")
-        val DESIGN = stringPreferencesKey("design")
-        val ACCENT = stringPreferencesKey("accent")
-        val CUSTOM_ACCENTS = stringPreferencesKey("custom_accents")
-        val LOGGING = booleanPreferencesKey("logging")
-        val ONBOARDED = booleanPreferencesKey("onboarded")
-        val AUTOMATION = booleanPreferencesKey("automation")
-        val AUTOMATION_TOKEN = stringPreferencesKey("automation_token")
-    }
 }
+
+internal val THEME = stringPreferencesKey("theme")
+internal val DESIGN = stringPreferencesKey("design")
+internal val ACCENT = stringPreferencesKey("accent")
+internal val CUSTOM_ACCENTS = stringPreferencesKey("custom_accents")
+internal val LOGGING = booleanPreferencesKey("logging")
+internal val ONBOARDED = booleanPreferencesKey("onboarded")
+internal val AUTOMATION = booleanPreferencesKey("automation")
+internal val AUTOMATION_TOKEN = stringPreferencesKey("automation_token")
+
+internal fun toSettings(preferences: Preferences) = Settings(
+    theme = runCatching { ThemeChoice.valueOf(preferences[THEME].orEmpty()) }
+        .getOrDefault(ThemeChoice.SYSTEM),
+    design = runCatching { DesignLanguage.valueOf(preferences[DESIGN].orEmpty()) }
+        .getOrDefault(DesignLanguage.MATERIAL_EXPRESSIVE),
+    accent = parseAccent(preferences[ACCENT]),
+    customAccents = parseAccents(preferences[CUSTOM_ACCENTS]),
+    isLogging = preferences[LOGGING] ?: true,
+    hasCompletedOnboarding = preferences[ONBOARDED] ?: false,
+    isAutomationEnabled = preferences[AUTOMATION] ?: false,
+    automationToken = preferences[AUTOMATION_TOKEN].orEmpty(),
+)
