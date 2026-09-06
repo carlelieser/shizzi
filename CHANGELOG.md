@@ -19,6 +19,10 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   default, and every command carries a token. The token card copies and
   regenerates it, and a setup dialog lists the values an automation app needs
   for each action. See [automation](docs/automation.md).
+- **Quick settings tile.** Sharing can be started and stopped from the notification
+  shade. The tile follows the session — it reads how many devices are connected
+  while sharing, says why it cannot start when Shizuku is not ready, and opens
+  the app so that can be fixed.
 
 ### Fixed
 
@@ -30,6 +34,10 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   nothing. Battery optimization exemption lifts the restriction and is now
   surfaced as a permission, and a start that cannot be delivered reports the
   reason instead of failing silently.
+- **Toggling mid-start.** An automation toggle sent while a session was still
+  coming up tore down the session it was meant to leave alone, because it read
+  the service as running before it had connected. Every toggle — the app, the
+  tile, and automation — now agrees on what a running session is.
 
 ## [0.3.0] - 2026-08-22
 

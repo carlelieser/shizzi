@@ -78,7 +78,7 @@ class AutomationReceiver : BroadcastReceiver() {
     }
 
     private fun toggleTarget(): AutomationCommand = when {
-        SessionService.isRunning -> AutomationCommand.STOP
+        SessionService.isSessionUp -> AutomationCommand.STOP
         else -> AutomationCommand.START
     }
 }

@@ -213,6 +213,10 @@ class SessionService : Service() {
 
         val isRunning: Boolean get() = liveService != null
 
+        val isSessionUp: Boolean get() = liveState.value.status == UiStatus.CONNECTED
+
+        val isSessionBusy: Boolean get() = liveState.value.status == UiStatus.LOADING
+
         fun start(context: Context, reportAs: AutomationCommand? = null) {
             context.startForegroundService(
                 Intent(context, SessionService::class.java).reporting(reportAs),

@@ -121,8 +121,8 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
     fun toggle() {
         val context = getApplication<Application>()
 
-        when (localState.value.status) {
-            UiStatus.CONNECTED -> SessionService.stop(context)
+        when {
+            SessionService.isSessionUp -> SessionService.stop(context)
             else -> SessionService.start(context)
         }
     }

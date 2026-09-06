@@ -3,6 +3,9 @@
 Shizzi can be started and stopped by other apps — Tasker, MacroDroid, or
 anything else that can send an intent.
 
+To start and stop it yourself without opening the app, add the quick settings
+tile to your notification shade instead.
+
 ## Enabling
 
 Off by default. Turn it on in **Settings › Advanced › Automation**.
