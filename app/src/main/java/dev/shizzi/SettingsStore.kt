@@ -8,12 +8,21 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import dev.shizzi.ui.theme.AccentChoice
+import dev.shizzi.ui.theme.DesignLanguage
 import dev.shizzi.ui.theme.ThemeChoice
+import dev.shizzi.ui.theme.parseAccent
+import dev.shizzi.ui.theme.parseAccents
+import dev.shizzi.ui.theme.serialize
+import dev.shizzi.ui.theme.serializeAccents
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 data class Settings(
     val theme: ThemeChoice = ThemeChoice.SYSTEM,
+    val design: DesignLanguage = DesignLanguage.NEOBRUTALISM,
+    val accent: AccentChoice = AccentChoice.Default,
+    val customAccents: List<Int> = emptyList(),
     val isLogging: Boolean = true,
 
     val hasCompletedOnboarding: Boolean = false,
@@ -41,6 +50,23 @@ class SettingsStore(private val context: Context) {
 
     suspend fun setTheme(choice: ThemeChoice) {
         context.dataStore.edit { it[THEME] = choice.name }
+    }
+
+    suspend fun setDesign(design: DesignLanguage) {
+        context.dataStore.edit { it[DESIGN] = design.name }
+    }
+
+    suspend fun setAccent(accent: AccentChoice) {
+        context.dataStore.edit { it[ACCENT] = accent.serialize() }
+    }
+
+    suspend fun addCustomAccent(argb: Int) {
+        context.dataStore.edit { preferences ->
+            val existing = parseAccents(preferences[CUSTOM_ACCENTS])
+            if (argb in existing) return@edit
+
+            preferences[CUSTOM_ACCENTS] = serializeAccents(existing + argb)
+        }
     }
 
     suspend fun setLogging(enabled: Boolean) {
@@ -71,6 +97,10 @@ class SettingsStore(private val context: Context) {
     private fun toSettings(preferences: Preferences) = Settings(
         theme = runCatching { ThemeChoice.valueOf(preferences[THEME].orEmpty()) }
             .getOrDefault(ThemeChoice.SYSTEM),
+        design = runCatching { DesignLanguage.valueOf(preferences[DESIGN].orEmpty()) }
+            .getOrDefault(DesignLanguage.NEOBRUTALISM),
+        accent = parseAccent(preferences[ACCENT]),
+        customAccents = parseAccents(preferences[CUSTOM_ACCENTS]),
         isLogging = preferences[LOGGING] ?: true,
         hasCompletedOnboarding = preferences[ONBOARDED] ?: false,
         isAutomationEnabled = preferences[AUTOMATION] ?: false,
@@ -79,6 +109,9 @@ class SettingsStore(private val context: Context) {
 
     private companion object {
         val THEME = stringPreferencesKey("theme")
+        val DESIGN = stringPreferencesKey("design")
+        val ACCENT = stringPreferencesKey("accent")
+        val CUSTOM_ACCENTS = stringPreferencesKey("custom_accents")
         val LOGGING = booleanPreferencesKey("logging")
         val ONBOARDED = booleanPreferencesKey("onboarded")
         val AUTOMATION = booleanPreferencesKey("automation")
