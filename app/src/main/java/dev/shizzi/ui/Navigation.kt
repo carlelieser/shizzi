@@ -16,8 +16,6 @@ import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntOffset
-import dev.shizzi.ui.theme.fastTween
-import dev.shizzi.ui.theme.standardSpring
 import dev.shizzi.ui.theme.standardTween
 
 /** [depth] orders screens so a transition can derive its own direction. */
@@ -28,7 +26,7 @@ enum class Screen(val depth: Int) {
     EASTER_EGG(1),
 }
 
-private const val OutgoingShiftFraction = 4
+private const val SlideFraction = 6
 
 private val ScreenSaver = Saver<MutableState<Screen>, String>(
     save = { it.value.name },
@@ -56,9 +54,8 @@ fun ScreenHost(
     modifier: Modifier = Modifier,
     content: @Composable (Screen) -> Unit,
 ) {
-    val slideSpec = standardSpring<IntOffset>()
-    val enterFade = fastTween<Float>()
-    val exitFade = standardTween<Float>()
+    val slideSpec = standardTween<IntOffset>()
+    val fadeSpec = standardTween<Float>()
 
     AnimatedContent(
         targetState = current,
@@ -66,7 +63,7 @@ fun ScreenHost(
         transitionSpec = {
             screenTransform(
                 isForward = isDescending(initialState, targetState),
-                specs = TransitionSpecs(slideSpec, enterFade, exitFade),
+                specs = TransitionSpecs(slideSpec, fadeSpec),
             )
         },
         label = "screen",
@@ -77,8 +74,7 @@ fun ScreenHost(
 
 private data class TransitionSpecs(
     val slide: FiniteAnimationSpec<IntOffset>,
-    val enterFade: FiniteAnimationSpec<Float>,
-    val exitFade: FiniteAnimationSpec<Float>,
+    val fade: FiniteAnimationSpec<Float>,
 )
 
 /** Equal depths sit side by side, so ordinal breaks the tie consistently. */
@@ -91,12 +87,12 @@ private fun screenTransform(isForward: Boolean, specs: TransitionSpecs): Content
     val direction = if (isForward) 1 else -1
 
     val enter = slideInHorizontally(animationSpec = specs.slide) { width ->
-        direction * width
-    } + fadeIn(animationSpec = specs.enterFade)
+        direction * width / SlideFraction
+    } + fadeIn(animationSpec = specs.fade)
 
     val exit = slideOutHorizontally(animationSpec = specs.slide) { width ->
-        -direction * width / OutgoingShiftFraction
-    } + fadeOut(animationSpec = specs.exitFade)
+        -direction * width / SlideFraction
+    } + fadeOut(animationSpec = specs.fade)
 
     return enter togetherWith exit
 }

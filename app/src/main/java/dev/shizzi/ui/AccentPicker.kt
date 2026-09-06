@@ -1,7 +1,6 @@
 package dev.shizzi.ui
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -42,8 +41,6 @@ import dev.shizzi.ui.theme.standardTween
 import dev.shizzi.ui.theme.themedSurface
 
 private val SwatchSize = 48.dp
-
-private val SwatchSelectedSize = 52.dp
 
 private val SwatchIconSize = 20.dp
 
@@ -169,15 +166,9 @@ private data class SwatchStyle(
 
 @Composable
 private fun Swatch(style: SwatchStyle, onClick: () -> Unit) {
-    val size by animateDpAsState(
-        targetValue = if (style.isSelected) SwatchSelectedSize else SwatchSize,
-        animationSpec = emphasizedSpring(),
-        label = "swatchSize",
-    )
-
     Box(
         modifier = Modifier
-            .size(size)
+            .size(SwatchSize)
             .themedSurface(fill = style.fill, elevation = SurfaceElevation.FLAT)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,

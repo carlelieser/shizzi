@@ -19,6 +19,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -119,13 +120,17 @@ private fun ThemeOption(
 @Composable
 private fun rememberPressSpin(isPressed: Boolean): Float {
     val rotation = remember { Animatable(0f) }
+    val turns = remember { mutableIntStateOf(0) }
     val spinSpec = emphasizedSpring<Float>()
 
     LaunchedEffect(isPressed) {
         if (!isPressed) return@LaunchedEffect
 
-        rotation.snapTo(0f)
-        rotation.animateTo(targetValue = PressSpin, animationSpec = spinSpec)
+        turns.intValue += 1
+        rotation.animateTo(
+            targetValue = turns.intValue * PressSpin,
+            animationSpec = spinSpec,
+        )
     }
 
     return rotation.value

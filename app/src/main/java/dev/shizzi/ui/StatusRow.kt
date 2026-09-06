@@ -36,7 +36,6 @@ import dev.shizzi.SessionUiState
 import dev.shizzi.UiStatus
 import dev.shizzi.ui.theme.ScreenPadding
 import dev.shizzi.ui.theme.ShizziTheme
-import dev.shizzi.ui.theme.standardSpring
 import dev.shizzi.ui.theme.standardTween
 import dev.shizzi.ui.theme.themedIndication
 
@@ -61,8 +60,8 @@ fun StatusRow(
 
         AnimatedVisibility(
             visible = hasTunnel(state),
-            enter = fadeIn(standardTween()) + expandHorizontally(standardSpring()),
-            exit = fadeOut(standardTween()) + shrinkHorizontally(standardSpring()),
+            enter = fadeIn(standardTween()) + expandHorizontally(standardTween()),
+            exit = fadeOut(standardTween()) + shrinkHorizontally(standardTween()),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 StatusDivider()

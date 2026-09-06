@@ -38,6 +38,8 @@ private val ProgressDotSize = 10.dp
 
 private val ActiveDotWidth = 28.dp
 
+private const val StepSlideFraction = 6
+
 private const val InactiveDotAlpha = 0.6f
 
 data class WizardStep(
@@ -76,7 +78,7 @@ fun Wizard(step: WizardStep, currentIndex: Int, stepCount: Int) {
 /** Slides step content horizontally in the direction the wizard is travelling. */
 @Composable
 private fun StepContent(step: WizardStep, currentIndex: Int, modifier: Modifier = Modifier) {
-    val slideSpec = standardSpring<IntOffset>()
+    val slideSpec = standardTween<IntOffset>()
     val fadeSpec = standardTween<Float>()
 
     AnimatedContent(
@@ -84,9 +86,10 @@ private fun StepContent(step: WizardStep, currentIndex: Int, modifier: Modifier 
         modifier = modifier,
         transitionSpec = {
             val direction = if (targetState > initialState) 1 else -1
+            val shift = { width: Int -> width * direction / StepSlideFraction }
 
-            val enter = slideInHorizontally(slideSpec) { it * direction } + fadeIn(fadeSpec)
-            val exit = slideOutHorizontally(slideSpec) { -it * direction } + fadeOut(fadeSpec)
+            val enter = slideInHorizontally(slideSpec, shift) + fadeIn(fadeSpec)
+            val exit = slideOutHorizontally(slideSpec) { -shift(it) } + fadeOut(fadeSpec)
 
             enter togetherWith exit
         },
