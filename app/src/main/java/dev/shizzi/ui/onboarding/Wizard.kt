@@ -1,5 +1,13 @@
 package dev.shizzi.ui.onboarding
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -7,20 +15,28 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import dev.shizzi.ui.theme.ScreenPadding
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.DesignLanguage
 import dev.shizzi.ui.theme.SurfaceElevation
+import dev.shizzi.ui.theme.emphasizedSpring
+import dev.shizzi.ui.theme.standardSpring
+import dev.shizzi.ui.theme.standardTween
 import dev.shizzi.ui.theme.themedSurface
 
 private val ProgressDotSize = 10.dp
+
+private val ActiveDotWidth = 28.dp
 
 private const val InactiveDotAlpha = 0.6f
 
@@ -45,15 +61,7 @@ fun Wizard(step: WizardStep, currentIndex: Int, stepCount: Int) {
             .systemBarsPadding()
             .padding(ScreenPadding),
     ) {
-        Box(
-            modifier = Modifier.weight(1f),
-            contentAlignment = Alignment.Center,
-        ) {
-            Column {
-                if (step.title.isNotEmpty()) StepTitle(step.title)
-                step.content()
-            }
-        }
+        StepContent(step = step, currentIndex = currentIndex, modifier = Modifier.weight(1f))
 
         ProgressDots(
             currentIndex = currentIndex,
@@ -62,6 +70,34 @@ fun Wizard(step: WizardStep, currentIndex: Int, stepCount: Int) {
         )
 
         WizardFooter(primary = step.primary, secondary = step.secondary)
+    }
+}
+
+/** Slides step content horizontally in the direction the wizard is travelling. */
+@Composable
+private fun StepContent(step: WizardStep, currentIndex: Int, modifier: Modifier = Modifier) {
+    val slideSpec = standardSpring<IntOffset>()
+    val fadeSpec = standardTween<Float>()
+
+    AnimatedContent(
+        targetState = currentIndex,
+        modifier = modifier,
+        transitionSpec = {
+            val direction = if (targetState > initialState) 1 else -1
+
+            val enter = slideInHorizontally(slideSpec) { it * direction } + fadeIn(fadeSpec)
+            val exit = slideOutHorizontally(slideSpec) { -it * direction } + fadeOut(fadeSpec)
+
+            enter togetherWith exit
+        },
+        label = "wizardStep",
+    ) { _ ->
+        Box(contentAlignment = Alignment.Center) {
+            Column {
+                if (step.title.isNotEmpty()) StepTitle(step.title)
+                step.content()
+            }
+        }
     }
 }
 
@@ -94,11 +130,24 @@ private fun ProgressDot(isCurrent: Boolean) {
     }
     val hasShadow = isBrutal && isCurrent
 
+    val fill by animateColorAsState(
+        targetValue = if (isCurrent) colors.primary else inactiveFill,
+        animationSpec = standardSpring(),
+        label = "dotFill",
+    )
+
+    val width by animateDpAsState(
+        targetValue = if (isCurrent) ActiveDotWidth else ProgressDotSize,
+        animationSpec = emphasizedSpring(),
+        label = "dotWidth",
+    )
+
     Box(
         modifier = Modifier
-            .size(ProgressDotSize)
+            .width(width)
+            .height(ProgressDotSize)
             .themedSurface(
-                fill = if (isCurrent) colors.primary else inactiveFill,
+                fill = fill,
                 elevation = if (hasShadow) SurfaceElevation.RAISED else SurfaceElevation.FLAT,
             ),
     )
