@@ -32,6 +32,8 @@ Download the APK from the
 - 🛡️ **VPN compatible.** Stay private on every connected device.
 - ⚙️ **Uses your existing hotspot.** No extra configuration required.
 - 🙌 **No root.** Shizuku is all it needs.
+- 🎛️ **One tap away.** A quick settings tile starts and stops sharing from the
+  notification shade.
 - 🤖 **Automatable.** Start and stop from Tasker or MacroDroid. See
   [automation](docs/automation.md).
 
