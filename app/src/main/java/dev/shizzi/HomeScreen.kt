@@ -42,6 +42,7 @@ data class AppActions(
     val onSetAccent: (AccentChoice) -> Unit,
     val onAddCustomAccent: (Int) -> Unit,
     val onSetLogging: (Boolean) -> Unit,
+    val onSetVpnMode: (VpnMode) -> Unit,
     val onRunProbes: () -> Unit,
     val onDismissDiagnostics: () -> Unit,
     val onClearLog: (onCleared: (String?) -> Unit) -> Unit,
@@ -151,6 +152,7 @@ private fun settingsState(state: AppState): SettingsState {
         accent = settings.accent,
         customAccents = settings.customAccents,
         isLogging = settings.isLogging,
+        vpnMode = settings.vpnMode,
         isRunningDiagnostics = state.diagnostics is DiagnosticsState.Running,
         automation = AutomationState(
             isEnabled = settings.isAutomationEnabled,
@@ -168,6 +170,7 @@ private fun settingsActions(context: ScreenContext): SettingsActions {
         onSetAccent = actions.onSetAccent,
         onAddCustomAccent = actions.onAddCustomAccent,
         onSetLogging = actions.onSetLogging,
+        onSetVpnMode = actions.onSetVpnMode,
         onOpenLog = { context.navigation.open(Screen.LOG) },
         onRunProbes = actions.onRunProbes,
         onGrantPermission = actions.onGrantPermission,

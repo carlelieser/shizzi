@@ -101,6 +101,7 @@ class MainActivity : ComponentActivity() {
                             onSetAccent = viewModel::setAccent,
                             onAddCustomAccent = viewModel::addCustomAccent,
                             onSetLogging = viewModel::setLogging,
+                            onSetVpnMode = viewModel::setVpnMode,
                             onRunProbes = viewModel::runProbes,
                             onDismissDiagnostics = viewModel::dismissDiagnostics,
                             onClearLog = viewModel::clearLog,

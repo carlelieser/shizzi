@@ -102,6 +102,10 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch { settingsStore.setLogging(enabled) }
     }
 
+    fun setVpnMode(mode: VpnMode) {
+        viewModelScope.launch { settingsStore.setVpnMode(mode) }
+    }
+
     fun setTheme(choice: ThemeChoice) {
         viewModelScope.launch { settingsStore.setTheme(choice) }
     }

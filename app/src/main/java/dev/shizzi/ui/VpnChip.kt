@@ -13,7 +13,12 @@ import androidx.compose.ui.Modifier
 import dev.shizzi.ui.theme.ShizziTheme
 
 @Composable
-fun VpnChip() {
+fun VpnChip(isBypassed: Boolean = false) {
+    val tint = when {
+        isBypassed -> ShizziTheme.colors.onSurfaceMuted
+        else -> ShizziTheme.colors.primary
+    }
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(ShizziTheme.spacing.sm),
@@ -21,14 +26,14 @@ fun VpnChip() {
         Icon(
             imageVector = Icons.Filled.VpnKey,
             contentDescription = null,
-            tint = ShizziTheme.colors.primary,
+            tint = tint,
             modifier = Modifier.size(ShizziTheme.spacing.lg),
         )
 
         Text(
-            text = "VPN CONNECTED",
+            text = if (isBypassed) "VPN IGNORED" else "VPN CONNECTED",
             style = ShizziTheme.typography.caption,
-            color = ShizziTheme.colors.primary,
+            color = tint,
         )
     }
 }

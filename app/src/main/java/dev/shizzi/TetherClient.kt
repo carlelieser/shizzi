@@ -23,6 +23,7 @@ data class SessionUiState(
     val interfaceName: String = "",
     val lastError: String = "",
     val isVpnBound: Boolean = false,
+    val isVpnBypassed: Boolean = false,
 
     val clientCount: Int = 0,
 
@@ -39,6 +40,7 @@ fun SessionUiState.asStopped(): SessionUiState = copy(
     detail = "Stopped",
     interfaceName = "",
     isVpnBound = false,
+    isVpnBypassed = false,
     clientCount = 0,
     traffic = Traffic(),
 )
@@ -53,6 +55,7 @@ fun SessionUiState.applyOutcome(outcome: Result<String>): SessionUiState {
 
             interfaceName = "",
             isVpnBound = false,
+            isVpnBypassed = false,
             clientCount = 0,
             traffic = Traffic(),
         )
@@ -70,6 +73,7 @@ fun SessionUiState.applyOutcome(outcome: Result<String>): SessionUiState {
         lastError = if (sessionState == "ERROR") sessionDetail else "",
 
         isVpnBound = parsed?.optBoolean("isVpnBound") == true,
+        isVpnBypassed = parsed?.optBoolean("isVpnBypassed") == true,
         clientCount = parsed?.optInt("clientCount") ?: 0,
         traffic = Traffic(
             up = parsed?.optLong("bytesUp") ?: 0,
@@ -199,10 +203,10 @@ class TetherClient {
         bound.rebootDevice()
     }
 
-    suspend fun start(logging: Boolean): String = withContext(Dispatchers.IO) {
+    suspend fun start(logging: Boolean, vpnMode: VpnMode): String = withContext(Dispatchers.IO) {
         val bound = service()
         verifyContract(bound)
-        bound.start(logging)
+        bound.start(logging, vpnMode.name)
     }
 
     fun setLogging(enabled: Boolean) {
