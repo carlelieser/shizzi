@@ -12,8 +12,13 @@ sealed interface VpnBinding {
     data class Lost(val problem: String) : VpnBinding
 }
 
+fun interface VpnLocator {
+
+    fun currentVpn(): Network?
+}
+
 class VpnWatchdog(
-    private val connectivityManager: ConnectivityManager,
+    private val locator: VpnLocator,
     private val onChange: (VpnBinding) -> Unit,
 ) {
 
@@ -87,17 +92,7 @@ class VpnWatchdog(
         return VpnBinding.Adopted(observed)
     }
 
-    private fun currentVpnHandle(): Long = findVpn()?.let(::handleOf) ?: UNBOUND
-
-    private fun findVpn(): Network? = runCatching {
-        connectivityManager.allNetworks.firstOrNull { candidate ->
-            connectivityManager.getNetworkCapabilities(candidate)
-                ?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) == true
-        }
-    }.getOrElse { failure ->
-        SessionLog.warn("could not read the VPN list: ${failure.message}")
-        null
-    }
+    private fun currentVpnHandle(): Long = locator.currentVpn()?.let(::handleOf) ?: UNBOUND
 
     private fun handleOf(network: Network): Long =
         runCatching { network.networkHandle }.getOrDefault(UNBOUND)

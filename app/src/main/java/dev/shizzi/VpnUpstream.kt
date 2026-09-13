@@ -15,7 +15,8 @@ class VpnUpstream(
     val isBound: Boolean get() = handle != UNBOUND
 
     fun follow(group: SessionResources) {
-        val watcher = VpnWatchdog(context.connectivityManager()) { binding ->
+        val locator = ConnectivityVpnLocator(context.connectivityManager())
+        val watcher = VpnWatchdog(locator) { binding ->
             apply(group, binding)
         }
         watchdog = watcher
