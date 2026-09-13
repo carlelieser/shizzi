@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ArrowOutward
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
@@ -142,7 +143,7 @@ fun SettingsChoice(label: SettingsText, value: String, onClick: () -> Unit) {
             modifier = Modifier.padding(end = ShizziTheme.spacing.sm),
         )
 
-        TrailingIcon(icon = Icons.AutoMirrored.Filled.ArrowForward)
+        TrailingIcon(icon = Icons.AutoMirrored.Filled.KeyboardArrowRight)
     }
 }
 
