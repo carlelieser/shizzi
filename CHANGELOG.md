@@ -5,28 +5,20 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Added
-
-- **VPN setting.** Auto binds to an active VPN if there is one, Always refuses
-  to start without one, and Never leaves the datapath unbound. A session that
-  ignores a live VPN says so on the home screen and in the notification.
-
-### Fixed
-
-- A VPN running in another Android user, such as Samsung's Secure Folder, no
-  longer counts as this profile's VPN. It could pin the datapath to a network
-  the hotspot never routed over, and end the session when that unrelated VPN
-  disconnected ([#32](https://github.com/carlelieser/shizzi/issues/32)).
-
-## [0.4.0-rc.2] - 2026-09-06
+## [0.4.0-rc.3] - 2026-09-13
 
 Adds a quick settings tile and an intent API for starting and stopping sessions
 from other apps. New permissions screen in onboarding. Adds accent and design
-language pickers, and animates screen changes and controls throughout.
-Supersedes 0.4.0-rc.1.
+language pickers, and animates screen changes and controls throughout. Adds a
+VPN setting, and stops a VPN in another Android user from being mistaken for
+this one. Supersedes 0.4.0-rc.1 and 0.4.0-rc.2.
 
 ### Added
 
+- **VPN setting.** `Auto` binds to an active VPN if there is one, `Always`
+  refuses to start without one, and `Never` leaves the datapath unbound. A
+  session that ignores a live VPN says so on the home screen and in the
+  notification.
 - **Quick settings tile.** Start and stop sharing from the notification shade.
 - **Intent API.** Start, stop, toggle, and query a session from another app.
   Off by default, token-authenticated. See [automation](docs/automation.md).
@@ -56,6 +48,11 @@ Supersedes 0.4.0-rc.1.
 
 ### Fixed
 
+- A VPN running in another Android user, such as Samsung's Secure Folder, no
+  longer counts as this profile's VPN. It could pin the datapath to a network
+  the hotspot never routed over, and end the session when that unrelated VPN
+  disconnected.
+  ([#32](https://github.com/carlelieser/shizzi/issues/32))
 - A VPN reconnect or radio handoff left the tethering upstream empty for a few
   seconds, which killed the session. Only real drift onto another interface
   ends it now.
@@ -73,6 +70,10 @@ Supersedes 0.4.0-rc.1.
   instead of silent.
 - The onboarding wizard drew the incoming step in both transition layers, so
   the slide animated identical content.
+- Settings rows that open a picker trailed the same arrow as rows that navigate
+  or act in place. They take a chevron now.
+- The Neobrutalism bottom sheet stopped above the navigation bar, leaving a band
+  of scrim below it. It spans the full display now.
 
 ## [0.3.0] - 2026-08-22
 
@@ -157,7 +158,7 @@ First public build.
 - IPv6 was not suppressed on the downstream; v6 traffic could bypass the
   tunnel. Fixed in 0.2.0.
 
-[0.4.0-rc.2]: https://github.com/carlelieser/shizzi/releases/tag/v0.4.0-rc.2
+[0.4.0-rc.3]: https://github.com/carlelieser/shizzi/releases/tag/v0.4.0-rc.3
 [0.3.0]: https://github.com/carlelieser/shizzi/releases/tag/v0.3.0
 [0.2.0]: https://github.com/carlelieser/shizzi/releases/tag/v0.2.0
 [0.1.0]: https://github.com/carlelieser/shizzi/releases/tag/v0.1.0
