@@ -123,6 +123,10 @@ android {
     packaging {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
     }
+
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 tasks.named("preBuild") { dependsOn(gomobileBind) }
@@ -153,4 +157,6 @@ dependencies {
     implementation("org.lsposed.hiddenapibypass:hiddenapibypass:4.3")
 
     testImplementation("junit:junit:4.13.2")
+
+    testImplementation("org.json:json:20250107")
 }

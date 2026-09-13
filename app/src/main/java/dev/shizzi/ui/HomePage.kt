@@ -64,7 +64,9 @@ fun HomePage(
                 modifier = Modifier.height(ShizziTheme.spacing.xxxl),
                 contentAlignment = Alignment.BottomCenter,
             ) {
-                RiseIn(isVisible = isShowingVpn(state)) { VpnChip() }
+                RiseIn(isVisible = isShowingVpn(state)) {
+                    VpnChip(isBypassed = state.isVpnBypassed)
+                }
             }
 
             StatusRow(state = state, onVersionClick = actions.onOpenEasterEgg)
@@ -106,8 +108,11 @@ private fun HomeHeader(
     }
 }
 
-private fun isShowingVpn(state: SessionUiState): Boolean =
-    state.isVpnBound && state.status == UiStatus.CONNECTED
+private fun isShowingVpn(state: SessionUiState): Boolean {
+    val hasVpn = state.isVpnBound || state.isVpnBypassed
+
+    return hasVpn && state.status == UiStatus.CONNECTED
+}
 
 /** Fades content up into a slot the layout already reserves. */
 @Composable

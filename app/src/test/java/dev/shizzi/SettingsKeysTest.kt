@@ -45,6 +45,25 @@ class SettingsKeysTest {
     }
 
     @Test
+    fun `reads a stored vpn mode`() {
+        val stored = preferencesOf(VPN_MODE to VpnMode.NEVER.name)
+
+        assertEquals(VpnMode.NEVER, toSettings(stored).vpnMode)
+    }
+
+    @Test
+    fun `defaults to auto when no vpn mode is stored`() {
+        assertEquals(VpnMode.AUTO, toSettings(preferencesOf()).vpnMode)
+    }
+
+    @Test
+    fun `falls back to auto when the vpn mode is unreadable`() {
+        val stored = preferencesOf(VPN_MODE to "sideways")
+
+        assertEquals(VpnMode.AUTO, toSettings(stored).vpnMode)
+    }
+
+    @Test
     fun `absent appearance keys read as defaults`() {
         val settings = toSettings(preferencesOf())
 

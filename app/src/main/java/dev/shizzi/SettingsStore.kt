@@ -25,6 +25,8 @@ data class Settings(
     val customAccents: List<Int> = emptyList(),
     val isLogging: Boolean = true,
 
+    val vpnMode: VpnMode = VpnMode.AUTO,
+
     val hasCompletedOnboarding: Boolean = false,
 
     val isAutomationEnabled: Boolean = false,
@@ -73,6 +75,10 @@ class SettingsStore(private val context: Context) {
         context.dataStore.edit { it[LOGGING] = enabled }
     }
 
+    suspend fun setVpnMode(mode: VpnMode) {
+        context.dataStore.edit { it[VPN_MODE] = mode.name }
+    }
+
     suspend fun setOnboardingComplete(hasCompleted: Boolean) {
         context.dataStore.edit { it[ONBOARDED] = hasCompleted }
     }
@@ -101,6 +107,7 @@ internal val DESIGN = stringPreferencesKey("design")
 internal val ACCENT = stringPreferencesKey("accent")
 internal val CUSTOM_ACCENTS = stringPreferencesKey("custom_accents")
 internal val LOGGING = booleanPreferencesKey("logging")
+internal val VPN_MODE = stringPreferencesKey("vpn_mode")
 internal val ONBOARDED = booleanPreferencesKey("onboarded")
 internal val AUTOMATION = booleanPreferencesKey("automation")
 internal val AUTOMATION_TOKEN = stringPreferencesKey("automation_token")
@@ -113,6 +120,7 @@ internal fun toSettings(preferences: Preferences) = Settings(
     accent = parseAccent(preferences[ACCENT]),
     customAccents = parseAccents(preferences[CUSTOM_ACCENTS]),
     isLogging = preferences[LOGGING] ?: true,
+    vpnMode = parseVpnMode(preferences[VPN_MODE]),
     hasCompletedOnboarding = preferences[ONBOARDED] ?: false,
     isAutomationEnabled = preferences[AUTOMATION] ?: false,
     automationToken = preferences[AUTOMATION_TOKEN].orEmpty(),

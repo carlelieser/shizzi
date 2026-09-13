@@ -18,6 +18,7 @@ class TetherSession(private val context: Context) {
     private var interfaceName: String? = null
 
     private var activeSince: Long = 0
+    private var vpnMode = VpnMode.AUTO
     private var watchdog: SessionWatchdog? = null
     private val teardown = SessionTeardown(context)
     private val downstream = DownstreamInspector()
@@ -25,11 +26,12 @@ class TetherSession(private val context: Context) {
 
     val isActive: Boolean get() = state == SessionState.ACTIVE
 
-    fun start(): String {
+    fun start(mode: VpnMode = VpnMode.AUTO): String {
         if (isActive) return status()
 
+        vpnMode = mode
         state = SessionState.STARTING
-        SessionLog.info("session start requested")
+        SessionLog.info("session start requested (vpn mode ${mode.name.lowercase()})")
 
         SessionLog.info(
             "device: ${Build.MANUFACTURER} ${Build.MODEL}, " +
@@ -60,7 +62,7 @@ class TetherSession(private val context: Context) {
 
         group.startDatapath(TUN_MTU)
         SessionLog.info("datapath attached to $name")
-        vpn.follow(group)
+        followVpn(group)
 
         preferTestNetworks()
         restartDownstream()
@@ -75,6 +77,18 @@ class TetherSession(private val context: Context) {
         teardown.installShutdownHook()
         startWatchdog(name)
         return status()
+    }
+
+    private fun followVpn(group: SessionResources) {
+        if (vpnMode == VpnMode.NEVER) {
+            SessionLog.info("vpn mode never: datapath left unbound")
+            return
+        }
+
+        check(vpnMode != VpnMode.ALWAYS || vpn.isVpnPresent()) {
+            "followVpn: vpn mode always requires an active VPN, none is connected"
+        }
+        vpn.follow(group)
     }
 
     private fun startWatchdog(name: String) {
@@ -206,12 +220,20 @@ class TetherSession(private val context: Context) {
         put("interface", interfaceName ?: JSONObject.NULL)
 
         put("isVpnBound", vpn.isBound)
+        put("isVpnBypassed", isVpnBypassed())
 
         val traffic = interfaceName?.let(InterfaceCounters::read) ?: Traffic()
         put("bytesUp", traffic.up)
         put("bytesDown", traffic.down)
         put("clientCount", if (isActive) downstream.countDevices() else 0)
     }.toString()
+
+    private fun isVpnBypassed(): Boolean {
+        if (vpnMode != VpnMode.NEVER) return false
+        if (!isActive) return false
+
+        return vpn.isVpnPresent()
+    }
 
     private fun tunAddresses() = listOf(
         buildLinkAddress(java.net.InetAddress.getByName(TUN_ADDRESS), TUN_PREFIX_LENGTH),

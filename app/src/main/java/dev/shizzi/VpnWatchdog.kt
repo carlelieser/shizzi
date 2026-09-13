@@ -1,8 +1,5 @@
 package dev.shizzi
 
-import android.net.ConnectivityManager
-import android.net.Network
-import android.net.NetworkCapabilities
 import java.util.concurrent.atomic.AtomicBoolean
 
 sealed interface VpnBinding {
@@ -12,8 +9,13 @@ sealed interface VpnBinding {
     data class Lost(val problem: String) : VpnBinding
 }
 
+fun interface VpnLocator {
+
+    fun currentVpnHandle(): Long
+}
+
 class VpnWatchdog(
-    private val connectivityManager: ConnectivityManager,
+    private val locator: VpnLocator,
     private val onChange: (VpnBinding) -> Unit,
 ) {
 
@@ -25,7 +27,7 @@ class VpnWatchdog(
     private var consecutiveMisses = 0
 
     fun adoptCurrentVpn(): Long {
-        boundHandle = currentVpnHandle()
+        boundHandle = locator.currentVpnHandle()
         return boundHandle
     }
 
@@ -59,8 +61,8 @@ class VpnWatchdog(
         }
     }
 
-    private fun evaluate(): VpnBinding? {
-        val observed = currentVpnHandle()
+    internal fun evaluate(): VpnBinding? {
+        val observed = locator.currentVpnHandle()
 
         if (observed != UNBOUND) return adopt(observed)
 
@@ -86,21 +88,6 @@ class VpnWatchdog(
         SessionLog.info(adoptionMessage(previous, observed))
         return VpnBinding.Adopted(observed)
     }
-
-    private fun currentVpnHandle(): Long = findVpn()?.let(::handleOf) ?: UNBOUND
-
-    private fun findVpn(): Network? = runCatching {
-        connectivityManager.allNetworks.firstOrNull { candidate ->
-            connectivityManager.getNetworkCapabilities(candidate)
-                ?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) == true
-        }
-    }.getOrElse { failure ->
-        SessionLog.warn("could not read the VPN list: ${failure.message}")
-        null
-    }
-
-    private fun handleOf(network: Network): Long =
-        runCatching { network.networkHandle }.getOrDefault(UNBOUND)
 
     private fun adoptionMessage(previous: Long, adopted: Long): String = when (previous) {
         UNBOUND -> "vpn adopted: pinning the datapath to handle $adopted"

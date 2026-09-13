@@ -28,6 +28,7 @@ import androidx.compose.ui.platform.LocalContext
 import dev.shizzi.AppPermission
 import dev.shizzi.PermissionStatus
 import dev.shizzi.ShizukuState
+import dev.shizzi.VpnMode
 import dev.shizzi.ui.theme.AccentChoice
 import dev.shizzi.ui.theme.DesignLanguage
 import dev.shizzi.ui.theme.ScreenPadding
@@ -53,6 +54,7 @@ data class SettingsState(
     val accent: AccentChoice,
     val customAccents: List<Int>,
     val isLogging: Boolean,
+    val vpnMode: VpnMode,
     val isRunningDiagnostics: Boolean,
     val automation: AutomationState,
 )
@@ -63,6 +65,7 @@ data class SettingsActions(
     val onSetAccent: (AccentChoice) -> Unit,
     val onAddCustomAccent: (Int) -> Unit,
     val onSetLogging: (Boolean) -> Unit,
+    val onSetVpnMode: (VpnMode) -> Unit,
     val onOpenLog: () -> Unit,
     val onRunProbes: () -> Unit,
     val onGrantPermission: (AppPermission) -> Unit,
@@ -146,6 +149,8 @@ private fun settingsSections(
     },
 
     SettingsSectionSpec("Advanced") {
+        VpnSection(selected = state.vpnMode, onSelect = actions.onSetVpnMode)
+
         AutomationSection(
             state = state.automation,
             actions = actions.automation,

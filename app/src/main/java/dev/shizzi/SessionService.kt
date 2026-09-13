@@ -81,11 +81,11 @@ class SessionService : Service() {
 
         startJob = scope.launch {
 
-            val isLogging = settingsStore().settings.first().isLogging
+            val settings = settingsStore().settings.first()
 
             val outcome = sessionLock.withLock {
                 if (attempt != generation) return@launch
-                runCatching { controller.start(isLogging) }
+                runCatching { controller.start(settings.isLogging, settings.vpnMode) }
             }
             if (attempt != generation) return@launch
 

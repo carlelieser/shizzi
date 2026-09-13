@@ -28,14 +28,15 @@ class SessionNotification(private val context: Context) {
 
     private fun titleFor(state: SessionUiState, isStopping: Boolean): String =
         when (state.status) {
-            UiStatus.CONNECTED -> connectedTitle(state.isVpnBound)
+            UiStatus.CONNECTED -> connectedTitle(state)
             UiStatus.LOADING -> if (isStopping) "Cleaning up…" else "Getting ready…"
             UiStatus.ERROR -> "Session ended"
             UiStatus.READY -> "Session ended"
         }
 
-    private fun connectedTitle(isVpnBound: Boolean): String = when {
-        isVpnBound -> "Connected · VPN"
+    private fun connectedTitle(state: SessionUiState): String = when {
+        state.isVpnBypassed -> "Connected · VPN ignored"
+        state.isVpnBound -> "Connected · VPN"
         else -> "Connected"
     }
 
