@@ -1,8 +1,5 @@
 package dev.shizzi
 
-import android.net.ConnectivityManager
-import android.net.Network
-import android.net.NetworkCapabilities
 import java.util.concurrent.atomic.AtomicBoolean
 
 sealed interface VpnBinding {
@@ -14,7 +11,7 @@ sealed interface VpnBinding {
 
 fun interface VpnLocator {
 
-    fun currentVpn(): Network?
+    fun currentVpnHandle(): Long
 }
 
 class VpnWatchdog(
@@ -30,7 +27,7 @@ class VpnWatchdog(
     private var consecutiveMisses = 0
 
     fun adoptCurrentVpn(): Long {
-        boundHandle = currentVpnHandle()
+        boundHandle = locator.currentVpnHandle()
         return boundHandle
     }
 
@@ -64,8 +61,8 @@ class VpnWatchdog(
         }
     }
 
-    private fun evaluate(): VpnBinding? {
-        val observed = currentVpnHandle()
+    internal fun evaluate(): VpnBinding? {
+        val observed = locator.currentVpnHandle()
 
         if (observed != UNBOUND) return adopt(observed)
 
@@ -91,11 +88,6 @@ class VpnWatchdog(
         SessionLog.info(adoptionMessage(previous, observed))
         return VpnBinding.Adopted(observed)
     }
-
-    private fun currentVpnHandle(): Long = locator.currentVpn()?.let(::handleOf) ?: UNBOUND
-
-    private fun handleOf(network: Network): Long =
-        runCatching { network.networkHandle }.getOrDefault(UNBOUND)
 
     private fun adoptionMessage(previous: Long, adopted: Long): String = when (previous) {
         UNBOUND -> "vpn adopted: pinning the datapath to handle $adopted"
