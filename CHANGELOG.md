@@ -5,6 +5,19 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **VPN setting.** Auto binds to an active VPN if there is one, Always refuses
+  to start without one, and Never leaves the datapath unbound. A session that
+  ignores a live VPN says so on the home screen and in the notification.
+
+### Fixed
+
+- A VPN running in another Android user, such as Samsung's Secure Folder, no
+  longer counts as this profile's VPN. It could pin the datapath to a network
+  the hotspot never routed over, and end the session when that unrelated VPN
+  disconnected ([#32](https://github.com/carlelieser/shizzi/issues/32)).
+
 ## [0.4.0-rc.2] - 2026-09-06
 
 Adds a quick settings tile and an intent API for starting and stopping sessions
