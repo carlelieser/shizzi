@@ -5,7 +5,7 @@
 <h1 align="center">Shizzi</h1>
 
 <p align="center">
-  Wi-Fi tethering over a Shizuku-privileged test network.
+  Wi-Fi tethering over a Shizuku or Wireless Debugging privileged test network.
 </p>
 
 Creates a test TUN interface, sets it as the preferred tethering upstream, and
@@ -14,7 +14,8 @@ forwards hotspot traffic through a Go datapath. Supports IPv4 and IPv6.
 ## Requirements
 
 - Android 11 (API 30+), arm64
-- [Shizuku](https://shizuku.rikka.app/) 13.6.0+
+- [Shizuku](https://shizuku.rikka.app/) 13.6.0+ or the device's own Wireless
+  Debugging (Android 11+)
 
 Android 13 and up work outright. On Android 11 and 12 it depends on the device's
 tethering module; the app checks on first launch and offers to install the
@@ -31,7 +32,8 @@ Download the APK from the
   hotspot allowance.
 - 🛡️ **VPN compatible.** Stay private on every connected device.
 - ⚙️ **Uses your existing hotspot.** No extra configuration required.
-- 🙌 **No root.** Shizuku is all it needs.
+- 🙌 **No root.** Shizuku or the phone's own Wireless Debugging is all it needs.
+  See [privilege backends](docs/privilege-backends.md).
 - 🎛️ **One tap away.** A quick settings tile starts and stops sharing from the
   notification shade.
 - 🤖 **Automatable.** Start and stop from Tasker or MacroDroid. See

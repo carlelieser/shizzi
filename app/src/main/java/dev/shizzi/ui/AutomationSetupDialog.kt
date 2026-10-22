@@ -1,5 +1,8 @@
 package dev.shizzi.ui
 
+import dev.shizzi.R
+import dev.shizzi.str
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -50,13 +53,13 @@ private fun ColumnScope.SetupContent(token: String, toasts: ToastState) {
     var command by remember { mutableStateOf(AutomationCommand.START) }
 
     Text(
-        text = "Setup",
+        text = str(R.string.setup_instructions),
         style = ShizziTheme.typography.heading,
         color = ShizziTheme.colors.onSurface,
     )
 
     Text(
-        text = "Send a broadcast intent with these values.",
+        text = str(R.string.send_a_broadcast_intent_using_the_parameters_below),
         style = ShizziTheme.typography.body,
         color = ShizziTheme.colors.onSurfaceMuted,
     )
@@ -74,11 +77,11 @@ private fun ColumnScope.SetupContent(token: String, toasts: ToastState) {
 }
 
 private fun connectionFields(token: String) = listOf(
-    SetupField("Package", "dev.shizzi"),
-    SetupField("Class", "dev.shizzi.AutomationReceiver"),
-    SetupField("Target", "Broadcast receiver"),
-    SetupField("Extra name", Automation.EXTRA_TOKEN),
-    SetupField("Extra value", token),
+    SetupField(str(R.string.package_label), "dev.shizzi"),
+    SetupField(str(R.string.class_label), "dev.shizzi.AutomationReceiver"),
+    SetupField(str(R.string.target), str(R.string.broadcast_receiver)),
+    SetupField(str(R.string.extra_name), Automation.EXTRA_TOKEN),
+    SetupField(str(R.string.extra_value), token),
 )
 
 @Composable
@@ -109,7 +112,7 @@ private fun CopyableField(field: SetupField, toasts: ToastState) {
 
         ShizziCompactIconButton(
             icon = Icons.Filled.ContentCopy,
-            contentDescription = "Copy ${field.label.lowercase()}",
+            contentDescription = str(R.string.copy_value, field.label),
             onClick = {
                 clipboard.setText(AnnotatedString(field.value))
                 toasts.show(copiedToast(field.label))

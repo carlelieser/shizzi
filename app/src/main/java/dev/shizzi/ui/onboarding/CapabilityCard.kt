@@ -1,5 +1,8 @@
 package dev.shizzi.ui.onboarding
 
+import dev.shizzi.R
+import dev.shizzi.str
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -89,14 +92,14 @@ private fun StatusMark(status: CapabilityStatus) {
 
             CapabilityStatus.SUCCESS -> Icon(
                 imageVector = Icons.Filled.Check,
-                contentDescription = "Supported",
+                contentDescription = str(R.string.supported),
                 tint = colors.primary,
                 modifier = Modifier.size(MarkSize),
             )
 
             CapabilityStatus.FAILURE -> Icon(
                 imageVector = Icons.Filled.Close,
-                contentDescription = "Not supported",
+                contentDescription = str(R.string.unsupported),
                 tint = colors.onSurfaceMuted,
                 modifier = Modifier.size(MarkSize),
             )
@@ -105,16 +108,14 @@ private fun StatusMark(status: CapabilityStatus) {
 }
 
 private fun titleFor(capability: Capability): String = when (capability) {
-    Capability.TEST_NETWORK -> "Test network API"
-    Capability.PREFER_TEST_NETWORKS -> "Prefer test networks"
+    Capability.TEST_NETWORK -> str(R.string.test_network_api)
+    Capability.PREFER_TEST_NETWORKS -> str(R.string.prefer_test_networks)
 }
 
 private fun descriptionFor(capability: Capability): String = when (capability) {
     Capability.TEST_NETWORK ->
-        "Lets the app create the test network tunnel your hotspot traffic " +
-            "travels through."
+        str(R.string.allows_the_app_to_create_a_test_network)
 
     Capability.PREFER_TEST_NETWORKS ->
-        "Lets the app route the hotspot through the test network tunnel. " +
-            "Added in Android 13."
+        str(R.string.allows_hotspot_traffic_to_be_routed_to_the)
 }

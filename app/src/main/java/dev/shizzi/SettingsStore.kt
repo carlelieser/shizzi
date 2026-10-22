@@ -24,6 +24,7 @@ data class Settings(
     val accent: AccentChoice = AccentChoice.Default,
     val customAccents: List<Int> = emptyList(),
     val isLogging: Boolean = true,
+    val privilegeBackend: PrivilegeBackendType = PrivilegeBackendType.SHIZUKU,
 
     val vpnMode: VpnMode = VpnMode.AUTO,
 
@@ -71,6 +72,10 @@ class SettingsStore(private val context: Context) {
         }
     }
 
+    suspend fun setPrivilegeBackend(backend: PrivilegeBackendType) {
+        context.dataStore.edit { it[PRIVILEGE_BACKEND] = backend.name }
+    }
+
     suspend fun setLogging(enabled: Boolean) {
         context.dataStore.edit { it[LOGGING] = enabled }
     }
@@ -107,6 +112,7 @@ internal val DESIGN = stringPreferencesKey("design")
 internal val ACCENT = stringPreferencesKey("accent")
 internal val CUSTOM_ACCENTS = stringPreferencesKey("custom_accents")
 internal val LOGGING = booleanPreferencesKey("logging")
+internal val PRIVILEGE_BACKEND = stringPreferencesKey("privilege_backend")
 internal val VPN_MODE = stringPreferencesKey("vpn_mode")
 internal val ONBOARDED = booleanPreferencesKey("onboarded")
 internal val AUTOMATION = booleanPreferencesKey("automation")
@@ -120,6 +126,9 @@ internal fun toSettings(preferences: Preferences) = Settings(
     accent = parseAccent(preferences[ACCENT]),
     customAccents = parseAccents(preferences[CUSTOM_ACCENTS]),
     isLogging = preferences[LOGGING] ?: true,
+    privilegeBackend = runCatching {
+        PrivilegeBackendType.valueOf(preferences[PRIVILEGE_BACKEND].orEmpty())
+    }.getOrDefault(PrivilegeBackendType.SHIZUKU),
     vpnMode = parseVpnMode(preferences[VPN_MODE]),
     hasCompletedOnboarding = preferences[ONBOARDED] ?: false,
     isAutomationEnabled = preferences[AUTOMATION] ?: false,

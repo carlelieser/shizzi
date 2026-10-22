@@ -6,25 +6,19 @@ import org.junit.Test
 
 class SessionTileTest {
 
-    private val ready = ShizukuState.Ready(uid = 2000, isRoot = false)
+    private val ready = PrivilegeState.Ready(PrivilegeBackendType.SHIZUKU, uid = 2000)
 
     @Test
-    fun `is unavailable and opens the app while shizuku is missing`() {
-        val render = SessionTile.render(SessionUiState(), ShizukuState.NotInstalled, false)
+    fun `is unavailable and opens the app while provider setup is required`() {
+        val render = SessionTile.render(
+            SessionUiState(),
+            PrivilegeState.SetupRequired(PrivilegeBackendType.SHIZUKU),
+            false,
+        )
 
         assertEquals(Tile.STATE_UNAVAILABLE, render.state)
-        assertEquals("Shizuku not installed", render.subtitle)
+        assertEquals("Setup required", render.subtitle)
         assertEquals(TileAction.OPEN_APP, render.action)
-    }
-
-    @Test
-    fun `names the reason shizuku cannot be used`() {
-        val stopped = SessionTile.render(SessionUiState(), ShizukuState.NotRunning, false)
-        val ungranted =
-            SessionTile.render(SessionUiState(), ShizukuState.PermissionRequired, false)
-
-        assertEquals("Shizuku not running", stopped.subtitle)
-        assertEquals("Permission required", ungranted.subtitle)
     }
 
     @Test
@@ -32,7 +26,7 @@ class SessionTileTest {
         val render = SessionTile.render(SessionUiState(status = UiStatus.READY), ready, false)
 
         assertEquals(Tile.STATE_INACTIVE, render.state)
-        assertEquals("Tap to share", render.subtitle)
+        assertEquals("Tap to start sharing", render.subtitle)
         assertEquals(TileAction.START, render.action)
     }
 
@@ -56,7 +50,6 @@ class SessionTileTest {
     @Test
     fun `offers a stop while connected`() {
         val state = SessionUiState(status = UiStatus.CONNECTED)
-
         val render = SessionTile.render(state, ready, false)
 
         assertEquals(Tile.STATE_ACTIVE, render.state)
@@ -69,7 +62,7 @@ class SessionTileTest {
         val one = none.copy(clientCount = 1, traffic = Traffic(down = 2_000))
         val many = none.copy(clientCount = 3, traffic = Traffic(down = 2_000))
 
-        assertEquals("No devices", SessionTile.render(none, ready, false).subtitle)
+        assertEquals("No connected devices", SessionTile.render(none, ready, false).subtitle)
         assertEquals("1 device · 2.0 KB", SessionTile.render(one, ready, false).subtitle)
         assertEquals("3 devices · 2.0 KB", SessionTile.render(many, ready, false).subtitle)
     }

@@ -23,8 +23,9 @@
     <application
         android:name=".App"
         android:allowBackup="false"
+        android:enableOnBackInvokedCallback="true"
         android:icon="@mipmap/ic_launcher"
-        android:label="Shizzi"
+        android:label="@string/shizzi"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Shizzi">
@@ -37,6 +38,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".LocalAdbPairingService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse"
+            android:stopWithTask="false">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Keeps Wireless Debugging pairing discovery active while system settings are open" />
+        </service>
 
         <service
             android:name=".SessionService"
@@ -52,7 +63,7 @@
             android:name=".SessionTileService"
             android:exported="true"
             android:icon="@drawable/ic_tile_tethering"
-            android:label="Shizzi"
+            android:label="@string/shizzi"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE" />

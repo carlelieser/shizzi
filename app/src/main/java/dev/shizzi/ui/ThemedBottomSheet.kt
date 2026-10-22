@@ -47,6 +47,9 @@ fun ThemedBottomSheet(
     }
 }
 
+// Neobrutalism fills the whole display with the sheet surface: M3's container,
+// shape and drag handle are stripped, and the surface runs to the bottom of the
+// display behind the navigation bar with the border drawn along the top edge.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BrutalSheet(

@@ -1,5 +1,8 @@
 package dev.shizzi.ui
 
+import dev.shizzi.R
+import dev.shizzi.str
+
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandHorizontally
@@ -99,7 +102,7 @@ private fun StatusLabel(status: String) {
     ) { word ->
         Text(
             text = buildAnnotatedString {
-                append("STATUS ")
+                append(str(R.string.status_2))
                 withStyle(
                     SpanStyle(color = colors.onSurface, fontWeight = FontWeight.W700),
                 ) {
@@ -154,7 +157,7 @@ private fun TunnelSegment(name: String) {
     val interaction = remember { MutableInteractionSource() }
 
     Text(
-        text = if (isShowingName) name.uppercase() else "TUNNEL ACTIVE",
+        text = if (isShowingName) name.uppercase() else str(R.string.tunnel_enabled),
         style = ShizziTheme.typography.caption,
         color = ShizziTheme.colors.onSurfaceMuted,
         textAlign = TextAlign.Center,
@@ -179,8 +182,8 @@ private fun StatusDivider() {
 }
 
 private fun statusWord(status: UiStatus): String = when (status) {
-    UiStatus.READY -> "Ready"
-    UiStatus.LOADING -> "Starting"
-    UiStatus.CONNECTED -> "Connected"
-    UiStatus.ERROR -> "Failed"
+    UiStatus.READY -> str(R.string.ready)
+    UiStatus.LOADING -> str(R.string.starting_2)
+    UiStatus.CONNECTED -> str(R.string.connected)
+    UiStatus.ERROR -> str(R.string.failed)
 }

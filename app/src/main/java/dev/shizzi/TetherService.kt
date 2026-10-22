@@ -2,7 +2,6 @@ package dev.shizzi
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.os.Build
 import android.os.ParcelFileDescriptor
 import android.util.Log
 
@@ -146,17 +145,18 @@ class TetherService : ITetherService.Stub {
         }
 
         private fun forceOpPackageName(context: Context) {
-            runCatching {
-                when {
-                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
-                        rebaseAttributionSource(context)
+            val attributionFailure = runCatching { rebaseAttributionSource(context) }
+                .exceptionOrNull()
 
-                    else -> rebaseOpPackageName(context)
-                }
-            }.getOrElse { failure ->
+            if (attributionFailure == null) return
+
+            // Newer Android builds may not expose the mAttributionSource field this
+            // code relies on. Fall back to the classic op package name field before
+            // giving up, so compatibility checks keep working across releases.
+            runCatching { rebaseOpPackageName(context) }.getOrElse {
                 throw IllegalStateException(
                     "forceOpPackageName: could not attribute context to $SHELL_PACKAGE",
-                    failure,
+                    attributionFailure,
                 )
             }
         }

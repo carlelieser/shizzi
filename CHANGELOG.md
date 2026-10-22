@@ -5,6 +5,149 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- A crash report dialog. When the app crashes, the next launch shows the
+  captured stack trace with the recent session log tail and a copy action,
+  so crashes that happen inside onboarding can be reported without adb.
+- The Neobrutalism design language is back and selectable from Settings →
+  Appearance → Design. It restores the original treatment: sharp corners,
+  a 2dp hard border, a 4dp offset shadow that surfaces slide onto when
+  pressed, uppercase labels, mono-and-grotesk type, and mechanically damped
+  motion. The design choice again drives shapes, typography, motion, and
+  pure black/white accent edges; Material 3 Expressive keeps the softer
+  outline colors it has now.
+- The onboarding steps swipe horizontally: dragging follows the finger and
+  releasing past a quarter of the width flips the step in that direction,
+  with an edge step resisting instead of flipping. The footer buttons stay.
+
+### Changed
+
+- The Settings header is now immersive: the list scrolls edge to edge
+  beneath it, the header blends into the page background while the list
+  rests at the top, and it picks up its surface treatment once content
+  scrolls underneath.
+- The theme picker options press with a Material 3 state layer on top of
+  their existing scale and ripple feedback.
+- The README documents both privilege backends (Shizuku and the phone's own
+  Wireless Debugging) and links to the privilege backends guide.
+
+### Fixed
+
+- Entering the compatibility step with a failing check crashed the app: the
+  step added its own vertical scroll inside the wizard's scrollable column,
+  and the nested measurement is disallowed.
+- The compatibility check over Wireless Debugging failed with
+  "IOException: Stream closed.". libadb-android ends a shell session by
+  closing the stream, and `AdbStream.read()` throws
+  `IOException("Stream closed.")` instead of returning end-of-stream when
+  the daemon's close lands while the reader is blocked. The helper launch
+  command runs detached and produces no output, so the compatibility check
+  hit that path every time. Shell output is now read in a loop that folds
+  that specific message into a normal end of output and still surfaces any
+  other failure.
+- The Wireless Debugging compatibility check then failed with
+  "IllegalStateException: Local ADB helper did not start": the helper poll
+  gave up after three seconds while app_process was still paying its
+  first-launch dexopt for the APK. The poll now runs for twelve seconds
+  (the overall check timeout moved to twenty to match), and a failed start
+  carries the helper's own log tail so the underlying reason shows up
+  instead of a bare assertion.
+
+## [0.5.0-rc.1] - 2026-09-26
+
+This release collects the full localization and Material 3 work since
+the 0.4.0-rc.3 base, and adds a second privilege backend that can operate
+without the Shizuku app.
+
+### Added
+
+- **Android resource localization.** English is the default resource language
+  and Simplified Chinese lives in `values-zh-rCN`; Compose UI, notifications,
+  Quick Settings, onboarding, settings, diagnostics, and accessibility labels
+  use Android string resources.
+- **Wireless Debugging / Local ADB privilege backend.** Shizzi can pair with the
+  device's own Android 11+ Wireless Debugging daemon and launch the same shell
+  helper used by the tethering implementation, without requiring the Shizuku
+  app.
+- **Notification-driven Wireless Debugging pairing.** Pairing discovery stays
+  alive while Android settings are open. When the pairing mDNS service appears,
+  the foreground notification exposes an inline six-digit pairing-code field
+  plus a Cancel action.
+- **Pluggable privilege layer.** Session, compatibility, diagnostics, Quick
+  Settings, and background service code use a shared `PrivilegedClient`
+  interface instead of directly depending on Shizuku.
+- **Session overview** on the home screen with privilege state, connected
+  clients, traffic, and upstream information.
+- **Material 3 Expressive interaction pass:** shape-morphing controls, press
+  feedback, smoother transitions, and adaptive motion.
+- **Dynamic wallpaper colors** as the default accent on Android 12+, with softer
+  Monet-style fallback palettes on older releases.
+- **Predictive back** for in-app navigation and edge-to-edge system bars.
+- **Tablet and landscape layouts** for the home screen, settings, onboarding,
+  and logs.
+- **Cancelable diagnostics.**
+- **Compatibility troubleshooting.** After three seconds of a pending check a
+  troubleshooting panel becomes available; checks now time out with a concrete
+  error instead of spinning forever.
+- A refreshed low-saturation launcher palette.
+
+### Changed
+
+- The home screen is a fixed single-screen layout; Settings is the only primary
+  destination exposed from the home screen.
+- Settings uses a stable classic top surface and a lazy list to avoid the
+  previous scroll/recomposition crash.
+- The appearance controls and privilege-provider selector use Material 3
+  state/shape transitions.
+- The custom-color add button was removed; wallpaper color extraction is the
+  default and the built-in palette was softened.
+- Wireless Debugging reconnects only through the TLS connect mDNS service,
+  avoiding accidental selection of a legacy/plain ADB endpoint.
+- Local ADB identity storage now uses a standard PKCS#8 RSA private key and X.509
+  certificate in app-private no-backup storage. The previous Android Keystore
+  identity is invalidated once and must be paired again.
+- The explicit bundled Conscrypt provider was removed for the Android 11+ Local
+  ADB path; the platform TLS 1.3 provider is used instead.
+
+### Fixed
+
+- Home-screen content could appear scrollable even though it is a single page.
+- The top-right Settings button could be covered by another composable and stop
+  receiving taps.
+- Scrolling Settings to the bottom and back to the top could crash the app.
+- Light-theme Settings headers could flicker while scrolling.
+- System status/navigation bars did not fully participate in edge-to-edge.
+- Session overview values could be clipped on smaller displays.
+- Compatibility checks could show a large indefinite spinner behind the two
+  capability cards.
+- On Android 16 / some HyperOS builds, compatibility checks could remain pending
+  indefinitely; checks now surface a timeout and troubleshooting guidance.
+- Local ADB could fail with Conscrypt/OpenSSL RSA internal errors when the TLS
+  stack attempted to use an Android Keystore private key.
+- Local ADB reconnect could discover the wrong ADB transport.
+- Wireless Debugging pairing silently did nothing when the notification
+  permission was missing. The open-wireless-debugging action now explains why
+  notifications are needed, requests the permission before pairing starts, and
+  surfaces the concrete pairing error when a start attempt fails.
+- Compatibility checks hid the real failure behind a generic "not reported by
+  the privileged process" placeholder. The error reported by the privileged
+  process is now surfaced in the capability details, and the shell-context
+  attribution falls back to the classic op package name when the modern
+  attribution field is unavailable (seen on Android 16).
+- The privileged compatibility check itself always failed with a
+  `Resources$NotFoundException` when it tried to load detail strings through
+  the shell context, whose resources do not contain this app's IDs. The
+  capability details are plain literals again, so the check now reports real
+  results instead of an error.
+- Release/about metadata now describes the localized Material 3 branch instead
+  of presenting it as the upstream release.
+- The about screen no longer carries the localization fork's own attribution
+  and source links; source, issue reporting, and author links all point at the
+  upstream project.
+- The default and Simplified Chinese string resources each declared
+  `action_continue` twice, which failed the resource merge.
+
 ## [0.4.0-rc.3] - 2026-09-13
 
 Adds a quick settings tile and an intent API for starting and stopping sessions

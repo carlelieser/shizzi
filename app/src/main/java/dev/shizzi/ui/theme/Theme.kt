@@ -71,8 +71,8 @@ fun ShizziTheme(
     }
 
     val context = LocalContext.current
-    val palette = remember(appearance.accent, isDark, context) {
-        accentPalette(appearance.accent, isDark, context)
+    val palette = remember(appearance.accent, isDark, appearance.design, context) {
+        accentPalette(appearance.accent, isDark, appearance.design, context)
     }
 
     DesignScope(design = appearance.design, palette = palette, content = content)

@@ -15,6 +15,7 @@ class SessionResources(
 
     private var tun: TunHandle? = null
     private var fileDescriptor: ParcelFileDescriptor? = null
+    private var datapathDescriptor: ParcelFileDescriptor? = null
     private var network: Network? = null
     private var datapathSession: DatapathSession? = null
     private var keepAliveCallback: ConnectivityManager.NetworkCallback? = null
@@ -62,17 +63,36 @@ class SessionResources(
     }
 
     fun startDatapath(mtu: Int) {
-        val descriptor = fileDescriptor
+        val source = fileDescriptor
             ?: error("startDatapath: no TUN fd; acquire() must succeed first")
 
-        datapathSession = runCatching { Datapath.start(descriptor.fd.toLong(), mtu.toLong()) }
-            .getOrElse { failure ->
-                throw IllegalStateException(
-                    "startDatapath: userspace stack failed to attach to fd " +
-                        "${descriptor.fd} (mtu=$mtu)",
-                    failure,
-                )
-            }
+        // Keep the framework-owned TestNetworkInterface descriptor untouched.
+        // gVisor gets its own dup whose lifetime is tied to the userspace
+        // datapath. This avoids races with TestNetworkManager/network setup on
+        // OEM builds that may replace or close their side of the descriptor.
+        val duplicate = runCatching {
+            ParcelFileDescriptor.dup(source.fileDescriptor)
+        }.getOrElse { failure ->
+            throw IllegalStateException(
+                "startDatapath: could not dup TUN fd ${source.fd} (mtu=$mtu): " +
+                    "${failure.javaClass.simpleName}: ${failure.message}",
+                failure,
+            )
+        }
+        datapathDescriptor = duplicate
+
+        datapathSession = runCatching {
+            Datapath.start(duplicate.fd.toLong(), mtu.toLong())
+        }.getOrElse { failure ->
+            runCatching { duplicate.close() }
+            datapathDescriptor = null
+            throw IllegalStateException(
+                "startDatapath: userspace stack failed to attach to duplicated TUN fd " +
+                    "${duplicate.fd} (source=${source.fd}, mtu=$mtu): " +
+                    "${failure.javaClass.simpleName}: ${failure.message}",
+                failure,
+            )
+        }
     }
 
     fun bindDatapathTo(handle: Long) {
@@ -111,6 +131,12 @@ class SessionResources(
                 .onFailure { problems += "datapath.stop: ${it.message}" }
         }
         datapathSession = null
+
+        datapathDescriptor?.let { descriptor ->
+            runCatching { descriptor.close() }
+                .onFailure { problems += "close(datapath dup fd): ${it.message}" }
+        }
+        datapathDescriptor = null
 
         network?.let { acquired ->
             runCatching { testNetworkApi.teardownTestNetwork(acquired) }

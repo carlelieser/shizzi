@@ -1,5 +1,8 @@
 package dev.shizzi.ui.onboarding
 
+import dev.shizzi.R
+import dev.shizzi.str
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -32,7 +35,7 @@ fun TetheringProviderDownloadCard(state: CompatibilityState, hasNetwork: Boolean
             verticalArrangement = Arrangement.spacedBy(ShizziTheme.spacing.xs),
         ) {
             Text(
-                text = "Tethering module",
+                text = str(R.string.tethering_module),
                 style = ShizziTheme.typography.subheading,
                 color = ShizziTheme.colors.onSurface,
             )
@@ -80,19 +83,19 @@ private fun FailureDetail(reason: String) {
 }
 
 private fun bodyFor(state: CompatibilityState, hasNetwork: Boolean): String = when {
-    state is CompatibilityState.Downloading -> "Downloading the module…"
+    state is CompatibilityState.Downloading -> str(R.string.downloading_module)
 
     state is CompatibilityState.DownloadFailed && state.failure.isConnectivity ->
-        "Couldn't reach the network to download the module. Reconnect and try again."
+        str(R.string.could_not_download_the_module_restore_network_access)
 
     state is CompatibilityState.DownloadFailed ->
-        "The download couldn't be verified, so nothing was installed."
+        str(R.string.the_download_failed_verification_so_nothing_was_installed)
 
     !hasNetwork ->
-        "Your phone needs the newer tethering module to route the hotspot. " +
-            "Connect to a network to download it."
+        str(R.string.your_phone_needs_a_newer_tethering_module_to) +
+            str(R.string.connect_to_the_internet_to_download_it)
 
     else ->
-        "Your phone can run this app once it has a newer tethering module. " +
-            "It's about 3 MB, and installing it needs one restart."
+        str(R.string.installing_the_newer_tethering_module_enables_shizzi_on) +
+            str(R.string.the_module_is_about_3_mb_and_requires)
 }

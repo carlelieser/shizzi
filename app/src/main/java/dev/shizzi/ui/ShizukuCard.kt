@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import dev.shizzi.R
 import dev.shizzi.ShizukuGate
 import dev.shizzi.ShizukuState
+import dev.shizzi.str
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.themedSurface
 
@@ -44,9 +45,9 @@ fun ShizukuCard(state: ShizukuState, onGrant: () -> Unit) {
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(ShizziTheme.spacing.sm),
         ) {
-            StatusRow(name = "Status", value = statusText(state))
-            StatusRow(name = "Service", value = serviceText(state))
-            StatusRow(name = "Version", value = ShizukuGate.installedVersion() ?: "Not installed")
+            StatusRow(name = str(R.string.status), value = statusText(state))
+            StatusRow(name = str(R.string.service), value = serviceText(state))
+            StatusRow(name = str(R.string.version), value = ShizukuGate.installedVersion() ?: str(R.string.not_installed))
 
             if (state is ShizukuState.PermissionRequired) {
                 GrantButton(onGrant)
@@ -86,7 +87,7 @@ private fun GrantButton(onGrant: () -> Unit) {
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = "GRANT PERMISSION",
+            text = str(R.string.grant_permission),
             style = ShizziTheme.typography.label,
             color = ShizziTheme.colors.onPrimary,
         )
@@ -94,10 +95,10 @@ private fun GrantButton(onGrant: () -> Unit) {
 }
 
 private fun statusText(state: ShizukuState): String = when (state) {
-    is ShizukuState.Ready -> "Ready"
-    ShizukuState.NotInstalled -> "Not installed"
-    ShizukuState.NotRunning -> "Not running"
-    ShizukuState.PermissionRequired -> "Permission required"
+    is ShizukuState.Ready -> str(R.string.ready)
+    ShizukuState.NotInstalled -> str(R.string.not_installed)
+    ShizukuState.NotRunning -> str(R.string.not_running)
+    ShizukuState.PermissionRequired -> str(R.string.permission_required)
 }
 
 private fun serviceText(state: ShizukuState): String = when (state) {

@@ -1,5 +1,8 @@
 package dev.shizzi.ui
 
+import dev.shizzi.R
+import dev.shizzi.str
+
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.mutableStateListOf
@@ -62,5 +65,5 @@ fun rememberToastState(): ToastState = remember { ToastState() }
 
 fun copiedToast(label: String): Toast = Toast(
     key = ToastKeys.COPY,
-    message = "$label copied",
+    message = str(R.string.copied_value, label),
 )

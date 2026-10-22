@@ -26,9 +26,9 @@ import kotlinx.coroutines.launch
 class SessionService : Service() {
 
     private val scope = CoroutineScope(SupervisorJob())
-    private val controller = TetherClient()
+    private var controller: PrivilegedClient? = null
     private val notification by lazy { SessionNotification(this) }
-    private val statusPoller = SessionStatusPoller(scope, controller)
+    private val statusPoller = SessionStatusPoller(scope)
 
     private val internalState get() = sessionState
 
@@ -44,7 +44,7 @@ class SessionService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        controller.onSessionLost = ::handleSessionLost
+
         liveService = this
     }
 
@@ -83,9 +83,11 @@ class SessionService : Service() {
 
             val settings = settingsStore().settings.first()
 
+            val activeController = controllerFor(settings.privilegeBackend)
+            activeController.onSessionLost = ::handleSessionLost
             val outcome = sessionLock.withLock {
                 if (attempt != generation) return@launch
-                runCatching { controller.start(settings.isLogging, settings.vpnMode) }
+                runCatching { activeController.start(settings.isLogging, settings.vpnMode) }
             }
             if (attempt != generation) return@launch
 
@@ -105,11 +107,19 @@ class SessionService : Service() {
 
     private fun followStatus() = statusPoller.follow(
         isConnected = { internalState.value.status == UiStatus.CONNECTED },
+        status = { requireNotNull(controller).status() },
         onStatus = { outcome ->
             internalState.update { current -> current.applyOutcome(outcome) }
             publishState()
         },
     )
+
+    private fun controllerFor(backend: PrivilegeBackendType): PrivilegedClient {
+        val current = controller
+        if (current != null && current.backend == backend) return current
+        current?.unbindAndStopDaemon()
+        return PrivilegeClients.create(applicationContext, backend).also { controller = it }
+    }
 
     private fun settingsStore(): SettingsStore =
         (application as App).settingsStore
@@ -133,10 +143,10 @@ class SessionService : Service() {
             abandoned?.cancelAndJoin()
 
             sessionLock.withLock {
-                runCatching { controller.stop() }
+                runCatching { controller?.stop() }
                     .onFailure { SessionLog.error("teardown failed: ${it.message}") }
 
-                controller.unbindAndStopDaemon()
+                controller?.unbindAndStopDaemon()
             }
 
             announceOutcome()
@@ -162,7 +172,7 @@ class SessionService : Service() {
         publishState()
 
         scope.launch {
-            val problem = runCatching { controller.releaseOrphanedDownstream() }
+            val problem = runCatching { controller?.releaseOrphanedDownstream() }
                 .getOrElse { failure -> "teardown failed: ${failure.message}" }
 
             when (problem) {
@@ -193,8 +203,8 @@ class SessionService : Service() {
         getSystemService(NotificationManager::class.java)
 
     override fun onDestroy() {
-        controller.onSessionLost = null
-        controller.unbind()
+        controller?.onSessionLost = null
+        controller?.unbind()
         scope.cancel()
         liveService = null
         super.onDestroy()

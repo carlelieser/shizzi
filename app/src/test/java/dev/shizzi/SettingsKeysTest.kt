@@ -45,6 +45,20 @@ class SettingsKeysTest {
     }
 
     @Test
+    fun `reads a stored privilege backend`() {
+        val stored = preferencesOf(PRIVILEGE_BACKEND to PrivilegeBackendType.LOCAL_ADB.name)
+
+        assertEquals(PrivilegeBackendType.LOCAL_ADB, toSettings(stored).privilegeBackend)
+    }
+
+    @Test
+    fun `defaults to shizuku when the privilege backend is unreadable`() {
+        val stored = preferencesOf(PRIVILEGE_BACKEND to "telepathy")
+
+        assertEquals(PrivilegeBackendType.SHIZUKU, toSettings(stored).privilegeBackend)
+    }
+
+    @Test
     fun `reads a stored vpn mode`() {
         val stored = preferencesOf(VPN_MODE to VpnMode.NEVER.name)
 

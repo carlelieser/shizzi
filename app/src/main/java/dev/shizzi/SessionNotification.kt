@@ -29,50 +29,50 @@ class SessionNotification(private val context: Context) {
     private fun titleFor(state: SessionUiState, isStopping: Boolean): String =
         when (state.status) {
             UiStatus.CONNECTED -> connectedTitle(state)
-            UiStatus.LOADING -> if (isStopping) "Cleaning up…" else "Getting ready…"
-            UiStatus.ERROR -> "Session ended"
-            UiStatus.READY -> "Session ended"
+            UiStatus.LOADING -> if (isStopping) str(R.string.cleaning_up) else str(R.string.preparing)
+            UiStatus.ERROR -> str(R.string.sharing_session_ended)
+            UiStatus.READY -> str(R.string.sharing_session_ended)
         }
 
     private fun connectedTitle(state: SessionUiState): String = when {
-        state.isVpnBypassed -> "Connected · VPN ignored"
-        state.isVpnBound -> "Connected · VPN"
-        else -> "Connected"
+        state.isVpnBypassed -> str(R.string.connected_vpn_bypassed)
+        state.isVpnBound -> str(R.string.connected_vpn)
+        else -> str(R.string.connected)
     }
 
     private fun bodyFor(state: SessionUiState, isStopping: Boolean): String = when {
         state.lastError.isNotEmpty() -> userFacingError(state.lastError)
         state.status == UiStatus.LOADING -> loadingBody(isStopping)
         state.status == UiStatus.CONNECTED -> connectedBody(state)
-        else -> "Not sharing"
+        else -> str(R.string.not_sharing)
     }
 
     private fun userFacingError(raw: String): String = when {
-        raw.contains(EXCEPTION_MARKER) -> "Something went wrong. Check the app for details."
+        raw.contains(EXCEPTION_MARKER) -> str(R.string.an_error_occurred_open_the_app_for_details)
         else -> raw
     }
 
     private fun loadingBody(isStopping: Boolean): String =
-        if (isStopping) "Turning the hotspot off…" else "Turning the hotspot on…"
+        if (isStopping) str(R.string.turning_off_hotspot) else str(R.string.turning_on_hotspot)
 
     private fun connectedBody(state: SessionUiState): String = when (state.clientCount) {
-        0 -> "No devices connected"
+        0 -> str(R.string.no_devices_connected)
         else -> "${deviceCount(state.clientCount)} · " +
             "$DOWN_ARROW ${Traffic.format(state.traffic.down)} · " +
             "$UP_ARROW ${Traffic.format(state.traffic.up)}"
     }
 
     private fun deviceCount(clients: Int): String = when (clients) {
-        1 -> "1 device"
-        else -> "$clients devices"
+        1 -> str(R.string.one_device)
+        else -> str(R.string.value_devices, clients)
     }
 
     fun describeLoss(problem: String?): String = when (problem) {
-        null -> "Shizuku stopped, so the session ended. The hotspot was turned off. " +
-            "Start again when you are ready."
+        null -> str(R.string.privileged_helper_stopped_session_ended) +
+            str(R.string.you_can_start_it_again_when_ready)
 
-        else -> "The session ended but the hotspot may still be on: $problem — " +
-            "turn it off in Settings."
+        else -> str(R.string.the_sharing_session_ended_but_the_hotspot_may, problem) +
+            str(R.string.turn_it_off_in_system_settings)
     }
 
     private fun openAppIntent(): PendingIntent = PendingIntent.getActivity(
@@ -84,7 +84,7 @@ class SessionNotification(private val context: Context) {
 
     private fun stopAction(): Notification.Action = Notification.Action.Builder(
         null,
-        "Stop",
+        str(R.string.action_stop),
         PendingIntent.getService(
             context,
             1,
@@ -98,9 +98,9 @@ class SessionNotification(private val context: Context) {
 
         val channel = NotificationChannel(
             CHANNEL_ID,
-            "Tethering session",
+            str(R.string.tethering_session),
             NotificationManager.IMPORTANCE_LOW,
-        ).apply { description = "Shown while a tethering session is running" }
+        ).apply { description = str(R.string.shown_while_the_tethering_session_is_running) }
 
         notificationManager().createNotificationChannel(channel)
     }

@@ -93,46 +93,46 @@ val Typography = ShizziTypography(
 val ExpressiveTypography = ShizziTypography(
 
     display = TextStyle(
-        fontFamily = GoogleSans,
+        fontFamily = FontFamily.SansSerif,
         fontSize = 32.sp,
         fontWeight = FontWeight.W700,
         letterSpacing = (-0.02).em,
     ),
 
     heading = TextStyle(
-        fontFamily = GoogleSans,
+        fontFamily = FontFamily.SansSerif,
         fontSize = 22.sp,
         fontWeight = FontWeight.W700,
         letterSpacing = (-0.01).em,
     ),
 
     subheading = TextStyle(
-        fontFamily = GoogleSans,
+        fontFamily = FontFamily.SansSerif,
         fontSize = 17.sp,
         fontWeight = FontWeight.W500,
     ),
 
     title = TextStyle(
-        fontFamily = GoogleSans,
+        fontFamily = FontFamily.SansSerif,
         fontSize = 16.sp,
         fontWeight = FontWeight.W500,
     ),
 
     label = TextStyle(
-        fontFamily = GoogleSans,
+        fontFamily = FontFamily.SansSerif,
         fontSize = 14.sp,
         fontWeight = FontWeight.W500,
     ),
 
     caption = TextStyle(
-        fontFamily = GoogleSans,
+        fontFamily = FontFamily.SansSerif,
         fontSize = 12.sp,
         fontWeight = FontWeight.W500,
     ),
 
     log = TextStyle(fontFamily = Mono, fontSize = 13.sp, fontWeight = FontWeight.W400),
     body = TextStyle(
-        fontFamily = GoogleSans,
+        fontFamily = FontFamily.SansSerif,
         fontSize = 14.sp,
         fontWeight = FontWeight.W400,
     ),

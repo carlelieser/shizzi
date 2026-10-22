@@ -14,6 +14,7 @@ class App : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        CrashReport.install(this)
         instance = this
 
         SessionLog.useAppStorage(filesDir)

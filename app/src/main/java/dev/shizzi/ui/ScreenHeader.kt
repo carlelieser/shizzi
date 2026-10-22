@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -19,6 +20,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.shizzi.ui.theme.DesignLanguage
 import dev.shizzi.ui.theme.HeaderHeight
@@ -29,7 +32,7 @@ private val HeaderRule = 1.dp
 
 /** Draws the rule across on entry so the header resolves rather than appearing. */
 @Composable
-private fun rememberRuleExtent(hasRule: Boolean): Float {
+private fun rememberRuleExtent(): Float {
     var hasDrawn by remember { mutableStateOf(false) }
 
     val extent by animateFloatAsState(
@@ -38,7 +41,7 @@ private fun rememberRuleExtent(hasRule: Boolean): Float {
         label = "headerRule",
     )
 
-    LaunchedEffect(hasRule) { hasDrawn = true }
+    LaunchedEffect(Unit) { hasDrawn = true }
 
     return extent
 }
@@ -48,42 +51,52 @@ fun ScreenHeader(
     title: String,
     onBack: () -> Unit,
     action: @Composable () -> Unit = {},
+    modifier: Modifier = Modifier,
+    containerColor: Color = ShizziTheme.colors.surface,
+    tonalElevation: Dp = 2.dp,
+    shadowElevation: Dp = 1.dp,
 ) {
-    val border = ShizziTheme.colors.border
+    // Neobrutalism resolves the header with a hard rule along its bottom edge;
+    // Material Expressive separates it through the surface elevation instead.
     val hasRule = ShizziTheme.design == DesignLanguage.NEOBRUTALISM
-    val ruleExtent = rememberRuleExtent(hasRule)
+    val border = ShizziTheme.colors.border
+    val ruleExtent = rememberRuleExtent()
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(HeaderHeight)
-
-            .drawBehind {
-                if (!hasRule) return@drawBehind
-
-                val thickness = HeaderRule.toPx()
-                val baseline = size.height - thickness / 2f
-                drawLine(
-                    color = border,
-                    start = Offset(0f, baseline),
-                    end = Offset(size.width * ruleExtent, baseline),
-                    strokeWidth = thickness,
-                )
-            }
-            .padding(horizontal = ShizziTheme.spacing.sm),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(ShizziTheme.spacing.xs),
+    Surface(
+        modifier = modifier,
+        color = containerColor,
+        tonalElevation = tonalElevation,
+        shadowElevation = shadowElevation,
     ) {
-        BackButton(onBack)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(HeaderHeight)
+                .drawBehind {
+                    if (!hasRule) return@drawBehind
 
-        Text(
-            text = title,
-            style = ShizziTheme.typography.heading,
-            color = ShizziTheme.colors.onSurface,
-            modifier = Modifier.weight(1f),
-        )
-
-        action()
-        Spacer(Modifier.width(ShizziTheme.spacing.xs))
+                    val thickness = HeaderRule.toPx()
+                    val baseline = size.height - thickness / 2f
+                    drawLine(
+                        color = border,
+                        start = Offset(0f, baseline),
+                        end = Offset(size.width * ruleExtent, baseline),
+                        strokeWidth = thickness,
+                    )
+                }
+                .padding(horizontal = ShizziTheme.spacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(ShizziTheme.spacing.xs),
+        ) {
+            BackButton(onBack)
+            Text(
+                text = title,
+                style = ShizziTheme.typography.heading,
+                color = ShizziTheme.colors.onSurface,
+                modifier = Modifier.weight(1f),
+            )
+            action()
+            Spacer(Modifier.width(ShizziTheme.spacing.xs))
+        }
     }
 }

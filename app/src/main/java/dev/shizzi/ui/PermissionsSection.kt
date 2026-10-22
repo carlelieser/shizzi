@@ -6,11 +6,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import dev.shizzi.AppPermission
 import dev.shizzi.PermissionStatus
-import dev.shizzi.ShizukuState
+import dev.shizzi.PrivilegeBackendType
+import dev.shizzi.PrivilegeState
 import dev.shizzi.ui.theme.ShizziTheme
 
 data class PermissionsSectionState(
-    val shizuku: ShizukuState,
+    val backend: PrivilegeBackendType,
+    val privilegeState: PrivilegeState,
     val permissions: List<PermissionStatus>,
 )
 
@@ -18,32 +20,17 @@ data class PermissionsSectionState(
 fun PermissionsSection(
     state: PermissionsSectionState,
     onGrantPermission: (AppPermission) -> Unit,
-    onShizukuAction: () -> Unit,
+    privilegeActions: PrivilegeAccessActions,
 ) {
     Box(modifier = Modifier.padding(vertical = ShizziTheme.spacing.md)) {
-        ShizukuCard(state = state.shizuku, onGrant = onShizukuAction)
+        PrivilegeAccessCard(state.backend, state.privilegeState, privilegeActions)
     }
-
-    val rows = permissionRows(
-        sources = PermissionRowSources(
-            shizuku = state.shizuku,
-            permissions = state.permissions,
-        ),
-        onGrantPermission = onGrantPermission,
-        onShizukuAction = onShizukuAction,
-    )
-
-    rows.forEach { row -> PermissionSettingsRow(row) }
+    permissionRows(state.permissions, onGrantPermission).forEach { row -> PermissionSettingsRow(row) }
 }
 
 @Composable
 private fun PermissionSettingsRow(row: PermissionRowState) {
     val label = SettingsText(title = row.title, subtitle = row.rationale)
-
-    if (row.isGranted) {
-        SettingsStatusRow(label = label)
-        return
-    }
-
-    SettingsAction(label = label, onClick = row.onAct)
+    if (row.isGranted) SettingsStatusRow(label = label)
+    else SettingsAction(label = label, onClick = row.onAct)
 }

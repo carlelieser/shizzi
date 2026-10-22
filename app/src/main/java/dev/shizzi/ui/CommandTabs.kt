@@ -1,5 +1,8 @@
 package dev.shizzi.ui
 
+import dev.shizzi.R
+import dev.shizzi.str
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -30,8 +33,8 @@ fun CommandTabs(
 }
 
 private fun labelFor(command: AutomationCommand): String = when (command) {
-    AutomationCommand.START -> "Start"
-    AutomationCommand.STOP -> "Stop"
-    AutomationCommand.TOGGLE -> "Toggle"
-    AutomationCommand.QUERY_STATUS -> "Status"
+    AutomationCommand.START -> str(R.string.action_start)
+    AutomationCommand.STOP -> str(R.string.action_stop)
+    AutomationCommand.TOGGLE -> str(R.string.toggle)
+    AutomationCommand.QUERY_STATUS -> str(R.string.status)
 }

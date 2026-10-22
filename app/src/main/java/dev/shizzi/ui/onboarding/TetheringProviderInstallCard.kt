@@ -1,5 +1,8 @@
 package dev.shizzi.ui.onboarding
 
+import dev.shizzi.R
+import dev.shizzi.str
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -59,21 +62,21 @@ private fun InstallFailureDetail(reason: String) {
 }
 
 private fun titleFor(state: CompatibilityState): String = when (state) {
-    is CompatibilityState.Staged -> "Restart your phone to finish"
-    is CompatibilityState.InstallFailed -> "The module wasn't accepted"
-    else -> "Tethering module"
+    is CompatibilityState.Staged -> str(R.string.reboot_to_finish_installation)
+    is CompatibilityState.InstallFailed -> str(R.string.the_module_was_rejected_by_the_system)
+    else -> str(R.string.tethering_module)
 }
 
 private fun bodyFor(state: CompatibilityState): String = when (state) {
-    is CompatibilityState.Installing -> "Installing the module…"
+    is CompatibilityState.Installing -> str(R.string.installing_module)
 
     is CompatibilityState.Staged ->
-        "The module is ready and will finish installing the next time your " +
-            "phone starts up. Come back here afterwards to check compatibility."
+        str(R.string.the_module_is_staged_and_will_finish_installing) +
+            str(R.string.return_here_after_rebooting_to_check_compatibility_again)
 
     is CompatibilityState.InstallFailed ->
-        "Your phone refused this module, which some manufacturers' builds do. " +
-            "Nothing was changed."
+        str(R.string.the_system_rejected_this_module_this_can_happen) +
+            str(R.string.no_changes_were_made_to_the_device)
 
-    else -> "The module is downloaded and verified, ready to install."
+    else -> str(R.string.the_module_is_downloaded_verified_and_ready_to)
 }

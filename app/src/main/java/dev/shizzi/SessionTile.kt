@@ -14,13 +14,13 @@ object SessionTile {
 
     const val LABEL = "Shizzi"
 
-    fun render(session: SessionUiState, shizuku: ShizukuState, isStopping: Boolean): TileRender {
-        if (shizuku !is ShizukuState.Ready) return unavailable(shizuku)
+    fun render(session: SessionUiState, privilege: PrivilegeState, isStopping: Boolean): TileRender {
+        if (privilege !is PrivilegeState.Ready) return unavailable(privilege)
 
         return when (session.status) {
             UiStatus.LOADING -> TileRender(
                 state = Tile.STATE_UNAVAILABLE,
-                subtitle = if (isStopping) "Stopping…" else "Starting…",
+                subtitle = if (isStopping) str(R.string.stopping) else str(R.string.starting),
                 action = TileAction.NONE,
             )
 
@@ -32,34 +32,35 @@ object SessionTile {
 
             UiStatus.ERROR -> TileRender(
                 state = Tile.STATE_INACTIVE,
-                subtitle = "Tap to retry",
+                subtitle = str(R.string.tap_to_retry),
                 action = TileAction.START,
             )
 
             UiStatus.READY -> TileRender(
                 state = Tile.STATE_INACTIVE,
-                subtitle = "Tap to share",
+                subtitle = str(R.string.tap_to_start_sharing),
                 action = TileAction.START,
             )
         }
     }
 
-    private fun unavailable(shizuku: ShizukuState) = TileRender(
+    private fun unavailable(privilege: PrivilegeState) = TileRender(
         state = Tile.STATE_UNAVAILABLE,
-        subtitle = describe(shizuku),
+        subtitle = describe(privilege),
         action = TileAction.OPEN_APP,
     )
 
-    private fun describe(shizuku: ShizukuState): String = when (shizuku) {
-        ShizukuState.NotInstalled -> "Shizuku not installed"
-        ShizukuState.NotRunning -> "Shizuku not running"
-        ShizukuState.PermissionRequired -> "Permission required"
-        is ShizukuState.Ready -> ""
+    private fun describe(privilege: PrivilegeState): String = when (privilege) {
+        is PrivilegeState.Ready -> ""
+        is PrivilegeState.SetupRequired -> str(R.string.provider_setup_required)
+        is PrivilegeState.Connecting -> str(R.string.local_adb_connecting)
+        is PrivilegeState.Unsupported -> str(R.string.local_adb_unsupported)
+        is PrivilegeState.Error -> str(R.string.local_adb_error, privilege.message)
     }
 
     private fun describeConnected(session: SessionUiState): String = when (session.clientCount) {
-        0 -> "No devices"
-        1 -> "1 device · ${Traffic.format(session.traffic.down)}"
-        else -> "${session.clientCount} devices · ${Traffic.format(session.traffic.down)}"
+        0 -> str(R.string.no_connected_devices)
+        1 -> str(R.string.one_device_traffic, Traffic.format(session.traffic.down))
+        else -> str(R.string.value_devices_value, session.clientCount, Traffic.format(session.traffic.down))
     }
 }

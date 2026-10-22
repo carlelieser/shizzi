@@ -1,5 +1,8 @@
 package dev.shizzi.ui.onboarding
 
+import dev.shizzi.R
+import dev.shizzi.str
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -38,13 +41,13 @@ fun WelcomeStep() {
         )
 
         Text(
-            text = "Welcome",
+            text = str(R.string.welcome),
             style = StepTitleStyle,
             color = ShizziTheme.colors.onSurface,
         )
 
         Text(
-            text = "Rootless wifi-tethering with Shizuku.",
+            text = str(R.string.rootless_wifi_tethering_with_shizuku_or_wireless_debugging),
             style = ShizziTheme.typography.body,
             color = ShizziTheme.colors.onSurfaceMuted,
             textAlign = TextAlign.Center,

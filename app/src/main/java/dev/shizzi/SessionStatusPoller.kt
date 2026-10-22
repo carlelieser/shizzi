@@ -5,14 +5,14 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-class SessionStatusPoller(
-    private val scope: CoroutineScope,
-    private val controller: TetherClient,
-) {
-
+class SessionStatusPoller(private val scope: CoroutineScope) {
     private var job: Job? = null
 
-    fun follow(isConnected: () -> Boolean, onStatus: (Result<String>) -> Unit) {
+    fun follow(
+        isConnected: () -> Boolean,
+        status: suspend () -> String,
+        onStatus: (Result<String>) -> Unit,
+    ) {
         stop()
         if (!isConnected()) return
 
@@ -20,8 +20,7 @@ class SessionStatusPoller(
             while (isConnected()) {
                 delay(POLL_INTERVAL_MS)
                 if (!isConnected()) return@launch
-
-                val outcome = runCatching { controller.status() }
+                val outcome = runCatching { status() }
                 if (outcome.isSuccess) onStatus(outcome)
             }
         }
@@ -32,8 +31,5 @@ class SessionStatusPoller(
         job = null
     }
 
-    private companion object {
-
-        const val POLL_INTERVAL_MS = 1_000L
-    }
+    private companion object { const val POLL_INTERVAL_MS = 1_000L }
 }

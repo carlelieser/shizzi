@@ -1,6 +1,9 @@
 package dev.shizzi.ui
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,12 +21,17 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import dev.shizzi.ui.theme.DesignLanguage
 import dev.shizzi.ui.theme.ShizziTheme
+import dev.shizzi.ui.theme.fastSpring
+import dev.shizzi.ui.theme.themedIndication
 import dev.shizzi.ui.theme.Spacing
 
 private val RowIconSize = 20.dp
@@ -98,10 +106,26 @@ fun SettingsAction(
     isExternal: Boolean = false,
     onClick: () -> Unit,
 ) {
+    val interaction = remember { MutableInteractionSource() }
+    val isPressed by interaction.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.985f else 1f,
+        animationSpec = fastSpring(),
+        label = "settingsActionScale",
+    )
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clickable(
+                interactionSource = interaction,
+                indication = themedIndication(),
+                onClick = onClick,
+            )
             .padding(vertical = RowPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -123,10 +147,26 @@ fun SettingsAction(
 
 @Composable
 fun SettingsChoice(label: SettingsText, value: String, onClick: () -> Unit) {
+    val interaction = remember { MutableInteractionSource() }
+    val isPressed by interaction.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.985f else 1f,
+        animationSpec = fastSpring(),
+        label = "settingsChoiceScale",
+    )
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clickable(
+                interactionSource = interaction,
+                indication = themedIndication(),
+                onClick = onClick,
+            )
             .padding(vertical = RowPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {

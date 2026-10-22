@@ -1,5 +1,8 @@
 package dev.shizzi.ui
 
+import dev.shizzi.R
+import dev.shizzi.str
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -40,7 +43,7 @@ fun ColorPickerSheet(onConfirm: (Int) -> Unit, onDismiss: () -> Unit) {
 
     ThemedBottomSheet(onDismiss = onDismiss) {
         Text(
-            text = "Color picker",
+            text = str(R.string.choose_color),
             style = ShizziTheme.typography.heading,
             color = ShizziTheme.colors.onSurface,
         )
@@ -93,7 +96,7 @@ private fun AddColorButton(onClick: () -> Unit) {
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = themedLabel("Add color"),
+            text = themedLabel(str(R.string.add_color)),
             style = ShizziTheme.typography.title,
             color = colors.onPrimary,
         )

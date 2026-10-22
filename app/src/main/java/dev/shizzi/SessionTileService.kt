@@ -15,8 +15,8 @@ import kotlinx.coroutines.launch
 class SessionTileService : TileService() {
 
     private var scope: CoroutineScope? = null
-
     private var isStopping = false
+    private var backend = PrivilegeBackendType.SHIZUKU
 
     override fun onStartListening() {
         super.onStartListening()
@@ -26,6 +26,12 @@ class SessionTileService : TileService() {
 
         created.launch {
             SessionService.liveState.collectLatest { publish(it) }
+        }
+        created.launch {
+            (application as App).settingsStore.settings.collectLatest { settings ->
+                backend = settings.privilegeBackend
+                publish(SessionService.liveState.value)
+            }
         }
     }
 
@@ -38,9 +44,7 @@ class SessionTileService : TileService() {
     override fun onClick() {
         super.onClick()
 
-        val render = currentRender()
-
-        when (render.action) {
+        when (currentRender().action) {
             TileAction.NONE -> Unit
             TileAction.OPEN_APP -> openApp()
             TileAction.START -> unlockAndRun { command(isStop = false) }
@@ -52,10 +56,7 @@ class SessionTileService : TileService() {
         isStopping = isStop
 
         runCatching {
-            when {
-                isStop -> SessionService.stop(this)
-                else -> SessionService.start(this)
-            }
+            if (isStop) SessionService.stop(this) else SessionService.start(this)
         }.onFailure { failure ->
             isStopping = false
             SessionLog.error(
@@ -69,7 +70,7 @@ class SessionTileService : TileService() {
 
     private fun publish(session: SessionUiState) {
         val tile = qsTile ?: return
-        val render = SessionTile.render(session, ShizukuGate.currentState(), isStopping)
+        val render = SessionTile.render(session, quickPrivilegeState(), isStopping)
 
         if (session.status != UiStatus.LOADING) isStopping = false
 
@@ -82,9 +83,18 @@ class SessionTileService : TileService() {
 
     private fun currentRender(): TileRender = SessionTile.render(
         SessionService.liveState.value,
-        ShizukuGate.currentState(),
+        quickPrivilegeState(),
         isStopping,
     )
+
+    private fun quickPrivilegeState(): PrivilegeState = when (backend) {
+        PrivilegeBackendType.SHIZUKU -> PrivilegeGate.shizukuState()
+        PrivilegeBackendType.LOCAL_ADB -> when {
+            !LocalAdbManager.isSupported() -> PrivilegeState.Unsupported(backend)
+            !LocalAdbManager.wasPaired(applicationContext) -> PrivilegeState.SetupRequired(backend)
+            else -> PrivilegeState.Ready(backend)
+        }
+    }
 
     private fun openApp() {
         val intent = Intent(this, MainActivity::class.java)

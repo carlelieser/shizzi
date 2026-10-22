@@ -1,58 +1,59 @@
 package dev.shizzi.ui
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import dev.shizzi.AppPermission
+import dev.shizzi.BuildConfig
 import dev.shizzi.PermissionStatus
-import dev.shizzi.ShizukuState
+import dev.shizzi.PrivilegeBackendType
+import dev.shizzi.PrivilegeState
+import dev.shizzi.R
 import dev.shizzi.VpnMode
+import dev.shizzi.str
 import dev.shizzi.ui.theme.AccentChoice
 import dev.shizzi.ui.theme.DesignLanguage
+import dev.shizzi.ui.theme.HeaderHeight
 import dev.shizzi.ui.theme.ScreenPadding
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.ThemeChoice
 import dev.shizzi.ui.theme.standardTween
 
-private const val SOURCE_URL = "https://github.com/carlelieser/shizzi"
+private const val UPSTREAM_URL = "https://github.com/carlelieser/shizzi"
 private const val ISSUE_URL = "https://github.com/carlelieser/shizzi/issues/new"
 private const val AUTHOR_URL = "https://carlelieser.dev"
 
-private const val BusyAlpha = 0.4f
-
-private const val SectionStaggerMillis = 45
-
-private val SectionRise = 12.dp
-
 data class SettingsState(
-    val shizuku: ShizukuState,
+    val backend: PrivilegeBackendType,
+    val privilegeState: PrivilegeState,
     val permissions: List<PermissionStatus>,
     val theme: ThemeChoice,
     val design: DesignLanguage,
     val accent: AccentChoice,
-    val customAccents: List<Int>,
     val isLogging: Boolean,
     val vpnMode: VpnMode,
     val isRunningDiagnostics: Boolean,
@@ -63,194 +64,141 @@ data class SettingsActions(
     val onSetTheme: (ThemeChoice) -> Unit,
     val onSetDesign: (DesignLanguage) -> Unit,
     val onSetAccent: (AccentChoice) -> Unit,
-    val onAddCustomAccent: (Int) -> Unit,
     val onSetLogging: (Boolean) -> Unit,
     val onSetVpnMode: (VpnMode) -> Unit,
     val onOpenLog: () -> Unit,
     val onRunProbes: () -> Unit,
+    val onCancelProbes: () -> Unit,
     val onGrantPermission: (AppPermission) -> Unit,
+    val onSetPrivilegeBackend: (PrivilegeBackendType) -> Unit,
     val onShizukuAction: () -> Unit,
+    val onStartLocalAdbPairing: () -> Unit,
+    val onCancelLocalAdbPairing: () -> Unit,
     val onRestartOnboarding: () -> Unit,
     val automation: AutomationActions,
 )
 
 @Composable
-fun SettingsPage(
-    state: SettingsState,
-    actions: SettingsActions,
-    toasts: ToastState,
-    onBack: () -> Unit,
-) {
-    val isBusy = state.isRunningDiagnostics
+fun SettingsPage(state: SettingsState, actions: SettingsActions, toasts: ToastState, onBack: () -> Unit) {
+    val listState = rememberLazyListState()
 
-    val busyAlpha by animateFloatAsState(
-        targetValue = if (isBusy) BusyAlpha else 1f,
+    // The header blends into the page background while the list rests at the
+    // top, and picks up its surface treatment once content scrolls beneath it.
+    val isScrolled = listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0
+    val colors = ShizziTheme.colors
+    val headerColor by animateColorAsState(
+        targetValue = if (isScrolled) colors.surfaceContainer else colors.background,
         animationSpec = standardTween(),
-        label = "settingsBusy",
+        label = "settingsHeaderColor",
+    )
+    val headerShadow by animateDpAsState(
+        targetValue = if (isScrolled) 1.dp else 0.dp,
+        animationSpec = standardTween(),
+        label = "settingsHeaderShadow",
     )
 
-    Column(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
-
-        ScreenHeader(title = "Settings", onBack = onBack)
+    Box(Modifier.fillMaxSize()) {
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                start = ScreenPadding,
+                end = ScreenPadding,
+                // The list draws edge to edge; it starts below the header and
+                // scrolls beneath it, including under the status bar.
+                top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() +
+                    HeaderHeight + ShizziTheme.spacing.md,
+                bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() +
+                    ShizziTheme.spacing.xxl,
+            ),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            items(settingsSections(state, actions, toasts), key = { it.label }) { section ->
+                SettingsSection(section.label, section.content)
+            }
+        }
 
         Column(
             modifier = Modifier
-                .verticalScroll(rememberScrollState(), enabled = !isBusy)
-                .alpha(busyAlpha)
-                .inert(isBusy)
-                .padding(horizontal = ScreenPadding),
+                .fillMaxWidth()
+                .background(headerColor)
+                .statusBarsPadding(),
         ) {
-            settingsSections(state, actions, toasts).forEachIndexed { index, section ->
-                SettingsSection(index = index, label = section.label, content = section.content)
-            }
-
-            Spacer(Modifier.height(ShizziTheme.spacing.xxl))
+            ScreenHeader(
+                title = str(R.string.settings),
+                onBack = onBack,
+                modifier = Modifier.fillMaxWidth(),
+                containerColor = headerColor,
+                tonalElevation = 0.dp,
+                shadowElevation = headerShadow,
+            )
         }
     }
 }
 
 @Immutable
-private data class SettingsSectionSpec(
-    val label: String,
-    val content: @Composable () -> Unit,
-)
+private data class SettingsSectionSpec(val label: String, val content: @Composable () -> Unit)
 
-private fun settingsSections(
-    state: SettingsState,
-    actions: SettingsActions,
-    toasts: ToastState,
-): List<SettingsSectionSpec> = listOf(
-    SettingsSectionSpec("Appearance") {
+private fun settingsSections(state: SettingsState, actions: SettingsActions, toasts: ToastState) = listOf(
+    SettingsSectionSpec(str(R.string.appearance)) {
         AppearanceSection(
-            state = AppearanceState(
-                theme = state.theme,
-                design = state.design,
-                accent = state.accent,
-                customAccents = state.customAccents,
-            ),
-            actions = AppearanceActions(
-                onSetTheme = actions.onSetTheme,
-                onSetDesign = actions.onSetDesign,
-                onSetAccent = actions.onSetAccent,
-                onAddCustomAccent = actions.onAddCustomAccent,
-            ),
+            AppearanceState(state.theme, state.design, state.accent),
+            AppearanceActions(actions.onSetTheme, actions.onSetDesign, actions.onSetAccent),
         )
     },
-
-    SettingsSectionSpec("Permissions") {
+    SettingsSectionSpec(str(R.string.permissions)) {
         PermissionsSection(
-            state = PermissionsSectionState(
-                shizuku = state.shizuku,
-                permissions = state.permissions,
-            ),
+            state = PermissionsSectionState(state.backend, state.privilegeState, state.permissions),
             onGrantPermission = actions.onGrantPermission,
-            onShizukuAction = actions.onShizukuAction,
+            privilegeActions = PrivilegeAccessActions(
+                actions.onSetPrivilegeBackend,
+                actions.onShizukuAction,
+                actions.onStartLocalAdbPairing,
+                actions.onCancelLocalAdbPairing,
+            ),
         )
     },
-
-    SettingsSectionSpec("Advanced") {
+    SettingsSectionSpec(str(R.string.advanced)) {
         VpnSection(selected = state.vpnMode, onSelect = actions.onSetVpnMode)
-
-        AutomationSection(
-            state = state.automation,
-            actions = actions.automation,
-            toasts = toasts,
-        )
+        AutomationSection(state.automation, actions.automation, toasts)
     },
-
-    SettingsSectionSpec("Developer") {
-        DeveloperSection(isLogging = state.isLogging, actions = actions)
-    },
-
-    SettingsSectionSpec("About") { AboutSection() },
+    SettingsSectionSpec(str(R.string.developer)) { DeveloperSection(state, actions) },
+    SettingsSectionSpec(str(R.string.about)) { AboutSection() },
 )
 
-/** Staggers each section in on first composition so the page assembles itself. */
 @Composable
-private fun SettingsSection(index: Int, label: String, content: @Composable () -> Unit) {
-    var hasEntered by remember { mutableStateOf(false) }
-
-    val progress by animateFloatAsState(
-        targetValue = if (hasEntered) 1f else 0f,
-        animationSpec = tween(
-            durationMillis = ShizziTheme.motion.standardMillis,
-            delayMillis = index * SectionStaggerMillis,
-            easing = ShizziTheme.motion.easing,
-        ),
-        label = "sectionEntrance",
-    )
-
-    LaunchedEffect(Unit) { hasEntered = true }
-
-    val shift = with(LocalDensity.current) { SectionRise.toPx() }
-
-    Column(
-        modifier = Modifier.graphicsLayer {
-            alpha = progress
-            translationY = (1f - progress) * shift
-        },
-    ) {
+private fun SettingsSection(label: String, content: @Composable () -> Unit) {
+    Column(Modifier.fillMaxWidth().widthIn(max = 860.dp).padding(bottom = ShizziTheme.spacing.lg)) {
         SectionLabel(label)
-        content()
-    }
-}
-
-private fun Modifier.inert(isBusy: Boolean): Modifier = when {
-    !isBusy -> this
-    else -> this.pointerInput(Unit) {
-        awaitPointerEventScope {
-            while (true) {
-                awaitPointerEvent(PointerEventPass.Initial)
-                    .changes
-                    .forEach { it.consume() }
-            }
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = ShizziTheme.colors.surfaceContainer),
+        ) {
+            Column(Modifier.padding(horizontal = ShizziTheme.spacing.md)) { content() }
         }
     }
 }
 
 @Composable
-private fun DeveloperSection(isLogging: Boolean, actions: SettingsActions) {
-    SettingsToggle(
-        label = SettingsText(title = "Logging"),
-        isChecked = isLogging,
-        onCheckedChange = actions.onSetLogging,
-    )
-
+private fun DeveloperSection(state: SettingsState, actions: SettingsActions) {
+    SettingsToggle(SettingsText(str(R.string.record_logs)), state.isLogging, actions.onSetLogging)
+    SettingsAction(SettingsText(str(R.string.view_logs)), onClick = actions.onOpenLog)
     SettingsAction(
-        label = SettingsText(title = "View logs"),
-        onClick = actions.onOpenLog,
+        SettingsText(if (state.isRunningDiagnostics) str(R.string.cancel_diagnostics) else str(R.string.run_diagnostics)),
+        onClick = if (state.isRunningDiagnostics) actions.onCancelProbes else actions.onRunProbes,
     )
-
-    SettingsAction(
-        label = SettingsText(title = "Run diagnostics"),
-        onClick = actions.onRunProbes,
-    )
-
-    SettingsAction(
-        label = SettingsText(title = "Restart onboarding"),
-        onClick = actions.onRestartOnboarding,
-    )
+    SettingsAction(SettingsText(str(R.string.restart_onboarding)), onClick = actions.onRestartOnboarding)
 }
 
 @Composable
 private fun AboutSection() {
     val context = LocalContext.current
-
-    SettingsAction(
-        label = SettingsText(title = "GitHub"),
-        isExternal = true,
-        onClick = { context.openUrl(SOURCE_URL) },
+    SettingsLabel(
+        title = "Shizzi",
+        subtitle = str(R.string.vvalue_material_3_expressive_localized, BuildConfig.VERSION_NAME),
+        modifier = Modifier.fillMaxWidth().padding(vertical = ShizziTheme.spacing.md),
     )
-
-    SettingsAction(
-        label = SettingsText(title = "Report a bug"),
-        isExternal = true,
-        onClick = { context.openUrl(ISSUE_URL) },
-    )
-
-    SettingsAction(
-        label = SettingsText(title = "Author", subtitle = "carlelieser.dev"),
-        isExternal = true,
-        onClick = { context.openUrl(AUTHOR_URL) },
-    )
+    SettingsAction(SettingsText(str(R.string.upstream_project), "carlelieser/shizzi"), true) { context.openUrl(UPSTREAM_URL) }
+    SettingsAction(SettingsText(str(R.string.report_an_issue)), true) { context.openUrl(ISSUE_URL) }
+    SettingsAction(SettingsText(str(R.string.original_author), "carlelieser.dev"), true) { context.openUrl(AUTHOR_URL) }
 }

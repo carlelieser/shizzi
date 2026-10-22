@@ -16,6 +16,7 @@ import rikka.shizuku.Shizuku
 enum class UiStatus { READY, LOADING, CONNECTED, ERROR }
 
 data class SessionUiState(
+    val privilegeState: PrivilegeState = PrivilegeState.SetupRequired(PrivilegeBackendType.SHIZUKU),
     val shizukuState: ShizukuState = ShizukuState.NotRunning,
     val status: UiStatus = UiStatus.READY,
     val isBusy: Boolean = false,
@@ -30,7 +31,7 @@ data class SessionUiState(
     val traffic: Traffic = Traffic(),
 ) {
 
-    val canStart: Boolean get() = shizukuState is ShizukuState.Ready && !isBusy
+    val canStart: Boolean get() = privilegeState is PrivilegeState.Ready && !isBusy
 }
 
 fun SessionUiState.asStopped(): SessionUiState = copy(
@@ -89,12 +90,14 @@ private fun statusFor(sessionState: String): UiStatus = when (sessionState) {
     else -> UiStatus.READY
 }
 
-class TetherClient {
+class TetherClient : PrivilegedClient {
+
+    override val backend = PrivilegeBackendType.SHIZUKU
 
     private var boundService: ITetherService? = null
     private var pendingBind: CompletableDeferred<ITetherService>? = null
 
-    var onSessionLost: (() -> Unit)? = null
+    override var onSessionLost: (() -> Unit)? = null
 
     private var deathRecipient: IBinder.DeathRecipient? = null
 
@@ -176,19 +179,19 @@ class TetherClient {
             }
     }
 
-    suspend fun runProbes(attemptTethering: Boolean): String = withContext(Dispatchers.IO) {
+    override suspend fun runProbes(attemptTethering: Boolean): String = withContext(Dispatchers.IO) {
         val bound = service()
         verifyContract(bound)
         bound.runProbes(attemptTethering, AVAILABILITY_TIMEOUT_MS)
     }
 
-    suspend fun checkCompatibility(): List<CapabilityResult> = withContext(Dispatchers.IO) {
+    override suspend fun checkCompatibility(): List<CapabilityResult> = withContext(Dispatchers.IO) {
         val bound = service()
         verifyContract(bound)
         parseCapabilities(bound.checkCompatibility())
     }
 
-    suspend fun installTetheringApex(path: String): StagingOutcome =
+    override suspend fun installTetheringApex(path: String): StagingOutcome =
         withContext(Dispatchers.IO) {
             val bound = service()
             verifyContract(bound)
@@ -197,27 +200,27 @@ class TetherClient {
                 .use { apex -> parseStagingOutcome(bound.installTetheringApex(apex)) }
         }
 
-    suspend fun rebootDevice(): String = withContext(Dispatchers.IO) {
+    override suspend fun rebootDevice(): String = withContext(Dispatchers.IO) {
         val bound = service()
         verifyContract(bound)
         bound.rebootDevice()
     }
 
-    suspend fun start(logging: Boolean, vpnMode: VpnMode): String = withContext(Dispatchers.IO) {
+    override suspend fun start(logging: Boolean, vpnMode: VpnMode): String = withContext(Dispatchers.IO) {
         val bound = service()
         verifyContract(bound)
         bound.start(logging, vpnMode.name)
     }
 
-    fun setLogging(enabled: Boolean) {
+    override fun setLogging(enabled: Boolean) {
         runCatching { boundService?.setLogging(enabled) }
     }
 
-    suspend fun stop(): String = withContext(Dispatchers.IO) {
+    override suspend fun stop(): String = withContext(Dispatchers.IO) {
         service().stop()
     }
 
-    suspend fun clearLog(): String? = withContext(Dispatchers.IO) {
+    override suspend fun clearLog(): String? = withContext(Dispatchers.IO) {
         runCatching {
             val bound = service()
 
@@ -229,7 +232,7 @@ class TetherClient {
         )
     }
 
-    suspend fun releaseOrphanedDownstream(): String? = withContext(Dispatchers.IO) {
+    override suspend fun releaseOrphanedDownstream(): String? = withContext(Dispatchers.IO) {
         runCatching { service().stop() }
             .fold(
                 onSuccess = { null },
@@ -239,7 +242,7 @@ class TetherClient {
             )
     }
 
-    suspend fun status(): String = withContext(Dispatchers.IO) {
+    override suspend fun status(): String = withContext(Dispatchers.IO) {
         service().status
     }
 
@@ -251,9 +254,9 @@ class TetherClient {
         }
     }
 
-    fun unbind() = releaseBinding(shouldTerminate = false)
+    override fun unbind() = releaseBinding(shouldTerminate = false)
 
-    fun unbindAndStopDaemon() = releaseBinding(shouldTerminate = true)
+    override fun unbindAndStopDaemon() = releaseBinding(shouldTerminate = true)
 
     private fun releaseBinding(shouldTerminate: Boolean) {
         deathRecipient?.let { recipient ->
