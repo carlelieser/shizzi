@@ -89,14 +89,14 @@ private fun StatusMark(status: CapabilityStatus) {
 
             CapabilityStatus.SUCCESS -> Icon(
                 imageVector = Icons.Filled.Check,
-                contentDescription = "Supported",
+                contentDescription = dev.shizzi.L10n.string(dev.shizzi.R.string.supported),
                 tint = colors.primary,
                 modifier = Modifier.size(MarkSize),
             )
 
             CapabilityStatus.FAILURE -> Icon(
                 imageVector = Icons.Filled.Close,
-                contentDescription = "Not supported",
+                contentDescription = dev.shizzi.L10n.string(dev.shizzi.R.string.not_supported),
                 tint = colors.onSurfaceMuted,
                 modifier = Modifier.size(MarkSize),
             )
@@ -105,16 +105,14 @@ private fun StatusMark(status: CapabilityStatus) {
 }
 
 private fun titleFor(capability: Capability): String = when (capability) {
-    Capability.TEST_NETWORK -> "Test network API"
-    Capability.PREFER_TEST_NETWORKS -> "Prefer test networks"
+    Capability.TEST_NETWORK -> dev.shizzi.L10n.string(dev.shizzi.R.string.capability_test_network)
+    Capability.PREFER_TEST_NETWORKS -> dev.shizzi.L10n.string(dev.shizzi.R.string.capability_prefer_test_networks)
 }
 
 private fun descriptionFor(capability: Capability): String = when (capability) {
     Capability.TEST_NETWORK ->
-        "Lets the app create the test network tunnel your hotspot traffic " +
-            "travels through."
+        dev.shizzi.L10n.string(dev.shizzi.R.string.capability_test_network_description)
 
     Capability.PREFER_TEST_NETWORKS ->
-        "Lets the app route the hotspot through the test network tunnel. " +
-            "Added in Android 13."
+        dev.shizzi.L10n.string(dev.shizzi.R.string.capability_prefer_test_networks_description)
 }

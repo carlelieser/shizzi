@@ -50,19 +50,19 @@ private fun ColumnScope.SetupContent(token: String, toasts: ToastState) {
     var command by remember { mutableStateOf(AutomationCommand.START) }
 
     Text(
-        text = "Setup",
+        text = dev.shizzi.L10n.string(dev.shizzi.R.string.setup),
         style = ShizziTheme.typography.heading,
         color = ShizziTheme.colors.onSurface,
     )
 
     Text(
-        text = "Send a broadcast intent with these values.",
+        text = dev.shizzi.L10n.string(dev.shizzi.R.string.setup_description),
         style = ShizziTheme.typography.body,
         color = ShizziTheme.colors.onSurfaceMuted,
     )
 
     CopyableField(
-        field = SetupField("Action", Automation.actionFor(command)),
+        field = SetupField(dev.shizzi.L10n.string(dev.shizzi.R.string.field_action), Automation.actionFor(command)),
         toasts = toasts,
     )
 
@@ -74,11 +74,11 @@ private fun ColumnScope.SetupContent(token: String, toasts: ToastState) {
 }
 
 private fun connectionFields(token: String) = listOf(
-    SetupField("Package", "dev.shizzi"),
-    SetupField("Class", "dev.shizzi.AutomationReceiver"),
-    SetupField("Target", "Broadcast receiver"),
-    SetupField("Extra name", Automation.EXTRA_TOKEN),
-    SetupField("Extra value", token),
+    SetupField(dev.shizzi.L10n.string(dev.shizzi.R.string.field_package), "dev.shizzi"),
+    SetupField(dev.shizzi.L10n.string(dev.shizzi.R.string.field_class), "dev.shizzi.AutomationReceiver"),
+    SetupField(dev.shizzi.L10n.string(dev.shizzi.R.string.field_target), dev.shizzi.L10n.string(dev.shizzi.R.string.broadcast_receiver)),
+    SetupField(dev.shizzi.L10n.string(dev.shizzi.R.string.field_extra_name), Automation.EXTRA_TOKEN),
+    SetupField(dev.shizzi.L10n.string(dev.shizzi.R.string.field_extra_value), token),
 )
 
 @Composable
@@ -109,7 +109,7 @@ private fun CopyableField(field: SetupField, toasts: ToastState) {
 
         ShizziCompactIconButton(
             icon = Icons.Filled.ContentCopy,
-            contentDescription = "Copy ${field.label.lowercase()}",
+            contentDescription = dev.shizzi.L10n.string(dev.shizzi.R.string.copy_field, field.label.lowercase()),
             onClick = {
                 clipboard.setText(AnnotatedString(field.value))
                 toasts.show(copiedToast(field.label))

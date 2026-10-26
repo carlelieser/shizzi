@@ -22,13 +22,13 @@ import dev.shizzi.ui.theme.ShizziTheme
 private val CheckSize = 20.dp
 
 fun designLabel(design: DesignLanguage): String = when (design) {
-    DesignLanguage.NEOBRUTALISM -> "Neobrutalism"
-    DesignLanguage.MATERIAL_EXPRESSIVE -> "Material Expressive"
+    DesignLanguage.NEOBRUTALISM -> dev.shizzi.L10n.string(dev.shizzi.R.string.design_neobrutalism)
+    DesignLanguage.MATERIAL_EXPRESSIVE -> dev.shizzi.L10n.string(dev.shizzi.R.string.design_material_expressive)
 }
 
 private fun descriptionOf(design: DesignLanguage): String = when (design) {
-    DesignLanguage.NEOBRUTALISM -> "Hard edges, bold borders, offset shadows"
-    DesignLanguage.MATERIAL_EXPRESSIVE -> "Rounded surfaces, tonal color, soft motion"
+    DesignLanguage.NEOBRUTALISM -> dev.shizzi.L10n.string(dev.shizzi.R.string.design_neobrutalism_description)
+    DesignLanguage.MATERIAL_EXPRESSIVE -> dev.shizzi.L10n.string(dev.shizzi.R.string.design_material_expressive_description)
 }
 
 @Composable
@@ -39,7 +39,7 @@ fun DesignPicker(
 ) {
     ThemedBottomSheet(onDismiss = onDismiss) {
         Text(
-            text = "Design",
+            text = dev.shizzi.L10n.string(dev.shizzi.R.string.design),
             style = ShizziTheme.typography.heading,
             color = ShizziTheme.colors.onSurface,
         )

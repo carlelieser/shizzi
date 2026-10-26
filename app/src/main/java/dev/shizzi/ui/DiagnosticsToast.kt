@@ -26,18 +26,18 @@ fun DiagnosticsToast(
 
             is DiagnosticsState.Running -> Toast(
                 key = ToastKeys.DIAGNOSTICS,
-                message = "Running diagnostics...",
+                message = dev.shizzi.L10n.string(dev.shizzi.R.string.running_diagnostics),
                 duration = ToastDuration.Indefinite,
                 isBusy = true,
             )
 
             is DiagnosticsState.Complete -> Toast(
                 key = ToastKeys.DIAGNOSTICS,
-                message = "Diagnostics completed",
+                message = dev.shizzi.L10n.string(dev.shizzi.R.string.diagnostics_completed),
                 detail = phase.path,
 
                 duration = ToastDuration.Indefinite,
-                action = ToastAction("Export") {
+                action = ToastAction(dev.shizzi.L10n.string(dev.shizzi.R.string.export)) {
                     (current as? DiagnosticsState.Complete)
                         ?.let { context.exportReport(it.report) }
                 },
@@ -46,7 +46,7 @@ fun DiagnosticsToast(
 
             is DiagnosticsState.Failed -> Toast(
                 key = ToastKeys.DIAGNOSTICS,
-                message = "Diagnostics failed",
+                message = dev.shizzi.L10n.string(dev.shizzi.R.string.diagnostics_failed),
                 detail = phase.problem,
                 duration = ToastDuration.Indefinite,
                 onDismiss = onDismiss,
