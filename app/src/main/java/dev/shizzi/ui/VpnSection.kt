@@ -12,7 +12,7 @@ fun VpnSection(selected: VpnMode, onSelect: (VpnMode) -> Unit) {
     var isPickerOpen by remember { mutableStateOf(false) }
 
     SettingsChoice(
-        label = SettingsText(title = "VPN"),
+        label = SettingsText(title = dev.shizzi.L10n.string(dev.shizzi.R.string.vpn)),
         value = vpnModeLabel(selected),
         onClick = { isPickerOpen = true },
     )

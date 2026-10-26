@@ -156,7 +156,7 @@ class SessionService : Service() {
                 isBusy = false,
                 status = UiStatus.ERROR,
                 interfaceName = "",
-                lastError = "Session ended unexpectedly — dropping the hotspot…",
+                lastError = L10n.string(R.string.session_ended_unexpectedly),
             )
         }
         publishState()

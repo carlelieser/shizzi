@@ -94,10 +94,10 @@ private fun glyphFor(status: UiStatus): ImageVector = when (status) {
 }
 
 private fun descriptionFor(status: UiStatus): String = when (status) {
-    UiStatus.READY -> "Not connected"
-    UiStatus.LOADING -> "Connecting"
-    UiStatus.CONNECTED -> "Connected"
-    UiStatus.ERROR -> "Failed"
+    UiStatus.READY -> dev.shizzi.L10n.string(dev.shizzi.R.string.status_not_connected)
+    UiStatus.LOADING -> dev.shizzi.L10n.string(dev.shizzi.R.string.status_connecting)
+    UiStatus.CONNECTED -> dev.shizzi.L10n.string(dev.shizzi.R.string.status_connected)
+    UiStatus.ERROR -> dev.shizzi.L10n.string(dev.shizzi.R.string.status_failed)
 }
 
 @Composable
@@ -119,7 +119,7 @@ fun ShizukuBadge(state: ShizukuState) {
 
 private fun badgeText(state: ShizukuState): String? = when (state) {
     is ShizukuState.Ready -> null
-    is ShizukuState.NotInstalled -> "NO SHIZUKU"
-    is ShizukuState.NotRunning -> "SHIZUKU OFF"
-    is ShizukuState.PermissionRequired -> "PERMISSION NEEDED"
+    is ShizukuState.NotInstalled -> dev.shizzi.L10n.string(dev.shizzi.R.string.badge_no_shizuku)
+    is ShizukuState.NotRunning -> dev.shizzi.L10n.string(dev.shizzi.R.string.badge_shizuku_off)
+    is ShizukuState.PermissionRequired -> dev.shizzi.L10n.string(dev.shizzi.R.string.badge_permission_needed)
 }

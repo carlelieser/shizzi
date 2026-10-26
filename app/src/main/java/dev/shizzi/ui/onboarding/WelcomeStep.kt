@@ -38,13 +38,13 @@ fun WelcomeStep() {
         )
 
         Text(
-            text = "Welcome",
+            text = dev.shizzi.L10n.string(dev.shizzi.R.string.welcome),
             style = StepTitleStyle,
             color = ShizziTheme.colors.onSurface,
         )
 
         Text(
-            text = "Rootless wifi-tethering with Shizuku.",
+            text = dev.shizzi.L10n.string(dev.shizzi.R.string.welcome_description),
             style = ShizziTheme.typography.body,
             color = ShizziTheme.colors.onSurfaceMuted,
             textAlign = TextAlign.Center,

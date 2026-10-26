@@ -99,7 +99,7 @@ private fun StatusLabel(status: String) {
     ) { word ->
         Text(
             text = buildAnnotatedString {
-                append("STATUS ")
+                append(dev.shizzi.L10n.string(dev.shizzi.R.string.status).uppercase() + " ")
                 withStyle(
                     SpanStyle(color = colors.onSurface, fontWeight = FontWeight.W700),
                 ) {
@@ -154,7 +154,7 @@ private fun TunnelSegment(name: String) {
     val interaction = remember { MutableInteractionSource() }
 
     Text(
-        text = if (isShowingName) name.uppercase() else "TUNNEL ACTIVE",
+        text = if (isShowingName) name.uppercase() else dev.shizzi.L10n.string(dev.shizzi.R.string.tunnel_active),
         style = ShizziTheme.typography.caption,
         color = ShizziTheme.colors.onSurfaceMuted,
         textAlign = TextAlign.Center,
@@ -179,8 +179,8 @@ private fun StatusDivider() {
 }
 
 private fun statusWord(status: UiStatus): String = when (status) {
-    UiStatus.READY -> "Ready"
-    UiStatus.LOADING -> "Starting"
-    UiStatus.CONNECTED -> "Connected"
-    UiStatus.ERROR -> "Failed"
+    UiStatus.READY -> dev.shizzi.L10n.string(dev.shizzi.R.string.ready)
+    UiStatus.LOADING -> dev.shizzi.L10n.string(dev.shizzi.R.string.status_starting)
+    UiStatus.CONNECTED -> dev.shizzi.L10n.string(dev.shizzi.R.string.status_connected)
+    UiStatus.ERROR -> dev.shizzi.L10n.string(dev.shizzi.R.string.status_failed)
 }

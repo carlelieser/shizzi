@@ -59,21 +59,19 @@ private fun InstallFailureDetail(reason: String) {
 }
 
 private fun titleFor(state: CompatibilityState): String = when (state) {
-    is CompatibilityState.Staged -> "Restart your phone to finish"
-    is CompatibilityState.InstallFailed -> "The module wasn't accepted"
-    else -> "Tethering module"
+    is CompatibilityState.Staged -> dev.shizzi.L10n.string(dev.shizzi.R.string.module_restart_to_finish)
+    is CompatibilityState.InstallFailed -> dev.shizzi.L10n.string(dev.shizzi.R.string.module_not_accepted)
+    else -> dev.shizzi.L10n.string(dev.shizzi.R.string.tethering_module)
 }
 
 private fun bodyFor(state: CompatibilityState): String = when (state) {
-    is CompatibilityState.Installing -> "Installing the module…"
+    is CompatibilityState.Installing -> dev.shizzi.L10n.string(dev.shizzi.R.string.module_installing)
 
     is CompatibilityState.Staged ->
-        "The module is ready and will finish installing the next time your " +
-            "phone starts up. Come back here afterwards to check compatibility."
+        dev.shizzi.L10n.string(dev.shizzi.R.string.module_staged_description)
 
     is CompatibilityState.InstallFailed ->
-        "Your phone refused this module, which some manufacturers' builds do. " +
-            "Nothing was changed."
+        dev.shizzi.L10n.string(dev.shizzi.R.string.module_install_failed_description)
 
-    else -> "The module is downloaded and verified, ready to install."
+    else -> dev.shizzi.L10n.string(dev.shizzi.R.string.module_ready_to_install)
 }

@@ -49,9 +49,9 @@ private fun glyphFor(choice: ThemeChoice): ImageVector = when (choice) {
 }
 
 private fun labelFor(choice: ThemeChoice): String = when (choice) {
-    ThemeChoice.SYSTEM -> "Match system"
-    ThemeChoice.LIGHT -> "Light"
-    ThemeChoice.DARK -> "Dark"
+    ThemeChoice.SYSTEM -> dev.shizzi.L10n.string(dev.shizzi.R.string.theme_match_system)
+    ThemeChoice.LIGHT -> dev.shizzi.L10n.string(dev.shizzi.R.string.theme_light)
+    ThemeChoice.DARK -> dev.shizzi.L10n.string(dev.shizzi.R.string.theme_dark)
 }
 
 @Composable

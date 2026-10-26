@@ -91,7 +91,7 @@ fun SettingsPage(
 
     Column(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
 
-        ScreenHeader(title = "Settings", onBack = onBack)
+        ScreenHeader(title = dev.shizzi.L10n.string(dev.shizzi.R.string.settings), onBack = onBack)
 
         Column(
             modifier = Modifier
@@ -120,7 +120,7 @@ private fun settingsSections(
     actions: SettingsActions,
     toasts: ToastState,
 ): List<SettingsSectionSpec> = listOf(
-    SettingsSectionSpec("Appearance") {
+    SettingsSectionSpec(dev.shizzi.L10n.string(dev.shizzi.R.string.appearance)) {
         AppearanceSection(
             state = AppearanceState(
                 theme = state.theme,
@@ -137,7 +137,7 @@ private fun settingsSections(
         )
     },
 
-    SettingsSectionSpec("Permissions") {
+    SettingsSectionSpec(dev.shizzi.L10n.string(dev.shizzi.R.string.permissions)) {
         PermissionsSection(
             state = PermissionsSectionState(
                 shizuku = state.shizuku,
@@ -148,7 +148,7 @@ private fun settingsSections(
         )
     },
 
-    SettingsSectionSpec("Advanced") {
+    SettingsSectionSpec(dev.shizzi.L10n.string(dev.shizzi.R.string.advanced)) {
         VpnSection(selected = state.vpnMode, onSelect = actions.onSetVpnMode)
 
         AutomationSection(
@@ -158,11 +158,11 @@ private fun settingsSections(
         )
     },
 
-    SettingsSectionSpec("Developer") {
+    SettingsSectionSpec(dev.shizzi.L10n.string(dev.shizzi.R.string.developer)) {
         DeveloperSection(isLogging = state.isLogging, actions = actions)
     },
 
-    SettingsSectionSpec("About") { AboutSection() },
+    SettingsSectionSpec(dev.shizzi.L10n.string(dev.shizzi.R.string.about)) { AboutSection() },
 )
 
 /** Staggers each section in on first composition so the page assembles itself. */
@@ -211,23 +211,23 @@ private fun Modifier.inert(isBusy: Boolean): Modifier = when {
 @Composable
 private fun DeveloperSection(isLogging: Boolean, actions: SettingsActions) {
     SettingsToggle(
-        label = SettingsText(title = "Logging"),
+        label = SettingsText(title = dev.shizzi.L10n.string(dev.shizzi.R.string.logging)),
         isChecked = isLogging,
         onCheckedChange = actions.onSetLogging,
     )
 
     SettingsAction(
-        label = SettingsText(title = "View logs"),
+        label = SettingsText(title = dev.shizzi.L10n.string(dev.shizzi.R.string.view_logs)),
         onClick = actions.onOpenLog,
     )
 
     SettingsAction(
-        label = SettingsText(title = "Run diagnostics"),
+        label = SettingsText(title = dev.shizzi.L10n.string(dev.shizzi.R.string.run_diagnostics)),
         onClick = actions.onRunProbes,
     )
 
     SettingsAction(
-        label = SettingsText(title = "Restart onboarding"),
+        label = SettingsText(title = dev.shizzi.L10n.string(dev.shizzi.R.string.restart_onboarding)),
         onClick = actions.onRestartOnboarding,
     )
 }
@@ -237,19 +237,19 @@ private fun AboutSection() {
     val context = LocalContext.current
 
     SettingsAction(
-        label = SettingsText(title = "GitHub"),
+        label = SettingsText(title = dev.shizzi.L10n.string(dev.shizzi.R.string.github)),
         isExternal = true,
         onClick = { context.openUrl(SOURCE_URL) },
     )
 
     SettingsAction(
-        label = SettingsText(title = "Report a bug"),
+        label = SettingsText(title = dev.shizzi.L10n.string(dev.shizzi.R.string.report_a_bug)),
         isExternal = true,
         onClick = { context.openUrl(ISSUE_URL) },
     )
 
     SettingsAction(
-        label = SettingsText(title = "Author", subtitle = "carlelieser.dev"),
+        label = SettingsText(title = dev.shizzi.L10n.string(dev.shizzi.R.string.author), subtitle = "carlelieser.dev"),
         isExternal = true,
         onClick = { context.openUrl(AUTHOR_URL) },
     )
