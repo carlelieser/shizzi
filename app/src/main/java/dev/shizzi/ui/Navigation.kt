@@ -36,8 +36,8 @@ private val ScreenSaver = Saver<MutableState<Screen>, String>(
 )
 
 @Composable
-fun rememberNavigator(): MutableState<Screen> =
-    rememberSaveable(saver = ScreenSaver) { mutableStateOf(Screen.HOME) }
+fun rememberNavigator(start: Screen = Screen.HOME): MutableState<Screen> =
+    rememberSaveable(saver = ScreenSaver) { mutableStateOf(start) }
 
 @Composable
 fun HandleBack(current: Screen, onBack: () -> Unit) {

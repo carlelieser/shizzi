@@ -26,6 +26,7 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import dev.shizzi.AppPermission
+import dev.shizzi.UsbTethering
 import dev.shizzi.PermissionStatus
 import dev.shizzi.ShizukuState
 import dev.shizzi.VpnMode
@@ -55,6 +56,7 @@ data class SettingsState(
     val customAccents: List<Int>,
     val isLogging: Boolean,
     val vpnMode: VpnMode,
+    val usbTethering: UsbTethering,
     val isRunningDiagnostics: Boolean,
     val automation: AutomationState,
 )
@@ -66,6 +68,7 @@ data class SettingsActions(
     val onAddCustomAccent: (Int) -> Unit,
     val onSetLogging: (Boolean) -> Unit,
     val onSetVpnMode: (VpnMode) -> Unit,
+    val onSetUsbTethering: (UsbTethering) -> Unit,
     val onOpenLog: () -> Unit,
     val onRunProbes: () -> Unit,
     val onGrantPermission: (AppPermission) -> Unit,
@@ -120,6 +123,14 @@ private fun settingsSections(
     actions: SettingsActions,
     toasts: ToastState,
 ): List<SettingsSectionSpec> = listOf(
+    SettingsSectionSpec("Tethering") {
+        TetheringSection(
+            selected = state.usbTethering,
+            onSelect = actions.onSetUsbTethering,
+            toasts = toasts,
+        )
+    },
+
     SettingsSectionSpec("Appearance") {
         AppearanceSection(
             state = AppearanceState(
@@ -162,7 +173,7 @@ private fun settingsSections(
         DeveloperSection(isLogging = state.isLogging, actions = actions)
     },
 
-    SettingsSectionSpec("About") { AboutSection() },
+    SettingsSectionSpec("About") { AboutSection(toasts) },
 )
 
 /** Staggers each section in on first composition so the page assembles itself. */
@@ -233,24 +244,27 @@ private fun DeveloperSection(isLogging: Boolean, actions: SettingsActions) {
 }
 
 @Composable
-private fun AboutSection() {
+private fun AboutSection(toasts: ToastState) {
     val context = LocalContext.current
+    val open = { label: String, url: String ->
+        if (!context.openUrl(url)) toasts.show(unopenedToast(label))
+    }
 
     SettingsAction(
         label = SettingsText(title = "GitHub"),
         isExternal = true,
-        onClick = { context.openUrl(SOURCE_URL) },
+        onClick = { open("GitHub", SOURCE_URL) },
     )
 
     SettingsAction(
         label = SettingsText(title = "Report a bug"),
         isExternal = true,
-        onClick = { context.openUrl(ISSUE_URL) },
+        onClick = { open("the issue tracker", ISSUE_URL) },
     )
 
     SettingsAction(
         label = SettingsText(title = "Author", subtitle = "carlelieser.dev"),
         isExternal = true,
-        onClick = { context.openUrl(AUTHOR_URL) },
+        onClick = { open("carlelieser.dev", AUTHOR_URL) },
     )
 }

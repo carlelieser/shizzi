@@ -45,4 +45,16 @@ class SessionStatusTest {
 
         assertFalse(failed.isVpnBypassed)
     }
+
+    @Test
+    fun `waiting for usb is carried across the service boundary`() {
+        assertTrue(stateFrom("""{"state":"ACTIVE","isWaitingForUsb":true}""").isWaitingForUsb)
+    }
+
+    @Test
+    fun `stopping clears waiting for usb`() {
+        val waiting = stateFrom("""{"state":"ACTIVE","isWaitingForUsb":true}""")
+
+        assertFalse(waiting.asStopped().isWaitingForUsb)
+    }
 }

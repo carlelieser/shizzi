@@ -3,7 +3,7 @@ package dev.shizzi
 import android.content.Context
 
 /**
- * Stops the hotspot, retrying while it stays tethered.
+ * Stops the downstream, retrying while it stays tethered.
  *
  * stopTethering lands asynchronously, so a single immediate read can still see
  * the downstream up. See https://github.com/carlelieser/shizzi/issues/22
@@ -39,10 +39,10 @@ class SessionTeardown(private val context: Context) {
     private val inspector = UpstreamInspector()
     private var shutdownHook: Thread? = null
 
-    fun installShutdownHook() {
+    fun installShutdownHook(started: StartedDownstreams) {
         val hook = Thread {
             SessionLog.warn("process exiting with session active; dropping downstream")
-            runCatching { DownstreamControl(context).stopWifiTethering() }
+            runCatching { DownstreamControl(context).stopTethering(started.types) }
         }
 
         runCatching { Runtime.getRuntime().addShutdownHook(hook) }
@@ -83,24 +83,24 @@ class SessionTeardown(private val context: Context) {
         SessionLog.warn("upstream still reads $name after ${UPSTREAM_RELEASE_MS}ms; releasing anyway")
     }
 
-    fun releaseDownstream(): String? {
+    fun releaseDownstream(types: Collection<TetheringType>): String? {
         val control = DownstreamControl(context)
         val inspector = DownstreamInspector()
 
         return releaseDownstreamWith(
-            stop = { attemptStop(control) },
+            stop = { attemptStop(control, types) },
             findTethered = {
-                runCatching { inspector.findTetheredDownstream() }
+                runCatching { inspector.findTetheredDownstream(types).problem }
                     .getOrElse { failure -> "could not verify downstream: ${failure.message}" }
             },
             onRetry = SessionLog::warn,
         )
     }
 
-    private fun attemptStop(control: DownstreamControl): Boolean =
-        runCatching { control.stopWifiTethering() }
+    private fun attemptStop(control: DownstreamControl, types: Collection<TetheringType>): Boolean =
+        runCatching { control.stopTethering(types) }
             .getOrElse { failure ->
-                SessionLog.error("stopping the hotspot failed: ${failure.message}")
+                SessionLog.error("stopping the downstream failed: ${failure.message}")
                 false
             }
 

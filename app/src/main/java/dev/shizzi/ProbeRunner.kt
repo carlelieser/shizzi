@@ -38,7 +38,7 @@ class ProbeRunner(private val context: Context) {
 
     private fun releaseSession(report: ProbeReportBuilder) {
         val downstreamProblem = when {
-            didStartDownstream -> teardown.releaseDownstream()
+            didStartDownstream -> teardown.releaseDownstream(listOf(TetheringType.WIFI))
             else -> null
         }
         didStartDownstream = false
@@ -354,7 +354,7 @@ class ProbeRunner(private val context: Context) {
 
     fun teardown(): String {
         val downstreamProblem = when {
-            didStartDownstream -> teardown.releaseDownstream()
+            didStartDownstream -> teardown.releaseDownstream(listOf(TetheringType.WIFI))
             else -> null
         }
         didStartDownstream = false

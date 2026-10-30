@@ -83,4 +83,32 @@ class UpstreamToleranceTest {
         assertNull(guard.judge(UpstreamReading.DRIFTED, drifted))
         assertNotNull(guard.judge(UpstreamReading.DRIFTED, drifted))
     }
+
+    @Test
+    fun `an absent upstream is tolerated while a downstream awaits its cable`() {
+        val guard = tolerance()
+
+        repeat(100) {
+            assertNull(guard.judge(UpstreamReading.ABSENT, emptyList(), DownstreamHealth.Awaiting))
+        }
+    }
+
+    @Test
+    fun `absence counts from scratch once the downstream is back`() {
+        val guard = tolerance()
+        repeat(11) { guard.judge(UpstreamReading.ABSENT, emptyList()) }
+        guard.judge(UpstreamReading.ABSENT, emptyList(), DownstreamHealth.Awaiting)
+
+        repeat(11) { assertNull(guard.judge(UpstreamReading.ABSENT, emptyList())) }
+        assertNotNull(guard.judge(UpstreamReading.ABSENT, emptyList()))
+    }
+
+    @Test
+    fun `a drifted upstream is not excused by an awaited downstream`() {
+        val guard = tolerance()
+        val drifted = listOf(expected, "rmnet_data2")
+
+        assertNull(guard.judge(UpstreamReading.DRIFTED, drifted, DownstreamHealth.Awaiting))
+        assertNotNull(guard.judge(UpstreamReading.DRIFTED, drifted, DownstreamHealth.Awaiting))
+    }
 }

@@ -5,6 +5,13 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **USB tethering.** A `USB tethering` setting shares over a USB cable through
+  the same test-network upstream. `Auto` adds USB alongside the hotspot
+  whenever a cable is connected, `Always` shares over USB only, and `Never`
+  keeps the hotspot alone.
+
 ## [0.4.0-rc.3] - 2026-09-13
 
 Adds a quick settings tile and an intent API for starting and stopping sessions

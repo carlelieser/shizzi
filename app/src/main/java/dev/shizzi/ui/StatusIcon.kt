@@ -35,11 +35,12 @@ private const val InactiveAlpha = 0.10f
 
 private const val ArrivalOvershoot = 1.08f
 
+/** Shows the session at a glance; a session waiting for USB shares nothing, so it reads inactive. */
 @Composable
-fun StatusIcon(status: UiStatus) {
-    val isConnected = status == UiStatus.CONNECTED
+fun StatusIcon(status: UiStatus, isWaitingForUsb: Boolean) {
+    val isSharing = status == UiStatus.CONNECTED && !isWaitingForUsb
     val target = when {
-        isConnected -> ShizziTheme.colors.primary
+        isSharing -> ShizziTheme.colors.primary
         else -> ShizziTheme.colors.onSurfaceMuted.copy(alpha = InactiveAlpha)
     }
     val tint by animateColorAsState(
@@ -54,11 +55,11 @@ fun StatusIcon(status: UiStatus) {
         targetState = glyphFor(status),
         transitionSpec = { fadeIn(fadeSpec) togetherWith fadeOut(fadeSpec) },
         label = "statusGlyph",
-        modifier = Modifier.arrivalPulse(isConnected),
+        modifier = Modifier.arrivalPulse(isSharing),
     ) { glyph ->
         Icon(
             imageVector = glyph,
-            contentDescription = descriptionFor(status),
+            contentDescription = if (isWaitingForUsb) "Waiting for USB" else descriptionFor(status),
             tint = tint,
             modifier = Modifier
                 .size(StatusIconSize)

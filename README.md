@@ -5,7 +5,7 @@
 <h1 align="center">Shizzi</h1>
 
 <p align="center">
-  Wi-Fi tethering over a Shizuku-privileged test network.
+  Wi-Fi and USB tethering over a Shizuku-privileged test network.
 </p>
 
 Creates a test TUN interface, sets it as the preferred tethering upstream, and
@@ -31,6 +31,8 @@ Download the APK from the
   hotspot allowance.
 - 🛡️ **VPN compatible.** Stay private on every connected device.
 - ⚙️ **Uses your existing hotspot.** No extra configuration required.
+- 🔌 **USB tethering.** Share over a USB cable alongside, or instead of, the
+  hotspot. Pick it under Settings → Tethering → USB tethering.
 - 🙌 **No root.** Shizuku is all it needs.
 - 🎛️ **One tap away.** A quick settings tile starts and stops sharing from the
   notification shade.

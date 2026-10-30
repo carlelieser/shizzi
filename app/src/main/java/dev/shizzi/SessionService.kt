@@ -85,7 +85,9 @@ class SessionService : Service() {
 
             val outcome = sessionLock.withLock {
                 if (attempt != generation) return@launch
-                runCatching { controller.start(settings.isLogging, settings.vpnMode) }
+                runCatching {
+                    controller.start(settings.isLogging, settings.vpnMode, settings.usbTethering)
+                }
             }
             if (attempt != generation) return@launch
 
@@ -108,8 +110,19 @@ class SessionService : Service() {
         onStatus = { outcome ->
             internalState.update { current -> current.applyOutcome(outcome) }
             publishState()
+            if (internalState.value.status == UiStatus.READY) finishEndedSession()
         },
     )
+
+    /** The session stopped on its own, as a stop would; release it the same way. */
+    private fun finishEndedSession() {
+        val ended = generation
+
+        scope.launch {
+            sessionLock.withLock { controller.unbindAndStopDaemon() }
+            if (ended == generation) stopSelf()
+        }
+    }
 
     private fun settingsStore(): SettingsStore =
         (application as App).settingsStore

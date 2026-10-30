@@ -28,6 +28,8 @@ class UpstreamInspector(private val deadlineMs: Long = DEFAULT_DEADLINE_MS) {
 
     fun observeWifi(): UpstreamObservation = run("wifi")
 
+    fun observeUsb(): UpstreamObservation = run("usb")
+
     private fun run(service: String): UpstreamObservation {
         val process = ProcessBuilder("dumpsys", service).start()
         val drainPool = Executors.newFixedThreadPool(2)

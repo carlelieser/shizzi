@@ -138,7 +138,7 @@ private fun HomeBody(state: SessionUiState, actions: HomeActions) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        StatusIcon(status = state.status)
+        StatusIcon(status = state.status, isWaitingForUsb = state.isWaitingForUsb)
 
         Spacer(Modifier.height(ShizziTheme.spacing.xxxl * 2))
 

@@ -40,6 +40,8 @@ object ToastKeys {
     const val CLEAR_LOG = "clear-log"
 
     const val COPY = "copy"
+
+    const val OPEN = "open"
 }
 
 class ToastState {
@@ -59,6 +61,11 @@ class ToastState {
 
 @Composable
 fun rememberToastState(): ToastState = remember { ToastState() }
+
+fun unopenedToast(label: String): Toast = Toast(
+    key = ToastKeys.OPEN,
+    message = "Couldn't open $label",
+)
 
 fun copiedToast(label: String): Toast = Toast(
     key = ToastKeys.COPY,

@@ -56,7 +56,7 @@ fun StatusRow(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        StatusLabel(statusWord(state.status))
+        StatusLabel(statusWord(state))
 
         AnimatedVisibility(
             visible = hasTunnel(state),
@@ -178,9 +178,9 @@ private fun StatusDivider() {
     )
 }
 
-private fun statusWord(status: UiStatus): String = when (status) {
+private fun statusWord(state: SessionUiState): String = when (state.status) {
+    UiStatus.CONNECTED -> if (state.isWaitingForUsb) "Waiting for USB" else "Connected"
     UiStatus.READY -> "Ready"
     UiStatus.LOADING -> "Starting"
-    UiStatus.CONNECTED -> "Connected"
     UiStatus.ERROR -> "Failed"
 }
