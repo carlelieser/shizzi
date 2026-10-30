@@ -5,12 +5,35 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-30
+
+Adds USB tethering, so a computer on a USB cable can share the same
+test-network upstream as hotspot clients. Thanks to
+[@DSparks156x](https://github.com/DSparks156x) for contributing it in
+[#57](https://github.com/carlelieser/shizzi/pull/57). Includes everything from
+0.4.0-rc.3, which never had a stable release.
+
 ### Added
 
-- **USB tethering.** A `USB tethering` setting shares over a USB cable through
-  the same test-network upstream. `Auto` adds USB alongside the hotspot
-  whenever a cable is connected, `Always` shares over USB only, and `Never`
-  keeps the hotspot alone.
+- **USB tethering.** A `USB tethering` setting with the same choices as the
+  VPN setting. `Auto` adds USB whenever a cable is connected, without ever
+  ending the session over it. `Always` includes USB in every session, so
+  sharing over USB alone works, and a start with no cable waits for one.
+  `Never` keeps the hotspot alone.
+- Unplugging the cable no longer ends the session. USB tethering comes back
+  when the cable does. An `Always` session waiting for a cable says so on the
+  home screen and in the notification, and ends like a normal stop after 10
+  minutes without one.
+- **Tethering section** in settings, with the USB tethering setting and a
+  link to open the system tethering settings, where the hotspot name,
+  password, and band still live.
+- Long-pressing the quick settings tile opens Shizzi's settings, like the
+  stock Hotspot tile.
+
+### Fixed
+
+- Tapping a link that no app can open shows a toast instead of doing
+  nothing.
 
 ## [0.4.0-rc.3] - 2026-09-13
 
@@ -165,6 +188,7 @@ First public build.
 - IPv6 was not suppressed on the downstream; v6 traffic could bypass the
   tunnel. Fixed in 0.2.0.
 
+[0.5.0]: https://github.com/carlelieser/shizzi/releases/tag/v0.5.0
 [0.4.0-rc.3]: https://github.com/carlelieser/shizzi/releases/tag/v0.4.0-rc.3
 [0.3.0]: https://github.com/carlelieser/shizzi/releases/tag/v0.3.0
 [0.2.0]: https://github.com/carlelieser/shizzi/releases/tag/v0.2.0
