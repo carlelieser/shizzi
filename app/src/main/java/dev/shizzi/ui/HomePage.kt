@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import dev.shizzi.R
 import dev.shizzi.SessionUiState
 import dev.shizzi.UiStatus
 import dev.shizzi.ui.theme.HeaderHeight
@@ -29,7 +30,7 @@ import dev.shizzi.ui.theme.standardSpring
 import dev.shizzi.ui.theme.standardTween
 
 private fun buttonLabel(status: UiStatus): String =
-    if (status == UiStatus.CONNECTED) "Stop" else "Start"
+    if (status == UiStatus.CONNECTED) dev.shizzi.L10n.string(dev.shizzi.R.string.stop) else dev.shizzi.L10n.string(dev.shizzi.R.string.start)
 
 private fun buttonState(state: SessionUiState): ConnectButtonState = when {
     state.status == UiStatus.LOADING -> ConnectButtonState.LOADING
@@ -101,7 +102,7 @@ private fun HomeHeader(
 
         ShizziIconButton(
             icon = Icons.Filled.Settings,
-            contentDescription = "Settings",
+            contentDescription = dev.shizzi.L10n.string(dev.shizzi.R.string.settings),
             onClick = onOpenSettings,
             tint = ShizziTheme.colors.onSurfaceMuted,
         )

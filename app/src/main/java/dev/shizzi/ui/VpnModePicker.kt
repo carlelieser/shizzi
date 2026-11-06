@@ -22,15 +22,15 @@ import dev.shizzi.ui.theme.ShizziTheme
 private val CheckSize = 20.dp
 
 fun vpnModeLabel(mode: VpnMode): String = when (mode) {
-    VpnMode.AUTO -> "Auto"
-    VpnMode.ALWAYS -> "Always"
-    VpnMode.NEVER -> "Never"
+    VpnMode.AUTO -> dev.shizzi.L10n.string(dev.shizzi.R.string.vpn_mode_auto)
+    VpnMode.ALWAYS -> dev.shizzi.L10n.string(dev.shizzi.R.string.vpn_mode_always)
+    VpnMode.NEVER -> dev.shizzi.L10n.string(dev.shizzi.R.string.vpn_mode_never)
 }
 
 private fun descriptionOf(mode: VpnMode): String = when (mode) {
-    VpnMode.AUTO -> "Bind to active VPN if available"
-    VpnMode.ALWAYS -> "Refuse connection without active VPN"
-    VpnMode.NEVER -> "Ignore active VPN"
+    VpnMode.AUTO -> dev.shizzi.L10n.string(dev.shizzi.R.string.vpn_mode_auto_description)
+    VpnMode.ALWAYS -> dev.shizzi.L10n.string(dev.shizzi.R.string.vpn_mode_always_description)
+    VpnMode.NEVER -> dev.shizzi.L10n.string(dev.shizzi.R.string.vpn_mode_never_description)
 }
 
 @Composable
@@ -41,7 +41,7 @@ fun VpnModePicker(
 ) {
     ThemedBottomSheet(onDismiss = onDismiss) {
         Text(
-            text = "VPN",
+            text = dev.shizzi.L10n.string(dev.shizzi.R.string.vpn),
             style = ShizziTheme.typography.heading,
             color = ShizziTheme.colors.onSurface,
         )

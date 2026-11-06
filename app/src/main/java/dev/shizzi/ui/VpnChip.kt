@@ -31,7 +31,7 @@ fun VpnChip(isBypassed: Boolean = false) {
         )
 
         Text(
-            text = if (isBypassed) "VPN IGNORED" else "VPN CONNECTED",
+            text = if (isBypassed) dev.shizzi.L10n.string(dev.shizzi.R.string.vpn_ignored_badge) else dev.shizzi.L10n.string(dev.shizzi.R.string.vpn_connected_badge),
             style = ShizziTheme.typography.caption,
             color = tint,
         )

@@ -6,6 +6,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import dev.shizzi.L10n
+import dev.shizzi.R
 import dev.shizzi.UsbTethering
 
 @Composable
@@ -18,16 +20,16 @@ fun TetheringSection(
     var isPickerOpen by remember { mutableStateOf(false) }
 
     SettingsChoice(
-        label = SettingsText(title = "USB tethering"),
+        label = SettingsText(title = L10n.string(R.string.usb_tethering)),
         value = usbTetheringLabel(selected),
         onClick = { isPickerOpen = true },
     )
 
     SettingsAction(
-        label = SettingsText(title = "Open system settings"),
+        label = SettingsText(title = L10n.string(R.string.open_system_settings)),
         isExternal = true,
         onClick = {
-            if (!context.openTetherSettings()) toasts.show(unopenedToast("system settings"))
+            if (!context.openTetherSettings()) toasts.show(unopenedToast(L10n.string(R.string.system_settings)))
         },
     )
 

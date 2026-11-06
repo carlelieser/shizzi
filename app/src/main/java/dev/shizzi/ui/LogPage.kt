@@ -121,7 +121,7 @@ fun LogPage(
 
     Column(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
         ScreenHeader(
-            title = "Log",
+            title = dev.shizzi.L10n.string(dev.shizzi.R.string.log_title),
             onBack = actions.onBack,
             action = {
 
@@ -142,8 +142,8 @@ fun LogPage(
 
                         OverflowItem(
                             label = when {
-                                isAllSelected -> "DESELECT ALL"
-                                else -> "SELECT ALL"
+                                isAllSelected -> dev.shizzi.L10n.string(dev.shizzi.R.string.deselect_all)
+                                else -> dev.shizzi.L10n.string(dev.shizzi.R.string.select_all)
                             },
                             onClick = {
                                 selected = when {
@@ -154,7 +154,7 @@ fun LogPage(
                         )
 
                         OverflowItem(
-                            label = "CLEAR",
+                            label = dev.shizzi.L10n.string(dev.shizzi.R.string.clear_upper),
                             onClick = { isConfirmingClear = true },
                         )
                     }
@@ -219,9 +219,9 @@ fun LogPage(
 
 
 private fun copyLabel(count: Int, total: Int): String = when {
-    count == 0 || count == total -> "COPY ALL"
-    count == 1 -> "COPY 1 LINE"
-    else -> "COPY $count LINES"
+    count == 0 || count == total -> dev.shizzi.L10n.string(dev.shizzi.R.string.copy_all)
+    count == 1 -> dev.shizzi.L10n.quantity(dev.shizzi.R.plurals.copy_lines, 1, 1)
+    else -> dev.shizzi.L10n.quantity(dev.shizzi.R.plurals.copy_lines, count, count)
 }
 
 private fun copyText(entries: List<LogEntry>, selected: Set<Int>): String = entries

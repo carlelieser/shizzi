@@ -26,7 +26,7 @@ private fun ErrorToast(lastError: String, toasts: ToastState) {
         toasts.show(
             Toast(
                 key = ToastKeys.SESSION,
-                message = lastError,
+                message = if (lastError == dev.shizzi.UsbDownstream.NO_USB_CABLE) dev.shizzi.L10n.string(dev.shizzi.R.string.usb_cable_required) else lastError,
                 duration = ToastDuration.Indefinite,
             ),
         )
@@ -51,7 +51,7 @@ private fun ShizukuToast(
                 key = ToastKeys.SHIZUKU,
                 message = message,
                 duration = ToastDuration.Indefinite,
-                action = ToastAction("Grant", onRequestPermission)
+                action = ToastAction(dev.shizzi.L10n.string(dev.shizzi.R.string.grant), onRequestPermission)
                     .takeIf { state is ShizukuState.PermissionRequired },
             ),
         )
@@ -59,8 +59,8 @@ private fun ShizukuToast(
 }
 
 private fun describe(state: ShizukuState): String = when (state) {
-    is ShizukuState.NotInstalled -> "Shizuku is not installed"
-    is ShizukuState.NotRunning -> "Shizuku is installed but not running"
-    is ShizukuState.PermissionRequired -> "Shizzi needs permission from Shizuku"
+    is ShizukuState.NotInstalled -> dev.shizzi.L10n.string(dev.shizzi.R.string.shizuku_not_installed)
+    is ShizukuState.NotRunning -> dev.shizzi.L10n.string(dev.shizzi.R.string.shizuku_not_running)
+    is ShizukuState.PermissionRequired -> dev.shizzi.L10n.string(dev.shizzi.R.string.shizuku_permission_needed)
     is ShizukuState.Ready -> ""
 }
