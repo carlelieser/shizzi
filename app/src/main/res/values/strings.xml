@@ -197,4 +197,23 @@
 
     <string name="session_ended_unexpectedly">Session ended unexpectedly — dropping the hotspot…</string>
     <string name="vpn_disconnected_session_stopped">VPN disconnected. Session stopped to keep devices protected.</string>
+
+    <!-- USB tethering and reconnect states (0.5.0) -->
+    <string name="tethering">Tethering</string>
+    <string name="usb_tethering">USB tethering</string>
+    <string name="open_system_settings">Open system settings</string>
+    <string name="system_settings">system settings</string>
+    <string name="usb_mode_auto">Auto</string>
+    <string name="usb_mode_always">Always</string>
+    <string name="usb_mode_never">Never</string>
+    <string name="usb_mode_auto_description">Also share over USB when a cable is connected</string>
+    <string name="usb_mode_always_description">Share over USB only; requires a cable</string>
+    <string name="usb_mode_never_description">Share through the hotspot only</string>
+    <string name="waiting_for_usb">Waiting for USB</string>
+    <string name="notification_usb_grace">Connect over USB within %1$d minutes to keep sharing</string>
+
+    <!-- Session and settings messages -->
+    <string name="could_not_open">Couldn\'t open %1$s</string>
+    <string name="usb_cable_required">Failed to start. USB connection required.</string>
+    <string name="issue_tracker_label">the issue tracker</string>
 </resources>

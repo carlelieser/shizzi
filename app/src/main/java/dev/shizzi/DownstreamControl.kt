@@ -46,17 +46,28 @@ class DownstreamControl(private val context: Context) {
 
     private val managerClass: Class<*> get() = Class.forName("android.net.TetheringManager")
 
-    private val wifiTetheringType = 0
+    fun stopWifiTethering(): Boolean = stopTethering(listOf(TetheringType.WIFI))
 
-    fun stopWifiTethering(): Boolean = runCatching {
-        val method = managerClass.getMethod("stopTethering", Int::class.javaPrimitiveType)
-        method.invoke(tetheringManager, wifiTetheringType)
+    fun stopTethering(types: Collection<TetheringType>): Boolean {
+        if (types.isEmpty()) return true
+
+        val method = runCatching {
+            managerClass.getMethod("stopTethering", Int::class.javaPrimitiveType)
+        }.getOrElse { return false }
+
+        val didStopAll = types
+            .map { type -> runCatching { method.invoke(tetheringManager, type.code) }.isSuccess }
+            .all { it }
+
         Thread.sleep(STOP_SETTLE_MS)
-    }.isSuccess
+        return didStopAll
+    }
 
-    fun startWifiTethering(): Pair<Boolean, String> {
-        val viaTethering = startViaTetheringManager()
-        if (viaTethering.first) return viaTethering
+    fun startWifiTethering(): Pair<Boolean, String> = startTethering(TetheringType.WIFI)
+
+    fun startTethering(type: TetheringType): Pair<Boolean, String> {
+        val viaTethering = startViaTetheringManager(type)
+        if (viaTethering.first || type != TetheringType.WIFI) return viaTethering
 
         val viaWifiManager = startViaWifiManager()
         return when {
@@ -81,19 +92,22 @@ class DownstreamControl(private val context: Context) {
         false to "startTetheredHotspot: ${failure.cause?.message ?: failure.message}"
     }
 
-    private fun startViaTetheringManager(): Pair<Boolean, String> {
-        val exempt = startTetheringRequest(isExemptFromEntitlement = true)
+    private fun startViaTetheringManager(type: TetheringType): Pair<Boolean, String> {
+        val exempt = startTetheringRequest(type, isExemptFromEntitlement = true)
         if (exempt.first) return exempt
 
-        val plain = startTetheringRequest(isExemptFromEntitlement = false)
+        val plain = startTetheringRequest(type, isExemptFromEntitlement = false)
         return when {
             plain.first -> plain
             else -> false to "exempt[${exempt.second}]; plain[${plain.second}]"
         }
     }
 
-    private fun startTetheringRequest(isExemptFromEntitlement: Boolean): Pair<Boolean, String> {
-        val request = runCatching { buildTetheringRequest(isExemptFromEntitlement) }
+    private fun startTetheringRequest(
+        type: TetheringType,
+        isExemptFromEntitlement: Boolean,
+    ): Pair<Boolean, String> {
+        val request = runCatching { buildTetheringRequest(type, isExemptFromEntitlement) }
             .getOrElse { return false to "buildTetheringRequest: ${it.message}" }
 
         val latch = CountDownLatch(1)
@@ -110,11 +124,11 @@ class DownstreamControl(private val context: Context) {
         }.getOrElse { false to "startTethering: ${it.message}" }
     }
 
-    private fun buildTetheringRequest(isExemptFromEntitlement: Boolean): Any {
+    private fun buildTetheringRequest(type: TetheringType, isExemptFromEntitlement: Boolean): Any {
         val builderClass = Class.forName("android.net.TetheringManager\$TetheringRequest\$Builder")
         val builder = builderClass
             .getConstructor(Int::class.javaPrimitiveType)
-            .newInstance(wifiTetheringType)
+            .newInstance(type.code)
 
         if (isExemptFromEntitlement) {
             runCatching {

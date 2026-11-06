@@ -26,7 +26,7 @@ private fun ErrorToast(lastError: String, toasts: ToastState) {
         toasts.show(
             Toast(
                 key = ToastKeys.SESSION,
-                message = lastError,
+                message = if (lastError == dev.shizzi.UsbDownstream.NO_USB_CABLE) dev.shizzi.L10n.string(dev.shizzi.R.string.usb_cable_required) else lastError,
                 duration = ToastDuration.Indefinite,
             ),
         )

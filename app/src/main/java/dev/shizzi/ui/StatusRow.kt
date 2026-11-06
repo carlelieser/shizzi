@@ -56,7 +56,7 @@ fun StatusRow(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        StatusLabel(statusWord(state.status))
+        StatusLabel(statusWord(state))
 
         AnimatedVisibility(
             visible = hasTunnel(state),
@@ -178,9 +178,9 @@ private fun StatusDivider() {
     )
 }
 
-private fun statusWord(status: UiStatus): String = when (status) {
+private fun statusWord(state: SessionUiState): String = when (state.status) {
+    UiStatus.CONNECTED -> if (state.isWaitingForUsb) dev.shizzi.L10n.string(dev.shizzi.R.string.waiting_for_usb) else dev.shizzi.L10n.string(dev.shizzi.R.string.status_connected)
     UiStatus.READY -> dev.shizzi.L10n.string(dev.shizzi.R.string.ready)
     UiStatus.LOADING -> dev.shizzi.L10n.string(dev.shizzi.R.string.status_starting)
-    UiStatus.CONNECTED -> dev.shizzi.L10n.string(dev.shizzi.R.string.status_connected)
     UiStatus.ERROR -> dev.shizzi.L10n.string(dev.shizzi.R.string.status_failed)
 }

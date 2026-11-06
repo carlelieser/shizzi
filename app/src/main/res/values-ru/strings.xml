@@ -203,4 +203,23 @@
 
     <string name="session_ended_unexpectedly">Раздача неожиданно завершилась — выключаю точку доступа…</string>
     <string name="vpn_disconnected_session_stopped">VPN отключился. Раздача остановлена, чтобы устройства не вышли в сеть напрямую.</string>
+
+    <!-- USB tethering and reconnect states (0.5.0) -->
+    <string name="tethering">Раздача интернета</string>
+    <string name="usb_tethering">Раздача по USB</string>
+    <string name="open_system_settings">Открыть системные настройки</string>
+    <string name="system_settings">системные настройки</string>
+    <string name="usb_mode_auto">Авто</string>
+    <string name="usb_mode_always">Всегда</string>
+    <string name="usb_mode_never">Никогда</string>
+    <string name="usb_mode_auto_description">Также раздавать по USB, когда подключён кабель</string>
+    <string name="usb_mode_always_description">Раздавать только по USB; требуется кабель</string>
+    <string name="usb_mode_never_description">Раздавать только через точку доступа Wi-Fi</string>
+    <string name="waiting_for_usb">Ожидание USB</string>
+    <string name="notification_usb_grace">Подключите USB в течение %1$d мин., чтобы продолжить раздачу</string>
+
+    <!-- Session and settings messages -->
+    <string name="could_not_open">Не удалось открыть %1$s</string>
+    <string name="usb_cable_required">Не удалось начать раздачу: требуется подключение USB.</string>
+    <string name="issue_tracker_label">список ошибок</string>
 </resources>

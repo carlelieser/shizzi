@@ -7,6 +7,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
+import dev.shizzi.ui.Screen
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.standardTween
 import dev.shizzi.ui.onboarding.OnboardingActions
@@ -40,6 +41,7 @@ fun ShizziApp(
     state: AppState,
     onboarding: OnboardingEntry,
     actions: AppActions,
+    startScreen: Screen = Screen.HOME,
 ) {
     val fadeSpec = standardTween<Float>()
     val scaleSpec = tween<Float>(
@@ -57,7 +59,11 @@ fun ShizziApp(
         label = "onboardingHandoff",
     ) { hasCompletedOnboarding ->
         when {
-            hasCompletedOnboarding -> HomeScreen(state = state, actions = actions)
+            hasCompletedOnboarding -> HomeScreen(
+                state = state,
+                actions = actions,
+                startScreen = startScreen,
+            )
             else -> OnboardingRoute(state = state, onboarding = onboarding, actions = actions)
         }
     }

@@ -43,6 +43,7 @@ data class AppActions(
     val onAddCustomAccent: (Int) -> Unit,
     val onSetLogging: (Boolean) -> Unit,
     val onSetVpnMode: (VpnMode) -> Unit,
+    val onSetUsbTethering: (UsbTethering) -> Unit,
     val onRunProbes: () -> Unit,
     val onDismissDiagnostics: () -> Unit,
     val onClearLog: (onCleared: (String?) -> Unit) -> Unit,
@@ -54,8 +55,8 @@ data class AppActions(
 
 /** Routes the navigator's current screen and hosts the toast overlay. */
 @Composable
-fun HomeScreen(state: AppState, actions: AppActions) {
-    val current = rememberNavigator()
+fun HomeScreen(state: AppState, actions: AppActions, startScreen: Screen = Screen.HOME) {
+    val current = rememberNavigator(startScreen)
     val goHome = { current.value = Screen.HOME }
 
     val goBack = {
@@ -153,6 +154,7 @@ private fun settingsState(state: AppState): SettingsState {
         customAccents = settings.customAccents,
         isLogging = settings.isLogging,
         vpnMode = settings.vpnMode,
+        usbTethering = settings.usbTethering,
         isRunningDiagnostics = state.diagnostics is DiagnosticsState.Running,
         automation = AutomationState(
             isEnabled = settings.isAutomationEnabled,
@@ -171,6 +173,7 @@ private fun settingsActions(context: ScreenContext): SettingsActions {
         onAddCustomAccent = actions.onAddCustomAccent,
         onSetLogging = actions.onSetLogging,
         onSetVpnMode = actions.onSetVpnMode,
+        onSetUsbTethering = actions.onSetUsbTethering,
         onOpenLog = { context.navigation.open(Screen.LOG) },
         onRunProbes = actions.onRunProbes,
         onGrantPermission = actions.onGrantPermission,

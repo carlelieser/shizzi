@@ -2,6 +2,7 @@ package dev.shizzi
 
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.service.quicksettings.TileService
 import android.view.View
 import android.view.ViewTreeObserver
 import androidx.activity.ComponentActivity
@@ -13,6 +14,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.core.view.WindowCompat
+import dev.shizzi.ui.Screen
 import dev.shizzi.ui.theme.Appearance
 import dev.shizzi.ui.theme.ShizziTheme
 import rikka.shizuku.Shizuku
@@ -49,6 +51,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         registerShizukuListeners()
+
+        // Long-pressing the quick settings tile lands on settings, like the stock hotspot tile.
+        val startScreen = when (intent?.action) {
+            TileService.ACTION_QS_TILE_PREFERENCES -> Screen.SETTINGS
+            else -> Screen.HOME
+        }
 
         setContent {
             val settings by viewModel.settings.collectAsState()
@@ -102,6 +110,7 @@ class MainActivity : ComponentActivity() {
                             onAddCustomAccent = viewModel::addCustomAccent,
                             onSetLogging = viewModel::setLogging,
                             onSetVpnMode = viewModel::setVpnMode,
+                            onSetUsbTethering = viewModel::setUsbTethering,
                             onRunProbes = viewModel::runProbes,
                             onDismissDiagnostics = viewModel::dismissDiagnostics,
                             onClearLog = viewModel::clearLog,
@@ -110,6 +119,7 @@ class MainActivity : ComponentActivity() {
                             onRegenerateAutomationToken =
                                 viewModel::regenerateAutomationToken,
                         ),
+                        startScreen = startScreen,
                     )
                 }
             }

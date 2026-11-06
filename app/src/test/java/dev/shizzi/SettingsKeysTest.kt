@@ -64,6 +64,25 @@ class SettingsKeysTest {
     }
 
     @Test
+    fun `reads a stored usb tethering mode`() {
+        val stored = preferencesOf(USB_TETHERING to UsbTethering.ALWAYS.name)
+
+        assertEquals(UsbTethering.ALWAYS, toSettings(stored).usbTethering)
+    }
+
+    @Test
+    fun `defaults to never when no usb tethering mode is stored`() {
+        assertEquals(UsbTethering.NEVER, toSettings(preferencesOf()).usbTethering)
+    }
+
+    @Test
+    fun `falls back to never when the usb tethering mode is unreadable`() {
+        val stored = preferencesOf(USB_TETHERING to "carrier pigeon")
+
+        assertEquals(UsbTethering.NEVER, toSettings(stored).usbTethering)
+    }
+
+    @Test
     fun `absent appearance keys read as defaults`() {
         val settings = toSettings(preferencesOf())
 
