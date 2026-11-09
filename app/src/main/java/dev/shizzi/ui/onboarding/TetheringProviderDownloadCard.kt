@@ -32,7 +32,7 @@ fun TetheringProviderDownloadCard(state: CompatibilityState, hasNetwork: Boolean
             verticalArrangement = Arrangement.spacedBy(ShizziTheme.spacing.xs),
         ) {
             Text(
-                text = "Tethering module",
+                text = dev.shizzi.L10n.string(dev.shizzi.R.string.tethering_module),
                 style = ShizziTheme.typography.subheading,
                 color = ShizziTheme.colors.onSurface,
             )
@@ -80,19 +80,17 @@ private fun FailureDetail(reason: String) {
 }
 
 private fun bodyFor(state: CompatibilityState, hasNetwork: Boolean): String = when {
-    state is CompatibilityState.Downloading -> "Downloading the module…"
+    state is CompatibilityState.Downloading -> dev.shizzi.L10n.string(dev.shizzi.R.string.module_downloading)
 
     state is CompatibilityState.DownloadFailed && state.failure.isConnectivity ->
-        "Couldn't reach the network to download the module. Reconnect and try again."
+        dev.shizzi.L10n.string(dev.shizzi.R.string.module_download_network_error)
 
     state is CompatibilityState.DownloadFailed ->
-        "The download couldn't be verified, so nothing was installed."
+        dev.shizzi.L10n.string(dev.shizzi.R.string.module_download_verify_error)
 
     !hasNetwork ->
-        "Your phone needs the newer tethering module to route the hotspot. " +
-            "Connect to a network to download it."
+        dev.shizzi.L10n.string(dev.shizzi.R.string.module_download_needed)
 
     else ->
-        "Your phone can run this app once it has a newer tethering module. " +
-            "It's about 3 MB, and installing it needs one restart."
+        dev.shizzi.L10n.string(dev.shizzi.R.string.module_download_available)
 }

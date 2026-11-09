@@ -37,14 +37,14 @@ fun CompatibilityVerdict(state: CompatibilityState) {
 
             state.isCompatible -> Icon(
                 imageVector = Icons.Filled.Verified,
-                contentDescription = "This device is compatible",
+                contentDescription = dev.shizzi.L10n.string(dev.shizzi.R.string.device_compatible),
                 tint = colors.primary,
                 modifier = Modifier.size(VerdictIconSize),
             )
 
             else -> Icon(
                 imageVector = Icons.Filled.Block,
-                contentDescription = "This device is not compatible",
+                contentDescription = dev.shizzi.L10n.string(dev.shizzi.R.string.device_not_compatible),
                 tint = colors.onSurfaceMuted,
                 modifier = Modifier.size(VerdictIconSize),
             )

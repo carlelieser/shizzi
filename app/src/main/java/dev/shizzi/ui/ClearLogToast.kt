@@ -27,11 +27,11 @@ fun ClearLogToast(
         toasts.show(
             Toast(
                 key = ToastKeys.CLEAR_LOG,
-                message = "Clear the log?",
-                detail = "This action cannot be undone.",
+                message = dev.shizzi.L10n.string(dev.shizzi.R.string.clear_log_question),
+                detail = dev.shizzi.L10n.string(dev.shizzi.R.string.clear_log_warning),
 
                 duration = ToastDuration.Indefinite,
-                action = ToastAction("Clear") {
+                action = ToastAction(dev.shizzi.L10n.string(dev.shizzi.R.string.clear)) {
                     isAnswered = true
                     confirm()
                 },
@@ -44,12 +44,12 @@ fun ClearLogToast(
 fun clearedToast(problem: String?): Toast = when (problem) {
     null -> Toast(
         key = ToastKeys.CLEAR_LOG,
-        message = "Log cleared",
+        message = dev.shizzi.L10n.string(dev.shizzi.R.string.log_cleared),
     )
 
     else -> Toast(
         key = ToastKeys.CLEAR_LOG,
-        message = "Cleared this app's entries only",
+        message = dev.shizzi.L10n.string(dev.shizzi.R.string.app_log_entries_cleared),
         detail = problem,
         duration = ToastDuration.Indefinite,
     )

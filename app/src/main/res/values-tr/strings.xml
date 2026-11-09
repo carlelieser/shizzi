@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Shizzi</string>
+
+    <string name="start">Başlat</string>
+    <string name="stop">Durdur</string>
+    <string name="cancel">İptal</string>
+    <string name="settings">Ayarlar</string>
+    <string name="back">Geri</string>
+    <string name="more_options">Diğer seçenekler</string>
+    <string name="grant">İzin ver</string>
+    <string name="clear">Temizle</string>
+    <string name="export">Dışa aktar</string>
+    <string name="continue_label">Devam</string>
+    <string name="finish">Bitir</string>
+    <string name="check">Kontrol et</string>
+    <string name="install">Yükle</string>
+    <string name="installing">Yükleniyor</string>
+    <string name="restart">Yeniden başlat</string>
+    <string name="retry">Tekrar dene</string>
+    <string name="download">İndir</string>
+
+    <string name="appearance">Görünüm</string>
+    <string name="permissions">İzinler</string>
+    <string name="advanced">Gelişmiş</string>
+    <string name="developer">Geliştirici</string>
+    <string name="about">Hakkında</string>
+    <string name="logging">Günlük kaydı</string>
+    <string name="view_logs">Günlüğü görüntüle</string>
+    <string name="run_diagnostics">Tanılamayı çalıştır</string>
+    <string name="restart_onboarding">Kurulum sihirbazını yeniden başlat</string>
+    <string name="github">GitHub</string>
+    <string name="report_a_bug">Hata bildir</string>
+    <string name="author">Geliştirici</string>
+
+    <string name="theme_match_system">Sistemle aynı</string>
+    <string name="theme_light">Açık</string>
+    <string name="theme_dark">Koyu</string>
+    <string name="design">Tasarım</string>
+    <string name="accent">Vurgu rengi</string>
+    <string name="accent_default">Varsayılan</string>
+    <string name="accent_wallpaper">Duvar kağıdı</string>
+    <string name="color_picker">Renk seçici</string>
+    <string name="add_color">Renk ekle</string>
+    <string name="design_neobrutalism">Neobrutalizm</string>
+    <string name="design_material_expressive">Material Expressive</string>
+    <string name="design_neobrutalism_description">Keskin köşeler, kalın kenarlıklar, kaydırılmış gölgeler</string>
+    <string name="design_material_expressive_description">Yuvarlak yüzeyler, tonlu renkler, yumuşak hareketler</string>
+
+    <string name="vpn">VPN</string>
+    <string name="vpn_mode_auto">Otomatik</string>
+    <string name="vpn_mode_always">Her zaman</string>
+    <string name="vpn_mode_never">Asla</string>
+    <string name="vpn_mode_auto_description">Etkin bir VPN varsa ona bağlan</string>
+    <string name="vpn_mode_always_description">Etkin VPN yoksa bağlantıyı reddet</string>
+    <string name="vpn_mode_never_description">Etkin VPN\'i yok say</string>
+    <string name="vpn_connected_badge">VPN BAĞLI</string>
+    <string name="vpn_ignored_badge">VPN YOK SAYILDI</string>
+
+    <string name="automation">Otomasyon</string>
+    <string name="automation_description">Tasker gibi uygulamaların Shizzi\'yi yönetmesine izin verir</string>
+    <string name="view_setup_instructions">Kurulum talimatlarını görüntüle</string>
+    <string name="setup">Kurulum</string>
+    <string name="setup_description">Bu değerlerle bir broadcast intent gönderin.</string>
+    <string name="field_action">Action</string>
+    <string name="field_package">Paket</string>
+    <string name="field_class">Sınıf</string>
+    <string name="field_target">Hedef</string>
+    <string name="field_extra_name">Extra adı</string>
+    <string name="field_extra_value">Extra değeri</string>
+    <string name="broadcast_receiver">Broadcast receiver</string>
+    <string name="copy_field">%1$s kopyala</string>
+    <string name="copied">%1$s kopyalandı</string>
+    <string name="token">Token</string>
+    <string name="copy_token">Token\'ı kopyala</string>
+    <string name="regenerate_token">Token\'ı yenile</string>
+    <string name="command_start">Başlat</string>
+    <string name="command_stop">Durdur</string>
+    <string name="command_toggle">Aç/Kapat</string>
+    <string name="command_status">Durum</string>
+
+    <string name="clear_log_question">Günlük temizlensin mi?</string>
+    <string name="clear_log_warning">Bu işlem geri alınamaz.</string>
+    <string name="log_cleared">Günlük temizlendi</string>
+    <string name="app_log_entries_cleared">Yalnızca bu uygulamanın kayıtları temizlendi</string>
+    <string name="running_diagnostics">Tanılama çalışıyor…</string>
+    <string name="diagnostics_completed">Tanılama tamamlandı</string>
+    <string name="diagnostics_failed">Tanılama başarısız oldu</string>
+    <string name="export_report">Raporu dışa aktar</string>
+    <string name="log_title">Günlük</string>
+    <string name="no_logs_yet">Henüz kayıt yok</string>
+    <string name="logging_disabled">Günlük kaydı kapalı</string>
+    <string name="logs_will_appear_here">Kayıtlar burada görünecek</string>
+    <string name="start_a_session">Oturum başlat</string>
+    <string name="enable_logging">Günlük kaydını aç</string>
+    <string name="scroll_to_top">EN ÜSTE GİT</string>
+    <string name="scroll_to_bottom">EN ALTA GİT</string>
+    <string name="select_all">TÜMÜNÜ SEÇ</string>
+    <string name="deselect_all">SEÇİMİ KALDIR</string>
+    <string name="clear_upper">TEMİZLE</string>
+    <string name="copy_all">TÜMÜNÜ KOPYALA</string>
+    <plurals name="copy_lines">
+        <item quantity="one">%d SATIRI KOPYALA</item>
+        <item quantity="other">%d SATIRI KOPYALA</item>
+    </plurals>
+
+    <string name="permission_notifications">Bildirimler</string>
+    <string name="permission_background_activity">Arka plan etkinliği</string>
+    <string name="permission_notifications_rationale">Oturumun çalışmaya devam etmesi için gerekli</string>
+    <string name="permission_background_activity_rationale">Oturumun dışarıdan yönetilmesi için gerekli</string>
+    <string name="shizuku">Shizuku</string>
+    <string name="shizuku_rationale">Temel işlevler için gerekli</string>
+    <string name="status">Durum</string>
+    <string name="service">Servis</string>
+    <string name="version">Sürüm</string>
+    <string name="not_installed">Yüklü değil</string>
+    <string name="not_running">Çalışmıyor</string>
+    <string name="permission_required">İzin gerekli</string>
+    <string name="ready">Hazır</string>
+    <string name="grant_permission_upper">İZİN VER</string>
+    <string name="shizuku_not_installed">Shizuku yüklü değil</string>
+    <string name="shizuku_not_running">Shizuku yüklü ama çalışmıyor</string>
+    <string name="shizuku_permission_needed">Shizzi\'nin Shizuku izni alması gerekiyor</string>
+
+    <string name="status_not_connected">Bağlı değil</string>
+    <string name="status_connecting">Bağlanıyor</string>
+    <string name="status_connected">Bağlı</string>
+    <string name="status_starting">Başlatılıyor</string>
+    <string name="status_failed">Başarısız</string>
+    <string name="badge_no_shizuku">SHIZUKU YOK</string>
+    <string name="badge_shizuku_off">SHIZUKU KAPALI</string>
+    <string name="badge_permission_needed">İZİN GEREKLİ</string>
+    <string name="status_prefix">DURUM %1$s</string>
+    <string name="tunnel_active">TÜNEL ETKİN</string>
+
+    <string name="welcome">Hoş geldiniz</string>
+    <string name="welcome_description">Shizuku ile root gerektirmeyen Wi-Fi paylaşımı.</string>
+    <string name="get_started">Başlayın</string>
+    <string name="grant_permissions">İzinleri ver</string>
+    <string name="compatibility">Uyumluluk</string>
+    <string name="capability_test_network">Test ağı API\'si</string>
+    <string name="capability_prefer_test_networks">Test ağlarını tercih et</string>
+    <string name="capability_test_network_description">Uygulamanın, hotspot trafiğinizin geçtiği test ağı tünelini oluşturmasını sağlar.</string>
+    <string name="capability_prefer_test_networks_description">Uygulamanın hotspot\'u test ağı tüneli üzerinden yönlendirmesini sağlar. Android 13 ile eklendi.</string>
+    <string name="supported">Destekleniyor</string>
+    <string name="not_supported">Desteklenmiyor</string>
+    <string name="device_compatible">Bu cihaz uyumlu</string>
+    <string name="device_not_compatible">Bu cihaz uyumlu değil</string>
+    <string name="module_restart_required">Yeniden başlatma gerekli</string>
+    <string name="module_download_failed">İndirme başarısız oldu</string>
+    <string name="module_install_failed">Yükleme başarısız oldu</string>
+    <string name="module_downloaded_verified">İndirildi ve doğrulandı</string>
+    <string name="module_available">Modül mevcut</string>
+    <string name="tethering_module">Tethering modülü</string>
+    <string name="module_downloading">Modül indiriliyor…</string>
+    <string name="module_download_network_error">Modülü indirmek için ağa ulaşılamadı. Yeniden bağlanıp tekrar deneyin.</string>
+    <string name="module_download_verify_error">İndirilen dosya doğrulanamadı, bu yüzden hiçbir şey yüklenmedi.</string>
+    <string name="module_download_needed">Telefonunuzun hotspot\'u yönlendirebilmesi için daha yeni bir tethering modülüne ihtiyacı var. İndirmek için bir ağa bağlanın.</string>
+    <string name="module_download_available">Daha yeni bir tethering modülü yüklendiğinde telefonunuz bu uygulamayı çalıştırabilir. Yaklaşık 3 MB boyutunda ve yüklemek için bir kez yeniden başlatma gerekiyor.</string>
+    <string name="module_restart_to_finish">Tamamlamak için telefonunuzu yeniden başlatın</string>
+    <string name="module_not_accepted">Modül kabul edilmedi</string>
+    <string name="module_installing">Modül yükleniyor…</string>
+    <string name="module_staged_description">Modül hazır ve telefonunuz bir sonraki açılışında yüklemeyi tamamlayacak. Ardından uyumluluğu kontrol etmek için buraya dönün.</string>
+    <string name="module_install_failed_description">Telefonunuz bu modülü reddetti; bazı üreticilerin yazılımları bunu yapar. Hiçbir şey değiştirilmedi.</string>
+    <string name="module_ready_to_install">Modül indirildi, doğrulandı ve yüklenmeye hazır.</string>
+
+    <string name="notification_cleaning_up">Temizleniyor…</string>
+    <string name="notification_getting_ready">Hazırlanıyor…</string>
+    <string name="notification_session_ended">Oturum sona erdi</string>
+    <string name="notification_connected_vpn_ignored">Bağlı · VPN yok sayıldı</string>
+    <string name="notification_connected_vpn">Bağlı · VPN</string>
+    <string name="notification_not_sharing">Paylaşım yapılmıyor</string>
+    <string name="notification_generic_error">Bir sorun oluştu. Ayrıntılar için uygulamaya bakın.</string>
+    <string name="notification_turning_hotspot_off">Hotspot kapatılıyor…</string>
+    <string name="notification_turning_hotspot_on">Hotspot açılıyor…</string>
+    <string name="notification_no_devices">Bağlı cihaz yok</string>
+    <plurals name="notification_device_count">
+        <item quantity="one">%d cihaz</item>
+        <item quantity="other">%d cihaz</item>
+    </plurals>
+    <string name="notification_shizuku_loss">Shizuku durduğu için oturum sona erdi. Hotspot kapatıldı. Hazır olduğunuzda yeniden başlatın.</string>
+    <string name="notification_session_loss_problem">Oturum sona erdi ancak hotspot hâlâ açık olabilir: %1$s — Ayarlar\'dan kapatın.</string>
+    <string name="notification_channel_name">Paylaşım oturumu</string>
+    <string name="notification_channel_description">Paylaşım oturumu çalışırken gösterilir</string>
+
+    <string name="tile_stopping">Durduruluyor…</string>
+    <string name="tile_starting">Başlatılıyor…</string>
+    <string name="tile_tap_retry">Tekrar denemek için dokunun</string>
+    <string name="tile_tap_share">Paylaşmak için dokunun</string>
+    <string name="tile_shizuku_not_installed">Shizuku yüklü değil</string>
+    <string name="tile_shizuku_not_running">Shizuku çalışmıyor</string>
+    <string name="tile_no_devices">Cihaz yok</string>
+    <plurals name="tile_device_count">
+        <item quantity="one">%1$d cihaz · %2$s</item>
+        <item quantity="other">%1$d cihaz · %2$s</item>
+    </plurals>
+
+    <string name="session_ended_unexpectedly">Oturum beklenmedik şekilde sona erdi — hotspot kapatılıyor…</string>
+    <string name="vpn_disconnected_session_stopped">VPN bağlantısı kesildi. Cihazları korumak için oturum durduruldu.</string>
+
+    <string name="tethering">Paylaşım</string>
+    <string name="usb_tethering">USB paylaşımı</string>
+    <string name="open_system_settings">Sistem ayarlarını aç</string>
+    <string name="system_settings">sistem ayarları</string>
+    <string name="usb_mode_auto">Otomatik</string>
+    <string name="usb_mode_always">Her zaman</string>
+    <string name="usb_mode_never">Asla</string>
+    <string name="usb_mode_auto_description">Kablo takılıyken USB üzerinden de paylaş</string>
+    <string name="usb_mode_always_description">Yalnızca USB üzerinden paylaş; kablo gerekir</string>
+    <string name="usb_mode_never_description">Yalnızca hotspot üzerinden paylaş</string>
+    <string name="waiting_for_usb">USB bekleniyor</string>
+    <string name="notification_usb_grace">Paylaşımın sürmesi için %1$d dakika içinde USB ile bağlanın</string>
+
+    <string name="could_not_open">%1$s açılamadı</string>
+    <string name="usb_cable_required">Başlatılamadı. USB bağlantısı gerekli.</string>
+    <string name="issue_tracker_label">hata takip sistemi</string>
+</resources>
