@@ -33,21 +33,41 @@ class TetherSession(private val context: Context) {
     @Volatile
     private var usbDownstream = UsbDownstream(UsbTethering.NEVER, usbLink)
 
+    private var blockedCidrs: String = ""
+    private var blockedDomains: String = ""
+    private var blockedDomainRegexes: String = ""
+
     private val vpn = VpnUpstream(context) { problem -> tearDownAfter(problem) }
 
     val isActive: Boolean get() = state == SessionState.ACTIVE
+    val isStarting: Boolean get() = state == SessionState.STARTING
 
-    fun start(mode: VpnMode = VpnMode.AUTO, usb: UsbTethering = UsbTethering.NEVER): String {
-        if (isActive) return status()
+    fun start(
+        mode: VpnMode = VpnMode.AUTO,
+        usb: UsbTethering = UsbTethering.NEVER,
+        blockedCidrs: String = "",
+        blockedDomains: String = "",
+        blockedDomainRegexes: String = "",
+    ): String = synchronized(this) {
+        if (isActive || isStarting) return status()
 
         vpnMode = mode
         usbTethering = usb
+        this.blockedCidrs = blockedCidrs
+        this.blockedDomains = blockedDomains
+        this.blockedDomainRegexes = blockedDomainRegexes
         usbDownstream = UsbDownstream(usb, usbLink, SessionLog::info)
         state = SessionState.STARTING
         SessionLog.info(
             "session start requested (vpn mode ${mode.name.lowercase()}, " +
                 "usb tethering ${usb.name.lowercase()})",
         )
+        if (blockedCidrs.isNotBlank()) {
+            SessionLog.info("firewall configured with blocked CIDR subnets")
+        }
+        if (blockedDomains.isNotBlank() || blockedDomainRegexes.isNotBlank()) {
+            SessionLog.info("firewall configured with blocked domain and regex rules")
+        }
 
         SessionLog.info(
             "device: ${Build.MANUFACTURER} ${Build.MODEL}, " +
@@ -77,6 +97,9 @@ class TetherSession(private val context: Context) {
     }
 
     private fun bringUp(): String {
+        resources?.release()
+        resources = null
+
         val group = SessionResources(testNetworkApi, context.connectivityManager())
         resources = group
 
@@ -84,8 +107,14 @@ class TetherSession(private val context: Context) {
         interfaceName = name
         SessionLog.info("tun up: $name (mtu $TUN_MTU, $TUN_ADDRESS, $TUN_ADDRESS_V6)")
 
-        group.startDatapath(TUN_MTU)
+        group.startDatapath(TUN_MTU, blockedCidrs, blockedDomains, blockedDomainRegexes)
         SessionLog.info("datapath attached to $name")
+        if (blockedCidrs.isNotBlank()) {
+            SessionLog.info("firewall active: blocked CIDRs loaded into datapath")
+        }
+        if (blockedDomains.isNotBlank() || blockedDomainRegexes.isNotBlank()) {
+            SessionLog.info("firewall active: domain and regex rules loaded into datapath")
+        }
         followVpn(group)
 
         preferTestNetworks()
@@ -208,7 +237,7 @@ class TetherSession(private val context: Context) {
     private fun liveUpstreams(owned: String): List<String> =
         inspector.observe().liveInterfaceNames(owned)
 
-    fun stop(): String {
+    fun stop(): String = synchronized(this) {
         watchdog?.stop()
         watchdog = null
         events?.unregister()
@@ -253,6 +282,23 @@ class TetherSession(private val context: Context) {
     }
 
 
+    fun setBlockedCidrs(cidrs: String) {
+        this.blockedCidrs = cidrs
+        resources?.updateBlockedCidrs(cidrs)
+        if (cidrs.isNotBlank()) {
+            SessionLog.info("firewall dynamic update: applied blocked CIDR ranges")
+        }
+    }
+
+    fun setBlockedDomains(domains: String, regexes: String) {
+        this.blockedDomains = domains
+        this.blockedDomainRegexes = regexes
+        resources?.updateBlockedDomains(domains, regexes)
+        if (domains.isNotBlank() || regexes.isNotBlank()) {
+            SessionLog.info("firewall dynamic update: applied blocked domain and regex rules")
+        }
+    }
+
     fun status(): String = JSONObject().apply {
         put("state", state.name)
         put("detail", detail)
@@ -266,6 +312,11 @@ class TetherSession(private val context: Context) {
         put("bytesUp", traffic.up)
         put("bytesDown", traffic.down)
         put("clientCount", if (isActive) downstream.countDevices(usbTethering.types) else 0)
+        put("blockedCount", resources?.getBlockedCount() ?: 0L)
+        put("blockedDomainCount", resources?.getBlockedDomainCount() ?: 0L)
+        put("recentBlocked", resources?.getRecentBlocked() ?: "[]")
+        put("isCidrBlockingActive", blockedCidrs.isNotBlank())
+        put("isDomainBlockingActive", blockedDomains.isNotBlank() || blockedDomainRegexes.isNotBlank())
     }.toString()
 
     private fun isVpnBypassed(): Boolean {

@@ -1,6 +1,7 @@
 package dev.shizzi
 
 import java.io.BufferedReader
+import java.net.NetworkInterface
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
@@ -20,7 +21,11 @@ data class UpstreamObservation(
 }
 
 private fun interfaceExists(name: String): Boolean =
-    runCatching { java.io.File("/sys/class/net/$name").exists() }.getOrDefault(true)
+    runCatching {
+        NetworkInterface.getByName(name) != null
+    }.getOrElse {
+        runCatching { java.io.File("/sys/class/net/$name").exists() }.getOrDefault(false)
+    }
 
 class UpstreamInspector(private val deadlineMs: Long = DEFAULT_DEADLINE_MS) {
 

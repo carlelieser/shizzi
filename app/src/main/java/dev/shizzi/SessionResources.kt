@@ -34,11 +34,16 @@ class SessionResources(
         fileDescriptor = created.fileDescriptor
 
         val name = created.interfaceName
-        testNetworkApi.setupTestNetwork(name, dnsServers, lifetimeToken)
+        try {
+            testNetworkApi.setupTestNetwork(name, dnsServers, lifetimeToken)
 
-        network = awaitAvailability(name, availabilityTimeoutMs)
-        requestKeepAlive()
-        return name
+            network = awaitAvailability(name, availabilityTimeoutMs)
+            requestKeepAlive()
+            return name
+        } catch (t: Throwable) {
+            release()
+            throw t
+        }
     }
 
     private fun requestKeepAlive() {
@@ -61,7 +66,12 @@ class SessionResources(
             }
     }
 
-    fun startDatapath(mtu: Int) {
+    fun startDatapath(
+        mtu: Int,
+        blockedCidrs: String = "",
+        blockedDomains: String = "",
+        blockedRegexes: String = "",
+    ) {
         val descriptor = fileDescriptor
             ?: error("startDatapath: no TUN fd; acquire() must succeed first")
 
@@ -73,7 +83,30 @@ class SessionResources(
                     failure,
                 )
             }
+        if (blockedCidrs.isNotBlank()) {
+            datapathSession?.setBlockedCIDRs(blockedCidrs)
+        }
+        if (blockedDomains.isNotBlank() || blockedRegexes.isNotBlank()) {
+            datapathSession?.setBlockedDomainRules(blockedDomains, blockedRegexes)
+        }
     }
+
+    fun updateBlockedCidrs(blockedCidrs: String) {
+        datapathSession?.setBlockedCIDRs(blockedCidrs)
+    }
+
+    fun updateBlockedDomains(blockedDomains: String, blockedRegexes: String) {
+        datapathSession?.setBlockedDomainRules(blockedDomains, blockedRegexes)
+    }
+
+    fun getBlockedCount(): Long =
+        runCatching { datapathSession?.blockedCount ?: 0L }.getOrDefault(0L)
+
+    fun getBlockedDomainCount(): Long =
+        runCatching { datapathSession?.blockedDomainCount ?: 0L }.getOrDefault(0L)
+
+    fun getRecentBlocked(): String =
+        runCatching { datapathSession?.recentBlockedJson ?: "[]" }.getOrDefault("[]")
 
     fun bindDatapathTo(handle: Long) {
         val session = datapathSession
@@ -112,7 +145,8 @@ class SessionResources(
         }
         datapathSession = null
 
-        network?.let { acquired ->
+        val net = network ?: interfaceName?.let { findNetworkOn(it) }
+        net?.let { acquired ->
             runCatching { testNetworkApi.teardownTestNetwork(acquired) }
                 .onFailure { problems += "teardownTestNetwork: ${it.message}" }
         }

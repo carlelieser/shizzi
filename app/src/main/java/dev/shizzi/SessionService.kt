@@ -46,6 +46,19 @@ class SessionService : Service() {
         super.onCreate()
         controller.onSessionLost = ::handleSessionLost
         liveService = this
+
+        scope.launch {
+            settingsStore().settings.collect { settings ->
+                if (internalState.value.status == UiStatus.CONNECTED) {
+                    val active = if (settings.isCidrBlockingEnabled) settings.blockedCidrs else ""
+                    controller.setBlockedCidrs(active)
+
+                    val activeDomains = if (settings.isDomainBlockingEnabled) settings.blockedDomains else ""
+                    val activeRegexes = if (settings.isDomainBlockingEnabled) settings.blockedDomainRegexes else ""
+                    controller.setBlockedDomains(activeDomains, activeRegexes)
+                }
+            }
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -82,11 +95,23 @@ class SessionService : Service() {
         startJob = scope.launch {
 
             val settings = settingsStore().settings.first()
+            val activeCidrs = if (settings.isCidrBlockingEnabled) settings.blockedCidrs else ""
+            val activeDomains = if (settings.isDomainBlockingEnabled) settings.blockedDomains else ""
+            val activeRegexes = if (settings.isDomainBlockingEnabled) settings.blockedDomainRegexes else ""
 
             val outcome = sessionLock.withLock {
                 if (attempt != generation) return@launch
                 runCatching {
-                    controller.start(settings.isLogging, settings.vpnMode, settings.usbTethering)
+                    controller.start(
+                        settings.isLogging,
+                        settings.vpnMode,
+                        settings.usbTethering,
+                        activeCidrs,
+                    ).also {
+                        if (activeDomains.isNotBlank() || activeRegexes.isNotBlank()) {
+                            controller.setBlockedDomains(activeDomains, activeRegexes)
+                        }
+                    }
                 }
             }
             if (attempt != generation) return@launch
@@ -101,7 +126,11 @@ class SessionService : Service() {
             internalState.update { current -> current.applyOutcome(outcome) }
             publishState()
             announceOutcome()
-            followStatus()
+            if (internalState.value.status == UiStatus.CONNECTED) {
+                followStatus()
+            } else {
+                finishEndedSession()
+            }
         }
     }
 
