@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net"
 
+	"golang.org/x/sys/unix"
 	"gvisor.dev/gvisor/pkg/tcpip"
 	"gvisor.dev/gvisor/pkg/tcpip/header"
 	"gvisor.dev/gvisor/pkg/tcpip/link/fdbased"
@@ -30,6 +31,7 @@ const nicID tcpip.NICID = 1
 type Session struct {
 	stack   *stack.Stack
 	binding *networkBinding
+	ping    *pingForwarder
 }
 
 // Start builds a netstack over tunFD, already open, and attaches it to the TUN.
@@ -82,7 +84,15 @@ func Start(tunFD int, mtu int) (*Session, error) {
 		Control: binding.control,
 	})
 
-	return &Session{stack: netStack, binding: binding}, nil
+	// Echo replies go straight onto the TUN: they are whole IPv4 packets, and
+	// the kernel side routes them back through tethering's NAT like any reply.
+	ping := newPingForwarder(binding.echo, func(packet []byte) error {
+		_, err := unix.Write(tunFD, packet)
+		return err
+	})
+	ping.install(netStack)
+
+	return &Session{stack: netStack, binding: binding, ping: ping}, nil
 }
 
 // SetNetwork pins every subsequent dial to a handle from
@@ -106,6 +116,11 @@ func (s *Session) SetNetwork(handle int64) {
 func (s *Session) Stop() {
 	if s.stack == nil {
 		return
+	}
+	// Fence ping replies first: they write to the raw TUN fd, which the caller
+	// closes as soon as Stop returns.
+	if s.ping != nil {
+		s.ping.close()
 	}
 	s.stack.Close()
 	s.stack = nil
