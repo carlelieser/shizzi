@@ -32,6 +32,7 @@ type Session struct {
 	stack   *stack.Stack
 	binding *networkBinding
 	ping    *pingForwarder
+	udp     *udpMapper
 }
 
 // Start builds a netstack over tunFD, already open, and attaches it to the TUN.
@@ -44,10 +45,10 @@ func Start(tunFD int, mtu int) (*Session, error) {
 	}
 
 	binding := &networkBinding{}
-	installForwarders(netStack, &net.Dialer{
+	udp := installForwarders(netStack, &net.Dialer{
 		Timeout: dialTimeout,
 		Control: binding.control,
-	})
+	}, binding.handle.Load)
 
 	// Echo replies go straight onto the TUN: they are whole IPv4 packets, and
 	// the kernel side routes them back through tethering's NAT like any reply.
@@ -57,7 +58,7 @@ func Start(tunFD int, mtu int) (*Session, error) {
 	})
 	ping.install(netStack)
 
-	return &Session{stack: netStack, binding: binding, ping: ping}, nil
+	return &Session{stack: netStack, binding: binding, ping: ping, udp: udp}, nil
 }
 
 // SetNetwork pins every subsequent dial to a handle from
@@ -75,6 +76,13 @@ func (s *Session) SetNetwork(handle int64) {
 		return
 	}
 	s.binding.set(uint64(handle))
+
+	// UDP mappings are shared sockets pinned when they opened. Retire them so
+	// no client port keeps sending -- to new destinations too -- over the
+	// network it was pinned to before this change.
+	if s.udp != nil {
+		s.udp.retireAll()
+	}
 }
 
 // Stop tears the netstack down. It does not close the TUN fd.
@@ -86,6 +94,9 @@ func (s *Session) Stop() {
 	// closes as soon as Stop returns.
 	if s.ping != nil {
 		s.ping.close()
+	}
+	if s.udp != nil {
+		s.udp.close()
 	}
 	s.stack.Close()
 	s.stack = nil
