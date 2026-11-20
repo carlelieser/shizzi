@@ -3,37 +3,43 @@ package dev.shizzi.ui
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import dev.shizzi.R
+import dev.shizzi.SessionError
 import dev.shizzi.SessionUiState
 import dev.shizzi.ShizukuState
-import dev.shizzi.SessionError
 
 @Composable
 fun SessionToasts(
     state: SessionUiState,
     toasts: ToastState,
-    onRequestPermission: () -> Unit,
+    onShizukuAction: () -> Unit,
 ) {
-    ErrorToast(state.lastError, toasts)
-    ShizukuToast(state.shizukuState, toasts, onRequestPermission)
+    ErrorToast(state, toasts)
+    ShizukuToast(state.shizukuState, toasts, onShizukuAction)
 }
 
 @Composable
-private fun ErrorToast(lastError: String, toasts: ToastState) {
-    val message = SessionError.describe(lastError).resolve()
+private fun ErrorToast(state: SessionUiState, toasts: ToastState) {
+    val context = LocalContext.current
+    val message = SessionError.describe(state.lastError).resolve()
+    val hotspotSettings = stringResource(R.string.hotspot_settings)
 
-    LaunchedEffect(lastError) {
-        if (lastError.isEmpty()) {
+    LaunchedEffect(state.lastError, state.isHotspotPossiblyOn) {
+        if (state.lastError.isEmpty()) {
             toasts.dismiss(ToastKeys.SESSION)
             return@LaunchedEffect
         }
+
+        val openSettings = ToastAction(hotspotSettings) { context.openTetherSettings() }
 
         toasts.show(
             Toast(
                 key = ToastKeys.SESSION,
                 message = message,
                 duration = ToastDuration.Indefinite,
+                action = openSettings.takeIf { state.isHotspotPossiblyOn },
             ),
         )
     }
@@ -43,10 +49,10 @@ private fun ErrorToast(lastError: String, toasts: ToastState) {
 private fun ShizukuToast(
     state: ShizukuState,
     toasts: ToastState,
-    onRequestPermission: () -> Unit,
+    onShizukuAction: () -> Unit,
 ) {
     val message = describe(state)
-    val grant = stringResource(R.string.grant)
+    val action = actionLabel(state)?.let { label -> ToastAction(label, onShizukuAction) }
 
     LaunchedEffect(state) {
         if (message.isEmpty()) {
@@ -59,8 +65,7 @@ private fun ShizukuToast(
                 key = ToastKeys.SHIZUKU,
                 message = message,
                 duration = ToastDuration.Indefinite,
-                action = ToastAction(grant, onRequestPermission)
-                    .takeIf { state is ShizukuState.PermissionRequired },
+                action = action,
             ),
         )
     }
@@ -73,4 +78,12 @@ private fun describe(state: ShizukuState): String = when (state) {
     is ShizukuState.NotRunning -> stringResource(R.string.shizuku_not_running)
     is ShizukuState.PermissionRequired -> stringResource(R.string.shizuku_permission_needed)
     is ShizukuState.Ready -> ""
+}
+
+@Composable
+@ReadOnlyComposable
+private fun actionLabel(state: ShizukuState): String? = when (state) {
+    is ShizukuState.NotRunning -> stringResource(R.string.open_shizuku)
+    is ShizukuState.PermissionRequired -> stringResource(R.string.grant)
+    else -> null
 }

@@ -184,11 +184,19 @@ private fun StatusDivider() {
 
 @Composable
 @ReadOnlyComposable
+private fun loadingWord(state: SessionUiState): String = when {
+    state.isWaitingForShizuku -> stringResource(R.string.status_waiting_for_shizuku)
+    state.isReconnecting -> stringResource(R.string.status_reconnecting)
+    else -> stringResource(R.string.status_starting)
+}
+
+@Composable
+@ReadOnlyComposable
 private fun statusWord(state: SessionUiState): String = when (state.status) {
     UiStatus.CONNECTED -> stringResource(
         if (state.isWaitingForUsb) R.string.waiting_for_usb else R.string.status_connected,
     )
     UiStatus.READY -> stringResource(R.string.ready)
-    UiStatus.LOADING -> stringResource(R.string.status_starting)
+    UiStatus.LOADING -> loadingWord(state)
     UiStatus.ERROR -> stringResource(R.string.status_failed)
 }

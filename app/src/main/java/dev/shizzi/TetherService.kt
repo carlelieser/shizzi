@@ -13,6 +13,7 @@ class TetherService : ITetherService.Stub {
     private val shellContext: Context by lazy { asShellContext(context) }
     private val runner: ProbeRunner by lazy { ProbeRunner(shellContext) }
     private val session: TetherSession by lazy { TetherSession(shellContext) }
+    private val teardown: SessionTeardown by lazy { SessionTeardown(shellContext) }
     private val compatibility: CompatibilityCheck by lazy { CompatibilityCheck(shellContext) }
     private val apexInstaller: ApexInstaller by lazy { ApexInstaller() }
 
@@ -41,6 +42,17 @@ class TetherService : ITetherService.Stub {
         return runCatching { session.stop() }
             .getOrElse { failure -> sessionError("stop", failure) }
     }
+
+    /** Null once released; otherwise what is still up. */
+    override fun releaseOrphanedDownstream(types: Array<String>?): String? =
+        runCatching {
+            val orphaned = types.orEmpty().map(TetheringType::valueOf)
+            val problem = teardown.releaseDownstream(orphaned)
+            teardown.releaseUpstreamSelection(null)
+            problem
+        }.getOrElse { failure ->
+            "releaseOrphanedDownstream: ${failure.javaClass.simpleName}: ${failure.message}"
+        }
 
     override fun getStatus(): String =
         runCatching { session.status() }

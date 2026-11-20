@@ -33,10 +33,13 @@ import dev.shizzi.ui.theme.standardTween
 
 @Composable
 @ReadOnlyComposable
-private fun buttonLabel(status: UiStatus): String =
-    stringResource(if (status == UiStatus.CONNECTED) R.string.stop else R.string.start)
+private fun buttonLabel(state: SessionUiState): String {
+    val isStoppable = state.status == UiStatus.CONNECTED || state.isRecovering
+    return stringResource(if (isStoppable) R.string.stop else R.string.start)
+}
 
 private fun buttonState(state: SessionUiState): ConnectButtonState = when {
+    state.isRecovering -> ConnectButtonState.STOP
     state.status == UiStatus.LOADING -> ConnectButtonState.LOADING
     state.status == UiStatus.CONNECTED -> ConnectButtonState.STOP
     state.canStart -> ConnectButtonState.START
@@ -148,7 +151,7 @@ private fun HomeBody(state: SessionUiState, actions: HomeActions) {
         Spacer(Modifier.height(ShizziTheme.spacing.xxxl * 2))
 
         ConnectButton(
-            label = buttonLabel(state.status),
+            label = buttonLabel(state),
             state = buttonState(state),
             onClick = actions.onToggle,
         )

@@ -120,12 +120,14 @@
     <string name="grant_permission_upper">GRANT PERMISSION</string>
     <string name="shizuku_not_installed">Shizuku is not installed</string>
     <string name="shizuku_not_running">Shizuku is installed but not running</string>
-    <string name="shizuku_permission_needed">Shizzi needs permission from Shizuku</string>
+    <string name="shizuku_permission_needed">Shizuku permission is required</string>
 
     <string name="status_not_connected">Not connected</string>
     <string name="status_connecting">Connecting</string>
     <string name="status_connected">Connected</string>
     <string name="status_starting">Starting</string>
+    <string name="status_reconnecting">Reconnecting</string>
+    <string name="status_waiting_for_shizuku">Waiting for Shizuku</string>
     <string name="status_failed">Failed</string>
     <string name="badge_no_shizuku">NO SHIZUKU</string>
     <string name="badge_shizuku_off">SHIZUKU OFF</string>
@@ -165,6 +167,9 @@
 
     <string name="notification_cleaning_up">Cleaning up…</string>
     <string name="notification_getting_ready">Getting ready…</string>
+    <string name="notification_shizuku_stopped">Shizuku stopped</string>
+    <string name="notification_reconnecting">Reconnecting…</string>
+    <string name="notification_start_shizuku">Start Shizuku to resume sharing.</string>
     <string name="notification_session_ended">Session ended</string>
     <string name="notification_connected_vpn_ignored">Connected · VPN ignored</string>
     <string name="notification_connected_vpn">Connected · VPN</string>
@@ -177,13 +182,12 @@
         <item quantity="one">%d device</item>
         <item quantity="other">%d devices</item>
     </plurals>
-    <string name="notification_shizuku_loss">Shizuku stopped, so the session ended. The hotspot was turned off. Start again when you are ready.</string>
-    <string name="notification_session_loss_problem">The session ended but the hotspot may still be on: %1$s — turn it off in Settings.</string>
     <string name="notification_channel_name">Tethering session</string>
     <string name="notification_channel_description">Shown while a tethering session is running</string>
 
     <string name="tile_stopping">Stopping…</string>
     <string name="tile_starting">Starting…</string>
+    <string name="tile_reconnecting">Reconnecting…</string>
     <string name="tile_tap_retry">Tap to retry</string>
     <string name="tile_tap_share">Tap to share</string>
     <string name="tile_shizuku_not_installed">Shizuku not installed</string>
@@ -194,13 +198,18 @@
         <item quantity="other">%1$d devices · %2$s</item>
     </plurals>
 
-    <string name="session_ended_unexpectedly">Session ended unexpectedly — dropping the hotspot…</string>
     <string name="vpn_disconnected_session_stopped">VPN disconnected. Session stopped to keep devices protected.</string>
+    <string name="session_end_restart_failed">Sharing could not be restarted automatically.</string>
+    <string name="session_end_restart_failed_hotspot_on">Sharing could not be restarted automatically. The hotspot may still be on.</string>
+    <string name="session_end_shizuku_stopped">Sharing stopped because Shizuku is not running.</string>
+    <string name="session_end_shizuku_stopped_hotspot_on">Sharing stopped because Shizuku is not running. The hotspot may still be on.</string>
 
     <!-- USB tethering and reconnect states (0.5.0) -->
     <string name="tethering">Tethering</string>
     <string name="usb_tethering">USB tethering</string>
     <string name="open_system_settings">Open system settings</string>
+    <string name="open_shizuku">Open Shizuku</string>
+    <string name="hotspot_settings">Hotspot settings</string>
     <string name="system_settings">system settings</string>
     <string name="usb_mode_auto">Auto</string>
     <string name="usb_mode_always">Always</string>

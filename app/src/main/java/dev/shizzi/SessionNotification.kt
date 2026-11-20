@@ -22,6 +22,7 @@ class SessionNotification(private val context: Context) {
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentIntent(openAppIntent())
             .setOngoing(state.status != UiStatus.ERROR)
+            .apply { if (state.isWaitingForShizuku) openShizukuAction()?.let(::addAction) }
             .addAction(stopAction())
             .build()
     }
@@ -29,12 +30,17 @@ class SessionNotification(private val context: Context) {
     private fun titleFor(state: SessionUiState, isStopping: Boolean): String =
         when (state.status) {
             UiStatus.CONNECTED -> connectedTitle(state)
-            UiStatus.LOADING -> context.getString(
-                if (isStopping) R.string.notification_cleaning_up else R.string.notification_getting_ready,
-            )
+            UiStatus.LOADING -> loadingTitle(state, isStopping)
             UiStatus.ERROR -> context.getString(R.string.notification_session_ended)
             UiStatus.READY -> context.getString(R.string.notification_session_ended)
         }
+
+    private fun loadingTitle(state: SessionUiState, isStopping: Boolean): String = when {
+        isStopping -> context.getString(R.string.notification_cleaning_up)
+        state.isWaitingForShizuku -> context.getString(R.string.notification_shizuku_stopped)
+        state.isReconnecting -> context.getString(R.string.notification_reconnecting)
+        else -> context.getString(R.string.notification_getting_ready)
+    }
 
     private fun connectedTitle(state: SessionUiState): String = when {
         state.isWaitingForUsb -> context.getString(R.string.waiting_for_usb)
@@ -45,6 +51,7 @@ class SessionNotification(private val context: Context) {
 
     private fun bodyFor(state: SessionUiState, isStopping: Boolean): String = when {
         state.lastError.isNotEmpty() -> userFacingError(state.lastError)
+        state.isWaitingForShizuku -> context.getString(R.string.notification_start_shizuku)
         state.status == UiStatus.LOADING -> loadingBody(isStopping)
         state.isWaitingForUsb -> context.resources.getQuantityString(
             R.plurals.notification_usb_grace,
@@ -82,6 +89,13 @@ class SessionNotification(private val context: Context) {
         Intent(context, MainActivity::class.java),
         PendingIntent.FLAG_IMMUTABLE,
     )
+
+    private fun openShizukuAction(): Notification.Action? {
+        val launch = ShizukuGate.launchIntent() ?: return null
+        val intent = PendingIntent.getActivity(context, 2, launch, PendingIntent.FLAG_IMMUTABLE)
+
+        return Notification.Action.Builder(null, context.getString(R.string.open_shizuku), intent).build()
+    }
 
     private fun stopAction(): Notification.Action = Notification.Action.Builder(
         null,

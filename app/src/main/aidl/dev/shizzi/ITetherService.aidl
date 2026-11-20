@@ -10,6 +10,8 @@ interface ITetherService {
 
     String stop();
 
+    String releaseOrphanedDownstream(in String[] types);
+
     String getStatus();
 
     String runProbes(boolean attemptTethering, int availabilityTimeoutMs);

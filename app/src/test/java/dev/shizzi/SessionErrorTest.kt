@@ -15,27 +15,17 @@ class SessionErrorTest {
             UiText.Resource(R.string.vpn_disconnected_session_stopped),
             SessionError.describe(SessionError.VPN_LOST),
         )
-        assertEquals(
-            UiText.Resource(R.string.session_ended_unexpectedly),
-            SessionError.describe(SessionError.ENDED_UNEXPECTEDLY),
-        )
     }
 
     @Test
-    fun `reports a clean shizuku loss`() {
+    fun `tells apart session ends that may leave the hotspot on`() {
         assertEquals(
-            UiText.Resource(R.string.notification_shizuku_loss),
-            SessionError.describe(SessionError.lost(null)),
+            UiText.Resource(R.string.session_end_shizuku_stopped),
+            SessionError.describe(SessionEnd.SHIZUKU_STOPPED.message(isHotspotPossiblyOn = false)),
         )
-    }
-
-    @Test
-    fun `carries the teardown problem into the translation`() {
-        val raw = SessionError.lost("teardown failed: busy")
-
         assertEquals(
-            UiText.Resource(R.string.notification_session_loss_problem, listOf("teardown failed: busy")),
-            SessionError.describe(raw),
+            UiText.Resource(R.string.session_end_restart_failed_hotspot_on),
+            SessionError.describe(SessionEnd.RESTART_FAILED.message(isHotspotPossiblyOn = true)),
         )
     }
 

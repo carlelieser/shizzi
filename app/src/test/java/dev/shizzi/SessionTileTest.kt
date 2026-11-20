@@ -62,6 +62,15 @@ class SessionTileTest {
     }
 
     @Test
+    fun `says it is reconnecting while a lost session restarts`() {
+        val render = SessionTile.render(SessionUiState().asReconnecting(), ready, false)
+
+        assertEquals(Tile.STATE_UNAVAILABLE, render.state)
+        assertEquals(text(R.string.tile_reconnecting), render.subtitle)
+        assertEquals(TileAction.NONE, render.action)
+    }
+
+    @Test
     fun `offers a stop while connected`() {
         val state = SessionUiState(status = UiStatus.CONNECTED)
 
