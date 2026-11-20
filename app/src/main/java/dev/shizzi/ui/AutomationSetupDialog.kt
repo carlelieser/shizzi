@@ -29,6 +29,7 @@ import dev.shizzi.Automation
 import dev.shizzi.AutomationCommand
 import dev.shizzi.R
 import dev.shizzi.ui.theme.ShizziTheme
+import dev.shizzi.ui.theme.currentLocale
 import dev.shizzi.ui.theme.themedSurface
 
 private data class SetupField(val label: String, val value: String)
@@ -102,7 +103,7 @@ private fun CopyableField(field: SetupField, toasts: ToastState) {
             verticalArrangement = Arrangement.spacedBy(ShizziTheme.spacing.xs),
         ) {
             Text(
-                text = field.label.uppercase(),
+                text = field.label.uppercase(currentLocale()),
                 style = ShizziTheme.typography.caption,
                 color = ShizziTheme.colors.onSurfaceMuted,
             )
@@ -116,7 +117,7 @@ private fun CopyableField(field: SetupField, toasts: ToastState) {
 
         ShizziCompactIconButton(
             icon = Icons.Filled.ContentCopy,
-            contentDescription = stringResource(R.string.copy_field, field.label.lowercase()),
+            contentDescription = stringResource(R.string.copy_field, field.label.lowercase(currentLocale())),
             onClick = {
                 clipboard.setText(AnnotatedString(field.value))
                 toasts.show(copiedToast(resources, field.label))

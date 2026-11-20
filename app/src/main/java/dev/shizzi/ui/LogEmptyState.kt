@@ -23,6 +23,7 @@ import dev.shizzi.R
 import dev.shizzi.ui.theme.MinTouchTarget
 import dev.shizzi.ui.theme.ScreenPadding
 import dev.shizzi.ui.theme.ShizziTheme
+import dev.shizzi.ui.theme.currentLocale
 
 private val EmptyIconSize = 64.dp
 
@@ -82,7 +83,7 @@ private fun EmptyAction(label: String, onClick: () -> Unit) {
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = label.uppercase(),
+            text = label.uppercase(currentLocale()),
             style = ShizziTheme.typography.label,
             color = ShizziTheme.colors.primary,
         )

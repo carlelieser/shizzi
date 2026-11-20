@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import dev.shizzi.R
 import dev.shizzi.ui.theme.MinTouchTarget
 import dev.shizzi.ui.theme.ShizziTheme
+import dev.shizzi.ui.theme.currentLocale
 import dev.shizzi.ui.theme.isPressed
 import dev.shizzi.ui.theme.themedIndication
 import dev.shizzi.ui.theme.themedLabel
@@ -89,7 +90,7 @@ fun CancelButton(onClick: () -> Unit) {
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = stringResource(R.string.cancel).uppercase(),
+            text = stringResource(R.string.cancel).uppercase(currentLocale()),
             style = ShizziTheme.typography.label,
             color = ShizziTheme.colors.onSurfaceMuted,
         )

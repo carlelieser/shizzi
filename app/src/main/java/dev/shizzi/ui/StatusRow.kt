@@ -39,6 +39,7 @@ import dev.shizzi.SessionUiState
 import dev.shizzi.UiStatus
 import dev.shizzi.ui.theme.ScreenPadding
 import dev.shizzi.ui.theme.ShizziTheme
+import dev.shizzi.ui.theme.currentLocale
 import dev.shizzi.ui.theme.standardTween
 import dev.shizzi.ui.theme.themedIndication
 
@@ -80,7 +81,7 @@ fun StatusRow(
 @Composable
 private fun StatusText(text: String) {
     Text(
-        text = text.uppercase(),
+        text = text.uppercase(currentLocale()),
         style = ShizziTheme.typography.caption,
         color = ShizziTheme.colors.onSurfaceMuted,
         textAlign = TextAlign.Center,
@@ -102,11 +103,11 @@ private fun StatusLabel(status: String) {
     ) { word ->
         Text(
             text = buildAnnotatedString {
-                append(stringResource(R.string.status).uppercase() + " ")
+                append(stringResource(R.string.status).uppercase(currentLocale()) + " ")
                 withStyle(
                     SpanStyle(color = colors.onSurface, fontWeight = FontWeight.W700),
                 ) {
-                    append(word.uppercase())
+                    append(word.uppercase(currentLocale()))
                 }
             },
             style = ShizziTheme.typography.caption,
