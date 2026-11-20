@@ -7,7 +7,7 @@ import androidx.compose.ui.res.stringResource
 import dev.shizzi.R
 import dev.shizzi.SessionUiState
 import dev.shizzi.ShizukuState
-import dev.shizzi.UsbDownstream
+import dev.shizzi.SessionError
 
 @Composable
 fun SessionToasts(
@@ -21,7 +21,7 @@ fun SessionToasts(
 
 @Composable
 private fun ErrorToast(lastError: String, toasts: ToastState) {
-    val usbCableRequired = stringResource(R.string.usb_cable_required)
+    val message = SessionError.describe(lastError).resolve()
 
     LaunchedEffect(lastError) {
         if (lastError.isEmpty()) {
@@ -32,7 +32,7 @@ private fun ErrorToast(lastError: String, toasts: ToastState) {
         toasts.show(
             Toast(
                 key = ToastKeys.SESSION,
-                message = if (lastError == UsbDownstream.NO_USB_CABLE) usbCableRequired else lastError,
+                message = message,
                 duration = ToastDuration.Indefinite,
             ),
         )

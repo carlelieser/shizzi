@@ -169,7 +169,7 @@ class SessionService : Service() {
                 isBusy = false,
                 status = UiStatus.ERROR,
                 interfaceName = "",
-                lastError = L10n.string(R.string.session_ended_unexpectedly),
+                lastError = SessionError.ENDED_UNEXPECTEDLY,
             )
         }
         publishState()
@@ -183,7 +183,7 @@ class SessionService : Service() {
                 else -> SessionLog.error("orphan recovery failed: $problem")
             }
 
-            internalState.update { current -> current.copy(lastError = notification.describeLoss(problem)) }
+            internalState.update { current -> current.copy(lastError = SessionError.lost(problem)) }
             publishState()
             stopSelf()
         }

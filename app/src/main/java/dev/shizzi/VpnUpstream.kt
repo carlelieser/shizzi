@@ -19,10 +19,7 @@ class VpnUpstream(
     fun isVpnPresent(): Boolean = locator().currentVpnHandle() != UNBOUND
 
     fun follow(group: SessionResources) {
-        val watcher = VpnWatchdog(
-            locator = locator(),
-            lostDetail = { L10n.string(R.string.vpn_disconnected_session_stopped) },
-        ) { binding ->
+        val watcher = VpnWatchdog(locator()) { binding ->
             apply(group, binding)
         }
         watchdog = watcher

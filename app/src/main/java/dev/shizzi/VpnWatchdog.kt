@@ -16,7 +16,6 @@ fun interface VpnLocator {
 
 class VpnWatchdog(
     private val locator: VpnLocator,
-    private val lostDetail: () -> String = { DEFAULT_VPN_LOST_DETAIL },
     private val onChange: (VpnBinding) -> Unit,
 ) {
 
@@ -77,7 +76,7 @@ class VpnWatchdog(
             )
             return null
         }
-        return VpnBinding.Lost(lostDetail())
+        return VpnBinding.Lost(SessionError.VPN_LOST)
     }
 
     private fun adopt(observed: Long): VpnBinding? {
@@ -100,8 +99,5 @@ class VpnWatchdog(
         const val POLL_INTERVAL_MS = 5_000L
 
         const val MISSES_BEFORE_TEARDOWN = 2
-
-        const val DEFAULT_VPN_LOST_DETAIL =
-            "VPN disconnected. Session stopped to keep devices protected."
     }
 }

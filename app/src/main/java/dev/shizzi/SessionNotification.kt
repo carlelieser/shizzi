@@ -53,8 +53,7 @@ class SessionNotification(private val context: Context) {
 
     private fun userFacingError(raw: String): String = when {
         raw.contains(EXCEPTION_MARKER) -> context.getString(R.string.notification_generic_error)
-        raw == UsbDownstream.NO_USB_CABLE -> context.getString(R.string.usb_cable_required)
-        else -> raw
+        else -> SessionError.describe(raw).resolve(context.resources)
     }
 
     private fun loadingBody(isStopping: Boolean): String =
@@ -72,11 +71,6 @@ class SessionNotification(private val context: Context) {
     private fun deviceCount(clients: Int): String =
         context.resources.getQuantityString(R.plurals.notification_device_count, clients, clients)
 
-    fun describeLoss(problem: String?): String = when (problem) {
-        null -> context.getString(R.string.notification_shizuku_loss)
-
-        else -> context.getString(R.string.notification_session_loss_problem, problem)
-    }
 
     private fun openAppIntent(): PendingIntent = PendingIntent.getActivity(
         context,
