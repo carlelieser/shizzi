@@ -1,0 +1,153 @@
+package datapath
+
+import (
+	"errors"
+	"net"
+	"net/netip"
+	"sync/atomic"
+	"time"
+)
+
+// firstDatagramWait bounds the inline read of a new flow's first datagram.
+// CreateEndpoint has already queued it, so the read returns at once. The wait
+// is only spent when the endpoint dropped it (a bad UDP checksum), and it runs
+// on the dispatch goroutine that serves every client, so it stays short. It
+// cannot be zero: gonet checks an expired deadline before reading.
+const firstDatagramWait = 5 * time.Millisecond
+
+// udpBinding is one client source address and port, its upstream socket, and
+// the peers it is talking to.
+type udpBinding struct {
+	mapper   *udpMapper
+	client   netip.AddrPort
+	handle   uint64 // network the upstream socket was pinned to
+	upstream net.PacketConn
+
+	// Guarded by mapper.mu.
+	flows     map[netip.AddrPort]*udpFlow
+	isRetired bool
+}
+
+// udpFlow is one client-to-peer association: the netstack endpoint the client
+// talks to, and when traffic last crossed it in either direction.
+type udpFlow struct {
+	peer       netip.AddrPort
+	conn       net.Conn
+	lastActive atomic.Int64
+}
+
+func (f *udpFlow) touch() { f.lastActive.Store(time.Now().UnixNano()) }
+
+func (f *udpFlow) lastSeen() time.Time { return time.Unix(0, f.lastActive.Load()) }
+
+// sendFirst forwards the datagram that created the flow. A nil return also
+// covers "nothing queued": the send loop takes over either way.
+func (b *udpBinding) sendFirst(flow *udpFlow, buffer []byte) error {
+	if err := flow.conn.SetReadDeadline(time.Now().Add(firstDatagramWait)); err != nil {
+		return nil
+	}
+	read, err := flow.conn.Read(buffer)
+	if err != nil || read == 0 {
+		return nil
+	}
+	_, err = b.upstream.WriteTo(buffer[:read], net.UDPAddrFromAddrPort(flow.peer))
+	return err
+}
+
+// send copies the client's datagrams for one peer out the shared socket until
+// the flow has been idle in both directions for the idle timeout.
+func (b *udpBinding) send(flow *udpFlow, buffer []byte) {
+	defer b.drop(flow)
+
+	destination := net.UDPAddrFromAddrPort(flow.peer)
+	for {
+		// Measured from the last traffic either way, so replies -- a peer
+		// that only sends keepalives toward the client -- keep it alive.
+		deadline := flow.lastSeen().Add(b.mapper.idle)
+		if !time.Now().Before(deadline) {
+			return
+		}
+		if err := flow.conn.SetReadDeadline(deadline); err != nil {
+			return
+		}
+		read, err := flow.conn.Read(buffer)
+		if read > 0 {
+			flow.touch()
+			if _, writeErr := b.upstream.WriteTo(buffer[:read], destination); writeErr != nil {
+				return
+			}
+		}
+		if err != nil {
+			if isTimeout(err) {
+				continue
+			}
+			return
+		}
+	}
+}
+
+// receive delivers datagrams arriving on the shared socket to the client, from
+// whichever known peer sent them. Others are dropped.
+func (b *udpBinding) receive() {
+	buffer := make([]byte, maxDatagramSize)
+	for {
+		read, from, err := b.upstream.ReadFrom(buffer)
+		if err != nil {
+			b.mapper.mu.Lock()
+			b.mapper.retireLocked(b)
+			b.mapper.mu.Unlock()
+			b.closeAll()
+			return
+		}
+		address, ok := from.(*net.UDPAddr)
+		if !ok {
+			continue
+		}
+		source := address.AddrPort()
+		if b.client.Addr().Is4() {
+			// A udp4 socket can report its peer in 4-in-6 form; flows are
+			// keyed by the plain IPv4 the client addressed.
+			source = netip.AddrPortFrom(source.Addr().Unmap(), source.Port())
+		}
+
+		b.mapper.mu.Lock()
+		flow := b.flows[source]
+		b.mapper.mu.Unlock()
+		if flow == nil {
+			continue
+		}
+		flow.touch()
+		_, _ = flow.conn.Write(buffer[:read])
+	}
+}
+
+// drop ends one flow, and the binding with it once no flow remains.
+func (b *udpBinding) drop(flow *udpFlow) {
+	flow.conn.Close()
+
+	b.mapper.mu.Lock()
+	defer b.mapper.mu.Unlock()
+	if b.flows[flow.peer] == flow {
+		delete(b.flows, flow.peer)
+	}
+	b.mapper.releaseLocked(b)
+}
+
+// closeAll ends every flow after the upstream socket closes or fails.
+func (b *udpBinding) closeAll() {
+	b.mapper.mu.Lock()
+	flows := make([]*udpFlow, 0, len(b.flows))
+	for _, flow := range b.flows {
+		flows = append(flows, flow)
+	}
+	b.mapper.mu.Unlock()
+
+	for _, flow := range flows {
+		flow.conn.Close()
+	}
+}
+
+func isTimeout(err error) bool {
+	var netErr net.Error
+	return errors.As(err, &netErr) && netErr.Timeout()
+}
