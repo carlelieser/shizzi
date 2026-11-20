@@ -67,7 +67,7 @@ fun EmptyLog(
         Spacer(Modifier.height(ShizziTheme.spacing.sm))
 
         EmptyAction(
-            label = if (isLogging) stringResource(R.string.start_a_session) else stringResource(R.string.enable_logging),
+            label = stringResource(if (isLogging) R.string.start_a_session else R.string.enable_logging),
             onClick = if (isLogging) onStartSession else onEnableLogging,
         )
     }

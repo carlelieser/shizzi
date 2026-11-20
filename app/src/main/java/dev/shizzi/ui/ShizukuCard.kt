@@ -48,7 +48,10 @@ fun ShizukuCard(state: ShizukuState, onGrant: () -> Unit) {
         ) {
             StatusRow(name = stringResource(R.string.status), value = statusText(state))
             StatusRow(name = stringResource(R.string.service), value = serviceText(state))
-            StatusRow(name = stringResource(R.string.version), value = ShizukuGate.installedVersion() ?: stringResource(R.string.not_installed))
+            StatusRow(
+                name = stringResource(R.string.version),
+                value = ShizukuGate.installedVersion() ?: stringResource(R.string.not_installed),
+            )
 
             if (state is ShizukuState.PermissionRequired) {
                 GrantButton(onGrant)

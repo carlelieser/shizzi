@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Shizzi</string>
+    <string name="app_name" translatable="false">Shizzi</string>
 
     <string name="start">Start</string>
     <string name="stop">Stop</string>
@@ -130,7 +130,6 @@
     <string name="badge_no_shizuku">NO SHIZUKU</string>
     <string name="badge_shizuku_off">SHIZUKU OFF</string>
     <string name="badge_permission_needed">PERMISSION NEEDED</string>
-    <string name="status_prefix">STATUS %1$s</string>
     <string name="tunnel_active">TUNNEL ACTIVE</string>
 
     <string name="welcome">Welcome</string>

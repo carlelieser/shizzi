@@ -20,7 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
@@ -91,7 +91,7 @@ private fun connectionFields(token: String) = listOf(
 @Composable
 private fun CopyableField(field: SetupField, toasts: ToastState) {
     val clipboard = LocalClipboardManager.current
-    val resources = LocalContext.current.resources
+    val resources = LocalResources.current
 
     Row(
         modifier = Modifier.fillMaxWidth(),

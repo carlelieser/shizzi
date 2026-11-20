@@ -12,7 +12,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import dev.shizzi.R
@@ -63,7 +63,7 @@ private fun AutomationDetails(
     toasts: ToastState,
 ) {
     val clipboard = LocalClipboardManager.current
-    val resources = LocalContext.current.resources
+    val resources = LocalResources.current
     val tokenLabel = stringResource(R.string.token)
     var isExpanded by remember { mutableStateOf(false) }
 

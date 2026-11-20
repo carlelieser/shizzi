@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import dev.shizzi.R
 import dev.shizzi.UsbTethering
@@ -17,6 +18,7 @@ fun TetheringSection(
     toasts: ToastState,
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val systemSettings = stringResource(R.string.system_settings)
     var isPickerOpen by remember { mutableStateOf(false) }
 
@@ -30,7 +32,7 @@ fun TetheringSection(
         label = SettingsText(title = stringResource(R.string.open_system_settings)),
         isExternal = true,
         onClick = {
-            if (!context.openTetherSettings()) toasts.show(unopenedToast(context.resources, systemSettings))
+            if (!context.openTetherSettings()) toasts.show(unopenedToast(resources, systemSettings))
         },
     )
 

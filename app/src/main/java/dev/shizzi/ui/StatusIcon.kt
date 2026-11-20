@@ -62,7 +62,10 @@ fun StatusIcon(status: UiStatus, isWaitingForUsb: Boolean) {
     ) { glyph ->
         Icon(
             imageVector = glyph,
-            contentDescription = if (isWaitingForUsb) stringResource(R.string.waiting_for_usb) else descriptionFor(status),
+            contentDescription = when {
+                isWaitingForUsb -> stringResource(R.string.waiting_for_usb)
+                else -> descriptionFor(status)
+            },
             tint = tint,
             modifier = Modifier
                 .size(StatusIconSize)

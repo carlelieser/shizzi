@@ -34,7 +34,7 @@ import dev.shizzi.ui.theme.standardTween
 @Composable
 @ReadOnlyComposable
 private fun buttonLabel(status: UiStatus): String =
-    if (status == UiStatus.CONNECTED) stringResource(R.string.stop) else stringResource(R.string.start)
+    stringResource(if (status == UiStatus.CONNECTED) R.string.stop else R.string.start)
 
 private fun buttonState(state: SessionUiState): ConnectButtonState = when {
     state.status == UiStatus.LOADING -> ConnectButtonState.LOADING

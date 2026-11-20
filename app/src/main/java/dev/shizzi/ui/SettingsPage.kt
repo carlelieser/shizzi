@@ -24,6 +24,7 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import dev.shizzi.AppPermission
@@ -249,9 +250,10 @@ private fun DeveloperSection(isLogging: Boolean, actions: SettingsActions) {
 @Composable
 private fun AboutSection(toasts: ToastState) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val issueTracker = stringResource(R.string.issue_tracker_label)
     val open = { label: String, url: String ->
-        if (!context.openUrl(url)) toasts.show(unopenedToast(context.resources, label))
+        if (!context.openUrl(url)) toasts.show(unopenedToast(resources, label))
     }
 
     SettingsAction(

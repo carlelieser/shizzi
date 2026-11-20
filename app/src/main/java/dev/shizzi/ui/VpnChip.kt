@@ -33,7 +33,7 @@ fun VpnChip(isBypassed: Boolean = false) {
         )
 
         Text(
-            text = if (isBypassed) stringResource(R.string.vpn_ignored_badge) else stringResource(R.string.vpn_connected_badge),
+            text = stringResource(if (isBypassed) R.string.vpn_ignored_badge else R.string.vpn_connected_badge),
             style = ShizziTheme.typography.caption,
             color = tint,
         )

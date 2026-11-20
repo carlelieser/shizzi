@@ -45,7 +45,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
@@ -108,7 +108,7 @@ fun LogPage(
     var selected by remember { mutableStateOf(emptySet<Int>()) }
     var isConfirmingClear by remember { mutableStateOf(false) }
     val clipboard = LocalClipboardManager.current
-    val resources = LocalContext.current.resources
+    val resources = LocalResources.current
     val listState = rememberLazyListState()
 
     ClearLogToast(
@@ -228,7 +228,6 @@ fun LogPage(
 @ReadOnlyComposable
 private fun copyLabel(count: Int, total: Int): String = when {
     count == 0 || count == total -> stringResource(R.string.copy_all)
-    count == 1 -> pluralStringResource(R.plurals.copy_lines, 1, 1)
     else -> pluralStringResource(R.plurals.copy_lines, count, count)
 }
 

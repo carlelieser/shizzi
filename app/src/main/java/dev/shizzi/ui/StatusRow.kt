@@ -185,7 +185,9 @@ private fun StatusDivider() {
 @Composable
 @ReadOnlyComposable
 private fun statusWord(state: SessionUiState): String = when (state.status) {
-    UiStatus.CONNECTED -> if (state.isWaitingForUsb) stringResource(R.string.waiting_for_usb) else stringResource(R.string.status_connected)
+    UiStatus.CONNECTED -> stringResource(
+        if (state.isWaitingForUsb) R.string.waiting_for_usb else R.string.status_connected,
+    )
     UiStatus.READY -> stringResource(R.string.ready)
     UiStatus.LOADING -> stringResource(R.string.status_starting)
     UiStatus.ERROR -> stringResource(R.string.status_failed)
