@@ -69,10 +69,6 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
         localState.update { it.copy(shizukuState = ShizukuGate.currentState()) }
     }
 
-    fun requestPermission() {
-        ShizukuGate.requestPermission()
-    }
-
     fun actOnShizuku() {
         ShizukuGate.remedy(localState.value.shizukuState)
     }
