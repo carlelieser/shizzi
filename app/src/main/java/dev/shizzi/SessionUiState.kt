@@ -22,10 +22,14 @@ data class SessionUiState(
     val downstreams: Set<TetheringType> = emptySet(),
 
     val isReconnecting: Boolean = false,
+    val isWaitingForShizuku: Boolean = false,
     val isHotspotPossiblyOn: Boolean = false,
 ) {
 
     val canStart: Boolean get() = shizukuState is ShizukuState.Ready && !isBusy
+
+    /** A session the user did not stop is being brought back. */
+    val isRecovering: Boolean get() = isReconnecting || isWaitingForShizuku
 }
 
 fun SessionUiState.asStopped(): SessionUiState = copy(
@@ -41,6 +45,7 @@ fun SessionUiState.asStopped(): SessionUiState = copy(
     traffic = Traffic(),
     downstreams = emptySet(),
     isReconnecting = false,
+    isWaitingForShizuku = false,
     isHotspotPossiblyOn = false,
 )
 
@@ -51,6 +56,9 @@ fun SessionUiState.asReconnecting(): SessionUiState = asStopped().copy(
     detail = "",
     isReconnecting = true,
 )
+
+fun SessionUiState.asWaitingForShizuku(): SessionUiState =
+    asReconnecting().copy(isReconnecting = false, isWaitingForShizuku = true)
 
 fun SessionUiState.asEnded(message: String, isHotspotPossiblyOn: Boolean): SessionUiState =
     asStopped().copy(

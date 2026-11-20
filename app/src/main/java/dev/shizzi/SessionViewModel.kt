@@ -131,6 +131,7 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
 
         when {
             SessionService.isSessionUp -> SessionService.stop(context)
+            SessionService.isSessionRecovering -> SessionService.stop(context)
             else -> SessionService.start(context)
         }
     }

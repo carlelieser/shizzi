@@ -183,6 +183,11 @@ class SessionService : Service() {
             publishState()
         }
 
+        override fun showWaitingForShizuku() {
+            internalState.update { current -> current.asWaitingForShizuku() }
+            publishState()
+        }
+
         override suspend fun restartSession(): Boolean {
             val settings = settingsStore().settings.first()
             val outcome = sessionLock.withLock {
@@ -245,6 +250,7 @@ class SessionService : Service() {
         getSystemService(NotificationManager::class.java)
 
     override fun onDestroy() {
+        recovery.cancel()
         controller.onSessionLost = null
         controller.unbind()
         scope.cancel()
@@ -268,6 +274,8 @@ class SessionService : Service() {
         val isSessionUp: Boolean get() = liveState.value.status == UiStatus.CONNECTED
 
         val isSessionBusy: Boolean get() = liveState.value.status == UiStatus.LOADING
+
+        val isSessionRecovering: Boolean get() = liveState.value.isRecovering
 
         fun start(context: Context, reportAs: AutomationCommand? = null) {
             context.startForegroundService(

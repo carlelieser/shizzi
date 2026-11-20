@@ -11,6 +11,8 @@ interface RecoveryHost {
 
     fun showReconnecting()
 
+    fun showWaitingForShizuku()
+
     /** True once the restarted session is sharing. */
     suspend fun restartSession(): Boolean
 
@@ -26,12 +28,15 @@ class SessionRecoveryRunner(
     private var recovery = SessionRecovery()
     private var pending: Job? = null
 
+    private val shizuku = ShizukuWatch { handle(RecoveryEvent.ShizukuReturned(now())) }
+
     fun onHelperLost(orphaned: Set<TetheringType>) {
         handle(RecoveryEvent.HelperLost(now(), isShizukuReady(), orphaned))
     }
 
     @Synchronized
     fun cancel() {
+        shizuku.stop()
         pending?.cancel()
         pending = null
         recovery = SessionRecovery()
@@ -43,10 +48,25 @@ class SessionRecoveryRunner(
         SessionLog.info("recovery: ${describe(event)} -> ${describe(action)}")
 
         when (action) {
-            is RecoveryAction.Restart -> launch { restartAfter(action.afterMs) }
-            is RecoveryAction.End -> launch { host.endSession(action) }
+            is RecoveryAction.Restart -> stopWatchingAnd { restartAfter(action.afterMs) }
+            RecoveryAction.WaitForShizuku -> waitForShizuku()
+            is RecoveryAction.End -> stopWatchingAnd { host.endSession(action) }
             RecoveryAction.None -> Unit
         }
+    }
+
+    private fun stopWatchingAnd(block: suspend () -> Unit) {
+        shizuku.stop()
+        launch(block)
+    }
+
+    private fun waitForShizuku() {
+        host.showWaitingForShizuku()
+        launch {
+            delay(SessionRecovery.SHIZUKU_WAIT_MS)
+            handle(RecoveryEvent.WaitExpired)
+        }
+        shizuku.start()
     }
 
     private suspend fun restartAfter(delayMs: Long) {
@@ -77,10 +97,13 @@ class SessionRecoveryRunner(
         is RecoveryEvent.HelperLost -> "helper lost (shizuku ready: ${event.isShizukuReady})"
         is RecoveryEvent.RestartFailed -> "restart failed (shizuku ready: ${event.isShizukuReady})"
         RecoveryEvent.RestartSucceeded -> "restart succeeded"
+        is RecoveryEvent.ShizukuReturned -> "shizuku returned"
+        RecoveryEvent.WaitExpired -> "shizuku wait expired"
     }
 
     private fun describe(action: RecoveryAction): String = when (action) {
         is RecoveryAction.Restart -> "restart in ${action.afterMs}ms"
+        RecoveryAction.WaitForShizuku -> "wait for shizuku"
         is RecoveryAction.End -> "end (${action.reason.name.lowercase()})"
         RecoveryAction.None -> "nothing to do"
     }

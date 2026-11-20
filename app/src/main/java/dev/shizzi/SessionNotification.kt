@@ -22,6 +22,7 @@ class SessionNotification(private val context: Context) {
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentIntent(openAppIntent())
             .setOngoing(state.status != UiStatus.ERROR)
+            .apply { if (state.isWaitingForShizuku) openShizukuAction()?.let(::addAction) }
             .addAction(stopAction())
             .build()
     }
@@ -36,6 +37,7 @@ class SessionNotification(private val context: Context) {
 
     private fun loadingTitle(state: SessionUiState, isStopping: Boolean): String = when {
         isStopping -> "Cleaning up…"
+        state.isWaitingForShizuku -> "Shizuku stopped"
         state.isReconnecting -> "Reconnecting…"
         else -> "Getting ready…"
     }
@@ -49,6 +51,7 @@ class SessionNotification(private val context: Context) {
 
     private fun bodyFor(state: SessionUiState, isStopping: Boolean): String = when {
         state.lastError.isNotEmpty() -> userFacingError(state.lastError)
+        state.isWaitingForShizuku -> "Start Shizuku to resume sharing."
         state.status == UiStatus.LOADING -> loadingBody(isStopping)
         state.isWaitingForUsb -> "Connect over USB within $USB_GRACE_MINUTES minutes to keep sharing"
         state.status == UiStatus.CONNECTED -> connectedBody(state)
@@ -81,6 +84,13 @@ class SessionNotification(private val context: Context) {
         Intent(context, MainActivity::class.java),
         PendingIntent.FLAG_IMMUTABLE,
     )
+
+    private fun openShizukuAction(): Notification.Action? {
+        val launch = ShizukuGate.launchIntent() ?: return null
+        val intent = PendingIntent.getActivity(context, 2, launch, PendingIntent.FLAG_IMMUTABLE)
+
+        return Notification.Action.Builder(null, "Open Shizuku", intent).build()
+    }
 
     private fun stopAction(): Notification.Action = Notification.Action.Builder(
         null,

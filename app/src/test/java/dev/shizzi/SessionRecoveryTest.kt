@@ -43,10 +43,55 @@ class SessionRecoveryTest {
     }
 
     @Test
-    fun `ends when shizuku is not running`() {
+    fun `waits for shizuku when it is not running`() {
         val action = SessionRecovery().next(lost(isShizukuReady = false))
 
+        assertEquals(RecoveryAction.WaitForShizuku, action)
+    }
+
+    @Test
+    fun `resumes once shizuku returns`() {
+        val recovery = SessionRecovery()
+        recovery.next(lost(isShizukuReady = false))
+
+        val action = recovery.next(RecoveryEvent.ShizukuReturned(atMs = 0))
+
+        assertEquals(RecoveryAction.Restart(afterMs = 2_000), action)
+    }
+
+    @Test
+    fun `waits again when shizuku stops during a restart`() {
+        val recovery = SessionRecovery()
+        recovery.next(lost())
+
+        assertEquals(RecoveryAction.WaitForShizuku, recovery.next(failed(isShizukuReady = false)))
+    }
+
+    @Test
+    fun `ends when shizuku does not return`() {
+        val recovery = SessionRecovery()
+        recovery.next(lost(isShizukuReady = false))
+
+        val action = recovery.next(RecoveryEvent.WaitExpired)
+
         assertEquals(RecoveryAction.End(SessionEnd.SHIZUKU_STOPPED, hotspot), action)
+    }
+
+    @Test
+    fun `a wait that expires after shizuku returned is ignored`() {
+        val recovery = SessionRecovery()
+        recovery.next(lost(isShizukuReady = false))
+        recovery.next(RecoveryEvent.ShizukuReturned(atMs = 0))
+
+        assertEquals(RecoveryAction.None, recovery.next(RecoveryEvent.WaitExpired))
+    }
+
+    @Test
+    fun `shizuku returning while nothing waits on it is ignored`() {
+        val recovery = SessionRecovery()
+        recovery.next(lost())
+
+        assertEquals(RecoveryAction.None, recovery.next(RecoveryEvent.ShizukuReturned(atMs = 0)))
     }
 
     @Test
@@ -54,8 +99,9 @@ class SessionRecoveryTest {
         val recovery = SessionRecovery()
         recovery.next(lost())
         recovery.next(RecoveryEvent.RestartSucceeded)
+        recovery.next(RecoveryEvent.HelperLost(0, isShizukuReady = false, emptySet()))
 
-        val action = recovery.next(RecoveryEvent.HelperLost(0, isShizukuReady = false, emptySet()))
+        val action = recovery.next(RecoveryEvent.WaitExpired)
 
         assertEquals(RecoveryAction.End(SessionEnd.SHIZUKU_STOPPED, emptySet()), action)
     }

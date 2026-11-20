@@ -67,6 +67,21 @@ class SessionStatusTest {
     }
 
     @Test
+    fun `waiting for shizuku counts as recovering, not as an error`() {
+        val waiting = stateFrom("""{"state":"ACTIVE"}""").asWaitingForShizuku()
+
+        assertTrue(waiting.isRecovering)
+        assertTrue(waiting.lastError.isEmpty())
+    }
+
+    @Test
+    fun `stopping ends recovery`() {
+        val waiting = SessionUiState().asWaitingForShizuku()
+
+        assertFalse(waiting.asStopped().isRecovering)
+    }
+
+    @Test
     fun `stopping clears waiting for usb`() {
         val waiting = stateFrom("""{"state":"ACTIVE","isWaitingForUsb":true}""")
 
