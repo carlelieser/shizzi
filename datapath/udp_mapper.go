@@ -16,25 +16,10 @@ import (
 	"gvisor.dev/gvisor/pkg/waiter"
 )
 
-// udpMapper forwards client UDP with endpoint-independent mapping: every
-// datagram a client sends from one source address and port leaves through the
-// same upstream socket, whatever its destination.
-//
-// One upstream socket per destination (what a connected-socket proxy gives)
-// behaves like a symmetric NAT. The public port a client learns from a STUN
-// server is then not the port its packets to anyone else leave from, so NAT
-// traversal -- WebRTC, game consoles, and VPN hole punching such as UniFi's
-// Teleport and Site Magic -- never completes. Stock tethering keeps one mapping
-// per source port, and so does this.
-//
-// Filtering stays address-and-port dependent: a reply is delivered only from a
-// peer the client has already sent to, the same as the kernel NAT it replaces.
-//
-// Each shared socket is pinned once, when it opens, so it records the network
-// it was pinned to. When the binding changes (a VPN adopted or replaced), the
-// session retires every mapping and the next datagram opens a fresh, correctly
-// pinned socket: a client's mapped port changes with the network, and nothing
-// keeps leaving over the network it was pinned to before.
+// udpMapper forwards client UDP with endpoint-independent mapping and
+// address-and-port-dependent filtering, as a home router does; see
+// https://www.rfc-editor.org/rfc/rfc4787#section-4.1 and section 5. Sockets are
+// pinned when they open, so a network change retires every mapping.
 type udpMapper struct {
 	listen  func(network string) (net.PacketConn, error)
 	network func() uint64
@@ -115,8 +100,7 @@ func (m *udpMapper) bindingFor(client netip.AddrPort) (*udpBinding, error) {
 }
 
 // maxRepinAttempts bounds retries when the network keeps changing while a
-// socket opens. Re-pins come from a 5-second watchdog, so one retry is the
-// realistic worst case.
+// socket opens.
 const maxRepinAttempts = 3
 
 var errNetworkChanged = errors.New("udp mapper: network changed while opening a socket")
@@ -164,10 +148,8 @@ func (m *udpMapper) currentLocked(client netip.AddrPort, handle uint64) (*udpBin
 // m.mu held. Another flow from this client may have installed one meanwhile.
 func (m *udpMapper) installBinding(client netip.AddrPort, handle uint64, upstream net.PacketConn) (*udpBinding, error) {
 	m.mu.Lock()
-	// SetNetwork stores the new handle before retireAll, and retireAll needs
-	// m.mu, so a re-pin that raced the open is visible here. The socket may be
-	// pinned to the old network: discard it rather than insert it after
-	// retireAll has already swept.
+	// SetNetwork stores the handle before retireAll takes m.mu, so a re-pin
+	// that raced the open shows here; its socket may be on the old network.
 	if m.network() != handle {
 		m.mu.Unlock()
 		upstream.Close()
@@ -213,8 +195,8 @@ func (m *udpMapper) retireAll() {
 	}
 }
 
-// close retires every binding and refuses new flows: the session is stopping,
-// and the link may still deliver packets until its TUN fd is closed.
+// close retires every binding and refuses new flows, which the link may still
+// deliver until its TUN fd closes.
 func (m *udpMapper) close() {
 	m.mu.Lock()
 	m.isClosed = true
@@ -246,8 +228,7 @@ func (m *udpMapper) releaseLocked(binding *udpBinding) {
 	}
 }
 
-// unroutableErrnos are send failures meaning the destination cannot be reached
-// at all from this network, as opposed to a transient failure.
+// unroutableErrnos are send failures that no retry on this network can fix.
 var unroutableErrnos = []syscall.Errno{
 	syscall.ENETUNREACH,
 	syscall.EHOSTUNREACH,

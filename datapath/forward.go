@@ -37,9 +37,8 @@ const (
 // the addresses tethered clients dial, because those addresses belong to hosts
 // out on the internet rather than to this stack.
 //
-// network reports the handle dials are currently pinned to; the UDP mapper
-// records it per shared socket so a re-pin can retire stale ones. The mapper
-// is returned so the session can retire mappings when the binding changes.
+// network reports the handle dials are pinned to. The returned mapper lets
+// the session retire UDP mappings when that changes.
 func installForwarders(netStack *stack.Stack, dialer *net.Dialer, network func() uint64) *udpMapper {
 	tcpForwarder := tcp.NewForwarder(netStack, defaultRcvWnd, maxInFlightTCP,
 		func(request *tcp.ForwarderRequest) { forwardTCP(request, dialer) })

@@ -10,11 +10,9 @@ import (
 	"time"
 )
 
-// firstDatagramWait bounds the inline read of a new flow's first datagram.
-// CreateEndpoint has already queued it, so the read returns at once. The wait
-// is only spent when the endpoint dropped it (a bad UDP checksum), and it runs
-// on the dispatch goroutine that serves every client, so it stays short. It
-// cannot be zero: gonet checks an expired deadline before reading.
+// firstDatagramWait bounds the inline read of a new flow's first datagram,
+// already queued unless its checksum was bad. It runs on the dispatch goroutine
+// every client shares, and cannot be zero: gonet rejects an expired deadline.
 const firstDatagramWait = 5 * time.Millisecond
 
 // udpBinding is one client source address and port, its upstream socket, and
@@ -67,8 +65,7 @@ func (b *udpBinding) send(flow *udpFlow, buffer []byte) {
 
 	destination := net.UDPAddrFromAddrPort(flow.peer)
 	for {
-		// Measured from the last traffic either way, so replies -- a peer
-		// that only sends keepalives toward the client -- keep it alive.
+		// Measured from traffic in either direction, so replies keep it alive.
 		deadline := flow.lastSeen().Add(b.mapper.idle)
 		if !time.Now().Before(deadline) {
 			return

@@ -77,9 +77,7 @@ func (s *Session) SetNetwork(handle int64) {
 	}
 	s.binding.set(uint64(handle))
 
-	// UDP mappings are shared sockets pinned when they opened. Retire them so
-	// no client port keeps sending -- to new destinations too -- over the
-	// network it was pinned to before this change.
+	// UDP mappings stay pinned to the network they opened on.
 	if s.udp != nil {
 		s.udp.retireAll()
 	}
