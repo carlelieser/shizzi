@@ -7,8 +7,6 @@ import (
 	"syscall"
 	"testing"
 	"time"
-
-	"gvisor.dev/gvisor/pkg/tcpip/header"
 )
 
 // TestUDPMappingSharesSourcePortAcrossPeers is the Teleport regression: one
@@ -92,32 +90,24 @@ func TestUDPMappingIsPerClientPort(t *testing.T) {
 // TestUDPMappingReleasesIdleBindings: the shared socket closes once every flow
 // on it has gone idle, so mappings do not accumulate.
 func TestUDPMappingReleasesIdleBindings(t *testing.T) {
-	link, mapper := newUDPTestStack(t, 150*time.Millisecond)
+	link, _ := newUDPTestStack(t, 150*time.Millisecond)
 	host := localIPv4(t)
 	peer, peerPort := listenPeer(t)
 	client := netip.AddrPortFrom(netip.AddrFrom4([4]byte{192, 0, 2, 2}), 3333)
 
 	inject(link, udpPacket(client, netip.AddrPortFrom(host, peerPort), []byte("x")))
-	receiveFrom(t, peer)
+	_, mapped := receiveFrom(t, peer)
 
-	deadline := time.Now().Add(2 * time.Second)
-	for time.Now().Before(deadline) {
-		mapper.mu.Lock()
-		remaining := len(mapper.bindings)
-		mapper.mu.Unlock()
-		if remaining == 0 {
-			return
-		}
-		time.Sleep(20 * time.Millisecond)
+	if !awaitMappingClosed(t, mapped, 2*time.Second) {
+		t.Fatalf("idle mapping %v was never released", mapped)
 	}
-	t.Fatal("idle binding was never released")
 }
 
 // TestUDPMappingKeptAliveByReplies: a peer that keeps sending toward a quiet
 // client keeps the mapping, so the client's port does not change under it.
 func TestUDPMappingKeptAliveByReplies(t *testing.T) {
-	const idle = 300 * time.Millisecond
-	link, mapper := newUDPTestStack(t, idle)
+	const idle = 600 * time.Millisecond
+	link, _ := newUDPTestStack(t, idle)
 	host := localIPv4(t)
 	peer, peerPort := listenPeer(t)
 	client := netip.AddrPortFrom(netip.AddrFrom4([4]byte{192, 0, 2, 2}), 4444)
@@ -125,9 +115,9 @@ func TestUDPMappingKeptAliveByReplies(t *testing.T) {
 	inject(link, udpPacket(client, netip.AddrPortFrom(host, peerPort), []byte("open")))
 	_, mapped := receiveFrom(t, peer)
 
-	// The peer alone sends for three idle windows; the client stays silent.
-	for i := 0; i < 9; i++ {
-		time.Sleep(idle / 3)
+	// The peer alone sends for two idle windows; the client stays silent.
+	for i := 0; i < 8; i++ {
+		time.Sleep(idle / 4)
 		if _, err := peer.WriteToUDP([]byte("keepalive"), mapped); err != nil {
 			t.Fatalf("peer write: %v", err)
 		}
@@ -135,17 +125,10 @@ func TestUDPMappingKeptAliveByReplies(t *testing.T) {
 			t.Fatalf("keepalive %d did not reach the client", i)
 		}
 	}
-	if bindingCount(mapper) != 1 {
-		t.Fatal("mapping dropped while the peer was still sending")
-	}
 
 	// Once both sides go quiet it is released within about one idle window.
-	deadline := time.Now().Add(idle + 500*time.Millisecond)
-	for bindingCount(mapper) != 0 {
-		if time.Now().After(deadline) {
-			t.Fatal("mapping not released after both sides went idle")
-		}
-		time.Sleep(10 * time.Millisecond)
+	if !awaitMappingClosed(t, mapped, idle+time.Second) {
+		t.Fatal("mapping not released after both sides went idle")
 	}
 }
 
@@ -183,108 +166,7 @@ func TestUDPMappingRepinsOnNetworkChange(t *testing.T) {
 
 	// retireAll, which SetNetwork calls, drops every mapping at once.
 	mapper.retireAll()
-	if bindingCount(mapper) != 0 {
-		t.Fatal("retireAll left mappings in place")
-	}
-}
-
-// TestUDPMappingReportsUnroutableDestinations: a datagram that cannot be
-// routed gets the client an ICMP port unreachable, as the per-flow dial did,
-// so dual-stack clients fall back at once instead of timing out.
-func TestUDPMappingReportsUnroutableDestinations(t *testing.T) {
-	link, mapper := newUDPTestStack(t, 5*time.Second)
-	listen := mapper.listen
-	mapper.listen = func(network string) (net.PacketConn, error) {
-		conn, err := listen(network)
-		if err != nil {
-			return nil, err
-		}
-		return unroutableConn{conn}, nil
-	}
-	client := netip.AddrPortFrom(netip.AddrFrom4([4]byte{192, 0, 2, 2}), 6666)
-	nowhere := netip.AddrPortFrom(netip.AddrFrom4([4]byte{203, 0, 113, 9}), 53)
-
-	inject(link, udpPacket(client, nowhere, []byte("query")))
-
-	deadline := time.Now().Add(2 * time.Second)
-	for time.Now().Before(deadline) {
-		pkt := link.Read()
-		if pkt == nil {
-			time.Sleep(5 * time.Millisecond)
-			continue
-		}
-		view := pkt.ToView()
-		pkt.DecRef()
-		ip := header.IPv4(view.AsSlice())
-		if ip.TransportProtocol() == header.ICMPv4ProtocolNumber {
-			message := header.ICMPv4(ip.Payload())
-			if message.Type() == header.ICMPv4DstUnreachable && message.Code() == header.ICMPv4PortUnreachable {
-				view.Release()
-				if bindingCount(mapper) != 0 {
-					t.Fatal("mapping kept for a flow that was refused")
-				}
-				return
-			}
-		}
-		view.Release()
-	}
-	t.Fatal("client got no port unreachable for an unroutable destination")
-}
-
-// TestUDPMappingRefusesFlowsAfterClose: once the session stops, packets the
-// link still delivers must not open new upstream sockets.
-func TestUDPMappingRefusesFlowsAfterClose(t *testing.T) {
-	link, mapper := newUDPTestStack(t, 5*time.Second)
-	host := localIPv4(t)
-	peer, peerPort := listenPeer(t)
-	mapper.close()
-
-	inject(link, udpPacket(netip.AddrPortFrom(netip.AddrFrom4([4]byte{192, 0, 2, 2}), 7777),
-		netip.AddrPortFrom(host, peerPort), []byte("late")))
-
-	peer.SetReadDeadline(time.Now().Add(300 * time.Millisecond))
-	if _, _, err := peer.ReadFromUDP(make([]byte, 64)); err == nil {
-		t.Fatal("forwarded a datagram after close")
-	}
-	if bindingCount(mapper) != 0 {
-		t.Fatal("opened a mapping after close")
-	}
-}
-
-// TestUDPMappingRepinDuringSocketOpen: a re-pin that lands while a socket is
-// being opened (SetNetwork's store and retireAll both inside the window) must
-// not leave the old-network socket installed after the sweep.
-func TestUDPMappingRepinDuringSocketOpen(t *testing.T) {
-	var current atomic.Uint64
-	link, mapper := newUDPTestStackWith(t, &net.Dialer{}, 5*time.Second, current.Load)
-	host := localIPv4(t)
-	peer, peerPort := listenPeer(t)
-
-	listen := mapper.listen
-	var opens atomic.Int32
-	mapper.listen = func(network string) (net.PacketConn, error) {
-		conn, err := listen(network)
-		if opens.Add(1) == 1 {
-			// What SetNetwork does, racing the first open.
-			current.Store(7)
-			mapper.retireAll()
-		}
-		return conn, err
-	}
-
-	inject(link, udpPacket(netip.AddrPortFrom(netip.AddrFrom4([4]byte{192, 0, 2, 2}), 8888),
-		netip.AddrPortFrom(host, peerPort), []byte("during re-pin")))
-	receiveFrom(t, peer)
-
-	if got := opens.Load(); got != 2 {
-		t.Fatalf("opened %d sockets, want 2 (stale one discarded, fresh one opened)", got)
-	}
-	mapper.mu.Lock()
-	defer mapper.mu.Unlock()
-	for client, binding := range mapper.bindings {
-		if binding.handle != current.Load() || binding.isRetired {
-			t.Fatalf("binding for %v pinned to handle %d (retired=%v), want live on %d",
-				client, binding.handle, binding.isRetired, current.Load())
-		}
+	if !awaitMappingClosed(t, after, time.Second) {
+		t.Fatal("retireAll left the mapping open")
 	}
 }

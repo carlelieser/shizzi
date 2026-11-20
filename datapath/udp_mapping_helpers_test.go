@@ -1,8 +1,11 @@
 package datapath
 
 import (
+	"errors"
 	"net"
 	"net/netip"
+	"sync"
+	"sync/atomic"
 	"syscall"
 	"testing"
 	"time"
@@ -114,16 +117,89 @@ func clientDatagram(link *channel.Endpoint, within time.Duration) (src netip.Add
 	return netip.AddrPort{}, "", false
 }
 
-func bindingCount(mapper *udpMapper) int {
-	mapper.mu.Lock()
-	defer mapper.mu.Unlock()
-	return len(mapper.bindings)
+// awaitMappingClosed reports whether the upstream socket at mapped closes
+// within the wait: a connected probe to it is then refused.
+func awaitMappingClosed(t *testing.T, mapped *net.UDPAddr, within time.Duration) bool {
+	t.Helper()
+	deadline := time.Now().Add(within)
+	for time.Now().Before(deadline) {
+		probe, err := net.DialUDP("udp4", nil, mapped)
+		if err != nil {
+			t.Fatalf("dial probe to %v: %v", mapped, err)
+		}
+		probe.Write([]byte("probe"))
+		probe.SetReadDeadline(time.Now().Add(50 * time.Millisecond))
+		_, err = probe.Read(make([]byte, 16))
+		probe.Close()
+		if errors.Is(err, syscall.ECONNREFUSED) {
+			return true
+		}
+	}
+	return false
 }
 
-// unroutableConn is an upstream socket whose sends fail as they do on a
-// network with no route to the destination.
-type unroutableConn struct{ net.PacketConn }
+// recordedConn is an upstream socket a test can see closed.
+type recordedConn struct {
+	net.PacketConn
+	writeErr error
+	isClosed atomic.Bool
+}
 
-func (unroutableConn) WriteTo([]byte, net.Addr) (int, error) {
-	return 0, &net.OpError{Op: "write", Net: "udp", Err: syscall.ENETUNREACH}
+func (c *recordedConn) WriteTo(payload []byte, address net.Addr) (int, error) {
+	if c.writeErr != nil {
+		return 0, c.writeErr
+	}
+	return c.PacketConn.WriteTo(payload, address)
+}
+
+func (c *recordedConn) Close() error {
+	c.isClosed.Store(true)
+	return c.PacketConn.Close()
+}
+
+// socketRecorder sees every upstream socket the mapper opens. writeErr, when
+// set, fails every send; onOpen runs after each open with the running count.
+type socketRecorder struct {
+	writeErr error
+	onOpen   func(count int)
+
+	mu    sync.Mutex
+	conns []*recordedConn
+}
+
+func recordSockets(mapper *udpMapper) *socketRecorder {
+	recorder := &socketRecorder{}
+	listen := mapper.listen
+	mapper.listen = func(network string) (net.PacketConn, error) {
+		conn, err := listen(network)
+		if err != nil {
+			return nil, err
+		}
+		recorded := &recordedConn{PacketConn: conn, writeErr: recorder.writeErr}
+		recorder.mu.Lock()
+		recorder.conns = append(recorder.conns, recorded)
+		count := len(recorder.conns)
+		recorder.mu.Unlock()
+		if recorder.onOpen != nil {
+			recorder.onOpen(count)
+		}
+		return recorded, nil
+	}
+	return recorder
+}
+
+func (r *socketRecorder) all() []*recordedConn {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return append([]*recordedConn(nil), r.conns...)
+}
+
+func (r *socketRecorder) openCount() int {
+	open := 0
+	for _, conn := range r.all() {
+		if !conn.isClosed.Load() {
+			open++
+		}
+	}
+	return open
 }
