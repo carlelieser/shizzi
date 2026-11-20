@@ -23,23 +23,25 @@ type pingSocket struct {
 // echo sends request's echo through a ping socket pinned like every TCP and
 // UDP dial, and waits for the matching reply.
 func (b *networkBinding) echo(request echoRequest, timeout time.Duration) ([]byte, error) {
-	if request.destination.Len() != 4 {
-		return nil, errors.New("echo: not an IPv4 address")
+	reply, err := b.exchangeEcho(request, time.Now().Add(timeout))
+	if err != nil {
+		return nil, fmt.Errorf("echo %v: %w", request.destination, err)
 	}
+	return reply, nil
+}
 
+func (b *networkBinding) exchangeEcho(request echoRequest, deadline time.Time) ([]byte, error) {
+	if request.destination.Len() != 4 {
+		return nil, errors.New("not an IPv4 address")
+	}
 	socket, err := b.openPingSocket(request)
 	if err != nil {
 		return nil, err
 	}
 	defer unix.Close(socket.fd)
 
-	deadline := time.Now().Add(timeout)
-	timeval := unix.NsecToTimeval(timeout.Nanoseconds())
-	if err := unix.SetsockoptTimeval(socket.fd, unix.SOL_SOCKET, unix.SO_RCVTIMEO, &timeval); err != nil {
-		return nil, fmt.Errorf("echo: set timeout: %w", err)
-	}
 	if err := socket.send(request); err != nil {
-		return nil, fmt.Errorf("echo: send: %w", err)
+		return nil, fmt.Errorf("send: %w", err)
 	}
 	return socket.awaitReply(request.seq, deadline)
 }
@@ -49,7 +51,7 @@ func (b *networkBinding) echo(request echoRequest, timeout time.Duration) ([]byt
 func (b *networkBinding) openPingSocket(request echoRequest) (pingSocket, error) {
 	fd, err := unix.Socket(unix.AF_INET, unix.SOCK_DGRAM|unix.SOCK_CLOEXEC, unix.IPPROTO_ICMP)
 	if err != nil {
-		return pingSocket{}, fmt.Errorf("echo: ping socket: %w", err)
+		return pingSocket{}, fmt.Errorf("ping socket: %w", err)
 	}
 	if handle := b.handle.Load(); handle != unbound {
 		if err := bindToNetwork(handle, uintptr(fd)); err != nil {
@@ -68,20 +70,35 @@ func (s pingSocket) send(request echoRequest) error {
 	return unix.Sendto(s.fd, message, 0, &s.target)
 }
 
-// awaitReply reads until the reply to seq arrives from the target.
+// errEchoTimedOut reports an echo whose reply did not arrive in time.
+var errEchoTimedOut = errors.New("timed out")
+
+// awaitReply reads until the reply to seq arrives from the target. The receive
+// timeout is renewed to what remains, so replies that do not match cannot push
+// the wait past deadline.
 func (s pingSocket) awaitReply(seq uint16, deadline time.Time) ([]byte, error) {
 	buffer := make([]byte, maxDatagramSize)
-	for time.Now().Before(deadline) {
+	for {
+		remaining := time.Until(deadline)
+		if remaining <= 0 {
+			return nil, errEchoTimedOut
+		}
+		timeval := unix.NsecToTimeval(remaining.Nanoseconds())
+		if err := unix.SetsockoptTimeval(s.fd, unix.SOL_SOCKET, unix.SO_RCVTIMEO, &timeval); err != nil {
+			return nil, fmt.Errorf("set timeout: %w", err)
+		}
 		read, from, err := unix.Recvfrom(s.fd, buffer, 0)
+		if errors.Is(err, unix.EAGAIN) {
+			return nil, errEchoTimedOut
+		}
 		if err != nil {
-			return nil, fmt.Errorf("echo: receive: %w", err)
+			return nil, fmt.Errorf("receive: %w", err)
 		}
 		reply := header.ICMPv4(buffer[:read])
 		if s.isReplyTo(from, reply, seq) {
 			return append([]byte(nil), reply.Payload()...), nil
 		}
 	}
-	return nil, errors.New("echo: timed out")
 }
 
 func (s pingSocket) isReplyTo(from unix.Sockaddr, reply header.ICMPv4, seq uint16) bool {

@@ -1,6 +1,8 @@
 package datapath
 
 import (
+	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -134,23 +136,33 @@ func (f *pingForwarder) dispatch(request echoRequest) {
 
 	go func() {
 		defer func() { <-f.inFlight }()
-
-		replyPayload, err := f.echo(request, echoTimeout)
-		if err != nil {
-			return
-		}
-		f.deliver(request.reply(replyPayload))
+		// A failed echo goes unanswered, as a lost reply would on a real path.
+		_ = f.relay(request)
 	}()
 }
 
+// relay echoes request upstream and writes the reply back to the client.
+func (f *pingForwarder) relay(request echoRequest) error {
+	replyPayload, err := f.echo(request, echoTimeout)
+	if err != nil {
+		return err
+	}
+	return f.deliver(request.reply(replyPayload))
+}
+
+var errPingForwarderClosed = errors.New("ping forwarder closed")
+
 // deliver writes a reply unless the forwarder has been closed.
-func (f *pingForwarder) deliver(packet []byte) {
+func (f *pingForwarder) deliver(packet []byte) error {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 	if f.isClosed {
-		return
+		return errPingForwarderClosed
 	}
-	_ = f.write(packet)
+	if err := f.write(packet); err != nil {
+		return fmt.Errorf("write echo reply to %v: %w", header.IPv4(packet).DestinationAddress(), err)
+	}
+	return nil
 }
 
 // close stops all further writes. Echoes still in flight finish on their own
