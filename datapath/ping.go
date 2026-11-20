@@ -14,17 +14,13 @@ import (
 )
 
 const (
-	// maxInFlightPings bounds concurrent echo requests. Tethered clients ping
-	// a handful of hosts every few seconds (a router's internet monitor);
-	// this caps sockets and goroutines under a ping flood, not normal use.
+	// maxInFlightPings caps sockets and goroutines under a ping flood.
 	maxInFlightPings = 64
 
-	// echoTimeout is how long one echo waits for its reply. A lost reply is
-	// simply never answered, exactly as on a real path.
 	echoTimeout = 3 * time.Second
 
-	// echoReplyTTL is the TTL on synthesized replies. The real reply's TTL is
-	// not visible through a ping socket, so this is a typical host default.
+	// echoReplyTTL is a typical host default: a ping socket hides the real
+	// reply's TTL.
 	echoReplyTTL = 64
 )
 
@@ -50,24 +46,17 @@ type echoMessage struct {
 // echoFunc sends request's echo upstream and returns the reply's payload.
 type echoFunc func(request echoRequest, timeout time.Duration) ([]byte, error)
 
-// pingForwarder answers tethered clients' IPv4 pings with real ones.
-//
-// The netstack accepts every destination (promiscuous NIC), and for those
-// temporary addresses gVisor's IPv4 layer deliberately does not synthesize an
-// echo reply. Without this, every IPv4 ping from a tethered client goes
-// unanswered, and routers that watch the WAN by pinging (UniFi's internet
-// monitor among them) mark the uplink as having no internet while TCP and UDP
-// work fine.
+// pingForwarder answers tethered clients' IPv4 pings with real ones. gVisor
+// does not reply to echoes for the temporary addresses a promiscuous NIC
+// accepts; see LocalAddressTemporary in
+// https://github.com/google/gvisor/blob/master/pkg/tcpip/network/ipv4/icmp.go
 type pingForwarder struct {
 	echo     echoFunc
 	write    func(packet []byte) error
 	inFlight chan struct{}
 
-	// mu fences writes against close. Writes hold it shared; close takes it
-	// exclusively, so once close returns no write is running or can start.
-	// That matters because write targets a raw TUN fd number, which the
-	// session closes right after stopping and the kernel may hand to another
-	// file -- including the next session's TUN -- while an echo is in flight.
+	// mu fences writes against close: write targets a raw TUN fd number that
+	// may be reused once the session stops.
 	mu       sync.RWMutex
 	isClosed bool
 }
@@ -80,9 +69,8 @@ func newPingForwarder(echo echoFunc, write func(packet []byte) error) *pingForwa
 	}
 }
 
-// install makes the forwarder the per-stack default handler for ICMPv4, which
-// gVisor consults before its own echo handling; returning true there stops the
-// stack from doing anything further with the request.
+// install makes the forwarder the stack's default ICMPv4 handler, which runs
+// before gVisor's own echo handling.
 func (f *pingForwarder) install(netStack *stack.Stack) {
 	netStack.SetTransportProtocolHandler(icmp.ProtocolNumber4, f.handle)
 }
@@ -105,9 +93,9 @@ func isEchoRequest(message header.ICMPv4) bool {
 	return len(message) >= header.ICMPv4MinimumSize && message.Type() == header.ICMPv4Echo && message.Code() == 0
 }
 
-// readEchoRequest copies the request out of pkt, which the stack releases once
-// the handler returns. It reports false for a corrupt request: gVisor delivers
-// echoes with a bad checksum, and a real host drops them.
+// readEchoRequest copies the request out of pkt, which the stack releases
+// after the handler. It reports false for a bad checksum, which gVisor does not
+// check here.
 func readEchoRequest(id stack.TransportEndpointID, pkt *stack.PacketBuffer) (echoRequest, bool) {
 	view := stack.PayloadSince(pkt.TransportHeader())
 	message := header.ICMPv4(append([]byte(nil), view.AsSlice()...))
@@ -165,8 +153,7 @@ func (f *pingForwarder) deliver(packet []byte) error {
 	return nil
 }
 
-// close stops all further writes. Echoes still in flight finish on their own
-// within echoTimeout and are discarded.
+// close stops all further writes. Echoes in flight end within echoTimeout.
 func (f *pingForwarder) close() {
 	f.mu.Lock()
 	f.isClosed = true

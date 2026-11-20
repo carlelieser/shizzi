@@ -12,9 +12,8 @@ import (
 	"gvisor.dev/gvisor/pkg/tcpip/header"
 )
 
-// pingSocket is an unprivileged ping socket (SOCK_DGRAM/IPPROTO_ICMP), which
-// Android opens to every UID, aimed at one IPv4 destination. The kernel
-// chooses the echo identifier and fills in the checksum.
+// pingSocket is an unprivileged ping socket (SOCK_DGRAM/IPPROTO_ICMP) aimed
+// at one IPv4 destination. The kernel sets the identifier and checksum.
 type pingSocket struct {
 	fd     int
 	target unix.SockaddrInet4
@@ -73,9 +72,8 @@ func (s pingSocket) send(request echoRequest) error {
 // errEchoTimedOut reports an echo whose reply did not arrive in time.
 var errEchoTimedOut = errors.New("timed out")
 
-// awaitReply reads until the reply to seq arrives from the target. The receive
-// timeout is renewed to what remains, so replies that do not match cannot push
-// the wait past deadline.
+// awaitReply reads until the reply to seq arrives from the target or deadline
+// passes, however many other replies arrive first.
 func (s pingSocket) awaitReply(seq uint16, deadline time.Time) ([]byte, error) {
 	buffer := make([]byte, maxDatagramSize)
 	for {
