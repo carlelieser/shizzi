@@ -19,6 +19,10 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - After the helper died, the hotspot it started stayed on even though the log
   said it had been turned off.
+- **Pings from tethered devices get answered.** IPv4 pings through a session
+  used to time out, so devices that check connectivity with ping, such as
+  travel routers, reported no internet while traffic was flowing. Shizzi now
+  sends each ping out over the session's network and relays the reply.
 
 ## [0.5.0] - 2026-10-30
 
