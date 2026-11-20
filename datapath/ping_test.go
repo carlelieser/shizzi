@@ -141,30 +141,7 @@ func TestPingForwarderRepliesThroughUpstream(t *testing.T) {
 		t.Fatalf("upstream echo = %+v, want dst %v seq 7 payload %q", got, pingTarget, payload)
 	}
 
-	ip := header.IPv4(packet)
-	if !ip.IsValid(len(packet)) || !ip.IsChecksumValid() {
-		t.Fatalf("reply IPv4 header invalid: % x", packet[:header.IPv4MinimumSize])
-	}
-	if ip.SourceAddress() != pingTarget || ip.DestinationAddress() != pingClient {
-		t.Fatalf("reply %v -> %v, want %v -> %v", ip.SourceAddress(), ip.DestinationAddress(), pingTarget, pingClient)
-	}
-	if ip.TransportProtocol() != header.ICMPv4ProtocolNumber {
-		t.Fatalf("reply protocol %d, want ICMP", ip.TransportProtocol())
-	}
-
-	reply := header.ICMPv4(ip.Payload())
-	if reply.Type() != header.ICMPv4EchoReply || reply.Code() != 0 {
-		t.Fatalf("reply type/code %d/%d, want echo reply", reply.Type(), reply.Code())
-	}
-	if reply.Ident() != 0x1234 || reply.Sequence() != 7 {
-		t.Fatalf("reply ident/seq %#x/%d, want the client's %#x/7", reply.Ident(), reply.Sequence(), 0x1234)
-	}
-	if !bytes.Equal(reply.Payload(), payload) {
-		t.Fatalf("reply payload %q, want %q", reply.Payload(), payload)
-	}
-	if checksum.Checksum(reply, 0) != 0xffff {
-		t.Fatal("reply ICMP checksum invalid")
-	}
+	assertEchoReply(t, packet, payload)
 
 	// The stack must not also answer: one reply per request.
 	if pkt := link.Read(); pkt != nil {
@@ -266,5 +243,35 @@ func TestPingForwarderDropsCorruptRequests(t *testing.T) {
 	}
 	if upstream.echoCount() != 0 {
 		t.Fatalf("forwarded %d corrupt requests upstream", upstream.echoCount())
+	}
+}
+
+// assertEchoReply checks packet is a valid IPv4 echo reply from pingTarget to
+// pingClient carrying the client's ident 0x1234, seq 7 and payload.
+func assertEchoReply(t *testing.T, packet, payload []byte) {
+	t.Helper()
+	ip := header.IPv4(packet)
+	if !ip.IsValid(len(packet)) || !ip.IsChecksumValid() {
+		t.Fatalf("reply IPv4 header invalid: % x", packet[:header.IPv4MinimumSize])
+	}
+	if ip.SourceAddress() != pingTarget || ip.DestinationAddress() != pingClient {
+		t.Fatalf("reply %v -> %v, want %v -> %v", ip.SourceAddress(), ip.DestinationAddress(), pingTarget, pingClient)
+	}
+	if ip.TransportProtocol() != header.ICMPv4ProtocolNumber {
+		t.Fatalf("reply protocol %d, want ICMP", ip.TransportProtocol())
+	}
+
+	reply := header.ICMPv4(ip.Payload())
+	if reply.Type() != header.ICMPv4EchoReply || reply.Code() != 0 {
+		t.Fatalf("reply type/code %d/%d, want echo reply", reply.Type(), reply.Code())
+	}
+	if reply.Ident() != 0x1234 || reply.Sequence() != 7 {
+		t.Fatalf("reply ident/seq %#x/%d, want the client's %#x/7", reply.Ident(), reply.Sequence(), 0x1234)
+	}
+	if !bytes.Equal(reply.Payload(), payload) {
+		t.Fatalf("reply payload %q, want %q", reply.Payload(), payload)
+	}
+	if checksum.Checksum(reply, 0) != 0xffff {
+		t.Fatal("reply ICMP checksum invalid")
 	}
 }
