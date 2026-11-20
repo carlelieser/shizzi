@@ -63,9 +63,9 @@ private fun tintFor(state: CompatibilityState): Color = when (state) {
 }
 
 private fun descriptionFor(state: CompatibilityState): String = when (state) {
-    is CompatibilityState.Staged -> "Restart required"
-    is CompatibilityState.DownloadFailed -> "Download failed"
-    is CompatibilityState.InstallFailed -> "Install failed"
-    is CompatibilityState.Downloaded -> "Downloaded and verified"
-    else -> "Module available"
+    is CompatibilityState.Staged -> dev.shizzi.L10n.string(dev.shizzi.R.string.module_restart_required)
+    is CompatibilityState.DownloadFailed -> dev.shizzi.L10n.string(dev.shizzi.R.string.module_download_failed)
+    is CompatibilityState.InstallFailed -> dev.shizzi.L10n.string(dev.shizzi.R.string.module_install_failed)
+    is CompatibilityState.Downloaded -> dev.shizzi.L10n.string(dev.shizzi.R.string.module_downloaded_verified)
+    else -> dev.shizzi.L10n.string(dev.shizzi.R.string.module_available)
 }

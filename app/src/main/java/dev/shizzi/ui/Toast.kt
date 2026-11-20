@@ -64,7 +64,7 @@ fun rememberToastState(): ToastState = remember { ToastState() }
 
 fun unopenedToast(label: String): Toast = Toast(
     key = ToastKeys.OPEN,
-    message = "Couldn't open $label",
+    message = dev.shizzi.L10n.string(dev.shizzi.R.string.could_not_open, label),
 )
 
 fun copiedToast(label: String): Toast = Toast(

@@ -3,8 +3,8 @@ package dev.shizzi.ui
 import dev.shizzi.AppPermission
 import dev.shizzi.PermissionStatus
 import dev.shizzi.ShizukuState
-import dev.shizzi.rationale
-import dev.shizzi.title
+import dev.shizzi.rationaleRes
+import dev.shizzi.titleRes
 
 data class PermissionRowState(
     val title: String,
@@ -27,19 +27,17 @@ fun permissionRows(
 
     return listOf(shizuku) + sources.permissions.map { status ->
         PermissionRowState(
-            title = status.permission.title,
-            rationale = status.permission.rationale,
+            title = dev.shizzi.L10n.string(status.permission.titleRes),
+            rationale = dev.shizzi.L10n.string(status.permission.rationaleRes),
             isGranted = status.isGranted,
             onAct = { onGrantPermission(status.permission) },
         )
     }
 }
 
-private const val SHIZUKU_RATIONALE = "Required for core functionality"
-
 private fun shizukuRow(state: ShizukuState, onAct: () -> Unit) = PermissionRowState(
-    title = "Shizuku",
-    rationale = SHIZUKU_RATIONALE,
+    title = dev.shizzi.L10n.string(dev.shizzi.R.string.shizuku),
+    rationale = dev.shizzi.L10n.string(dev.shizzi.R.string.shizuku_rationale),
     isGranted = state is ShizukuState.Ready,
     onAct = onAct,
 )

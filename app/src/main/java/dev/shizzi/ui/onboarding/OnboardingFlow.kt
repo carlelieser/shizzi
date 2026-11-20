@@ -64,7 +64,7 @@ private fun rememberOnboardingStep(): MutableState<OnboardingStep> =
 private fun welcomeStep(onNext: () -> Unit) = WizardStep(
     title = "",
     content = { WelcomeStep() },
-    primary = WizardAction(label = "Get started", onClick = onNext),
+    primary = WizardAction(label = dev.shizzi.L10n.string(dev.shizzi.R.string.get_started), onClick = onNext),
 )
 
 private fun permissionsStep(
@@ -82,7 +82,7 @@ private fun permissionsStep(
     )
 
     return WizardStep(
-        title = "Permissions",
+        title = dev.shizzi.L10n.string(dev.shizzi.R.string.permissions),
         content = {
             PermissionsStep(
                 shizuku = state.shizuku,
@@ -99,23 +99,23 @@ private fun permissionsAction(
     actions: OnboardingActions,
     onNext: () -> Unit,
 ): WizardAction {
-    if (rows.all { it.isGranted }) return WizardAction(label = "Continue", onClick = onNext)
+    if (rows.all { it.isGranted }) return WizardAction(label = dev.shizzi.L10n.string(dev.shizzi.R.string.continue_label), onClick = onNext)
 
-    return WizardAction(label = "Grant permissions", onClick = actions.onRequestAllPermissions)
+    return WizardAction(label = dev.shizzi.L10n.string(dev.shizzi.R.string.grant_permissions), onClick = actions.onRequestAllPermissions)
 }
 
 private fun compatibilityStep(
     state: CompatibilityState,
     actions: OnboardingActions,
 ) = WizardStep(
-    title = "Compatibility",
+    title = dev.shizzi.L10n.string(dev.shizzi.R.string.compatibility),
     content = { CompatibilityStep(state) },
     primary = when {
-        state.isCompatible -> WizardAction(label = "Finish", onClick = actions.onFinish)
+        state.isCompatible -> WizardAction(label = dev.shizzi.L10n.string(dev.shizzi.R.string.finish), onClick = actions.onFinish)
         state.isOnFixPath -> fixPathAction(state, actions)
 
         else -> WizardAction(
-            label = "Check",
+            label = dev.shizzi.L10n.string(dev.shizzi.R.string.check),
             isEnabled = state !is CompatibilityState.Checking,
             onClick = actions.onCheckCompatibility,
         )
@@ -127,22 +127,22 @@ private fun fixPathAction(
     actions: OnboardingActions,
 ): WizardAction = when (state) {
     is CompatibilityState.Downloaded ->
-        WizardAction(label = "Install", onClick = actions.onInstallTetheringApex)
+        WizardAction(label = dev.shizzi.L10n.string(dev.shizzi.R.string.install), onClick = actions.onInstallTetheringApex)
 
     is CompatibilityState.Installing ->
-        WizardAction(label = "Installing", isEnabled = false, onClick = {})
+        WizardAction(label = dev.shizzi.L10n.string(dev.shizzi.R.string.installing), isEnabled = false, onClick = {})
 
     is CompatibilityState.Staged ->
-        WizardAction(label = "Restart", onClick = actions.onRebootDevice)
+        WizardAction(label = dev.shizzi.L10n.string(dev.shizzi.R.string.restart), onClick = actions.onRebootDevice)
 
     is CompatibilityState.InstallFailed ->
-        WizardAction(label = "Check", onClick = actions.onCheckCompatibility)
+        WizardAction(label = dev.shizzi.L10n.string(dev.shizzi.R.string.check), onClick = actions.onCheckCompatibility)
 
     is CompatibilityState.DownloadFailed ->
-        WizardAction(label = "Retry", onClick = actions.onDownloadTetheringApex)
+        WizardAction(label = dev.shizzi.L10n.string(dev.shizzi.R.string.retry), onClick = actions.onDownloadTetheringApex)
 
     else -> WizardAction(
-        label = "Download",
+        label = dev.shizzi.L10n.string(dev.shizzi.R.string.download),
         isEnabled = state !is CompatibilityState.Downloading,
         onClick = actions.onDownloadTetheringApex,
     )

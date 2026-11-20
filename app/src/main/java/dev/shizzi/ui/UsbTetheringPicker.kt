@@ -16,21 +16,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import dev.shizzi.L10n
+import dev.shizzi.R
 import dev.shizzi.UsbTethering
 import dev.shizzi.ui.theme.ShizziTheme
 
 private val CheckSize = 20.dp
 
 fun usbTetheringLabel(mode: UsbTethering): String = when (mode) {
-    UsbTethering.AUTO -> "Auto"
-    UsbTethering.ALWAYS -> "Always"
-    UsbTethering.NEVER -> "Never"
+    UsbTethering.AUTO -> L10n.string(R.string.usb_mode_auto)
+    UsbTethering.ALWAYS -> L10n.string(R.string.usb_mode_always)
+    UsbTethering.NEVER -> L10n.string(R.string.usb_mode_never)
 }
 
 private fun descriptionOf(mode: UsbTethering): String = when (mode) {
-    UsbTethering.AUTO -> "Also share over USB when a cable is connected"
-    UsbTethering.ALWAYS -> "Share over USB only; requires a cable"
-    UsbTethering.NEVER -> "Share through the hotspot only"
+    UsbTethering.AUTO -> L10n.string(R.string.usb_mode_auto_description)
+    UsbTethering.ALWAYS -> L10n.string(R.string.usb_mode_always_description)
+    UsbTethering.NEVER -> L10n.string(R.string.usb_mode_never_description)
 }
 
 @Composable
@@ -41,7 +43,7 @@ fun UsbTetheringPicker(
 ) {
     ThemedBottomSheet(onDismiss = onDismiss) {
         Text(
-            text = "USB tethering",
+            text = L10n.string(R.string.usb_tethering),
             style = ShizziTheme.typography.heading,
             color = ShizziTheme.colors.onSurface,
         )

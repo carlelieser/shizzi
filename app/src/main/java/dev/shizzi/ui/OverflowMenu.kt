@@ -45,7 +45,7 @@ fun OverflowMenu(
     Box {
         ShizziIconButton(
             icon = Icons.Filled.MoreVert,
-            contentDescription = "More options",
+            contentDescription = dev.shizzi.L10n.string(dev.shizzi.R.string.more_options),
             onClick = { isOpen = true },
 
             tint = if (isMarked) colors.primary else colors.onSurface,
