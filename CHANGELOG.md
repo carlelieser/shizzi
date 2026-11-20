@@ -5,6 +5,21 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- A session whose privileged helper dies restarts in the background with the
+  same settings. It tries three times before ending.
+- When Shizuku stops, the session waits up to 10 minutes for it to come back
+  and then resumes on its own. The notification and the home screen offer to
+  open Shizuku, and Stop still works while waiting.
+- A session that ends with the hotspot possibly still on links to the hotspot
+  settings.
+
+### Fixed
+
+- After the helper died, the hotspot it started stayed on even though the log
+  said it had been turned off.
+
 ## [0.5.0] - 2026-10-30
 
 Adds USB tethering, so a computer on a USB cable can share the same

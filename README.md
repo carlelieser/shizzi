@@ -39,6 +39,13 @@ Download the APK from the
 - 🤖 **Automatable.** Start and stop from Tasker or MacroDroid. See
   [automation](docs/automation.md).
 
+## Troubleshooting
+
+**Shizuku stops when the hotspot or USB tethering turns on.** If you start
+Shizuku with Wireless Debugging, a network change can turn Wireless Debugging
+off and take Shizuku with it. Sharing resumes once Shizuku is started again.
+Starting Shizuku with root, or over adb in TCP mode, avoids the problem.
+
 ## Build
 
 Needs the Android SDK with NDK, Go, and gomobile:
