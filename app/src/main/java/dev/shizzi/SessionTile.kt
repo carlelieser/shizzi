@@ -20,7 +20,7 @@ object SessionTile {
         return when (session.status) {
             UiStatus.LOADING -> TileRender(
                 state = Tile.STATE_UNAVAILABLE,
-                subtitle = if (isStopping) "Stopping…" else "Starting…",
+                subtitle = loadingSubtitle(session, isStopping),
                 action = TileAction.NONE,
             )
 
@@ -55,6 +55,12 @@ object SessionTile {
         ShizukuState.NotRunning -> "Shizuku not running"
         ShizukuState.PermissionRequired -> "Permission required"
         is ShizukuState.Ready -> ""
+    }
+
+    private fun loadingSubtitle(session: SessionUiState, isStopping: Boolean): String = when {
+        isStopping -> "Stopping…"
+        session.isReconnecting -> "Reconnecting…"
+        else -> "Starting…"
     }
 
     private fun describeConnected(session: SessionUiState): String = when (session.clientCount) {

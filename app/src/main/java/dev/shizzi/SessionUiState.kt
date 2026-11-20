@@ -20,6 +20,9 @@ data class SessionUiState(
     val traffic: Traffic = Traffic(),
 
     val downstreams: Set<TetheringType> = emptySet(),
+
+    val isReconnecting: Boolean = false,
+    val isHotspotPossiblyOn: Boolean = false,
 ) {
 
     val canStart: Boolean get() = shizukuState is ShizukuState.Ready && !isBusy
@@ -37,7 +40,25 @@ fun SessionUiState.asStopped(): SessionUiState = copy(
     clientCount = 0,
     traffic = Traffic(),
     downstreams = emptySet(),
+    isReconnecting = false,
+    isHotspotPossiblyOn = false,
 )
+
+/** Sharing is down while a new helper is brought up; not an error to show. */
+fun SessionUiState.asReconnecting(): SessionUiState = asStopped().copy(
+    isBusy = true,
+    status = UiStatus.LOADING,
+    detail = "",
+    isReconnecting = true,
+)
+
+fun SessionUiState.asEnded(message: String, isHotspotPossiblyOn: Boolean): SessionUiState =
+    asStopped().copy(
+        status = UiStatus.ERROR,
+        detail = "",
+        lastError = message,
+        isHotspotPossiblyOn = isHotspotPossiblyOn,
+    )
 
 fun SessionUiState.applyOutcome(outcome: Result<String>): SessionUiState {
     val failure = outcome.exceptionOrNull()

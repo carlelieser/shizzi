@@ -181,6 +181,6 @@ private fun StatusDivider() {
 private fun statusWord(state: SessionUiState): String = when (state.status) {
     UiStatus.CONNECTED -> if (state.isWaitingForUsb) "Waiting for USB" else "Connected"
     UiStatus.READY -> "Ready"
-    UiStatus.LOADING -> "Starting"
+    UiStatus.LOADING -> if (state.isReconnecting) "Reconnecting" else "Starting"
     UiStatus.ERROR -> "Failed"
 }

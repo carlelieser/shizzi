@@ -29,10 +29,16 @@ class SessionNotification(private val context: Context) {
     private fun titleFor(state: SessionUiState, isStopping: Boolean): String =
         when (state.status) {
             UiStatus.CONNECTED -> connectedTitle(state)
-            UiStatus.LOADING -> if (isStopping) "Cleaning up…" else "Getting ready…"
+            UiStatus.LOADING -> loadingTitle(state, isStopping)
             UiStatus.ERROR -> "Session ended"
             UiStatus.READY -> "Session ended"
         }
+
+    private fun loadingTitle(state: SessionUiState, isStopping: Boolean): String = when {
+        isStopping -> "Cleaning up…"
+        state.isReconnecting -> "Reconnecting…"
+        else -> "Getting ready…"
+    }
 
     private fun connectedTitle(state: SessionUiState): String = when {
         state.isWaitingForUsb -> "Waiting for USB"
@@ -67,14 +73,6 @@ class SessionNotification(private val context: Context) {
     private fun deviceCount(clients: Int): String = when (clients) {
         1 -> "1 device"
         else -> "$clients devices"
-    }
-
-    fun describeLoss(problem: String?): String = when (problem) {
-        null -> "Shizuku stopped, so the session ended. The hotspot was turned off. " +
-            "Start again when you are ready."
-
-        else -> "The session ended but the hotspot may still be on: $problem — " +
-            "turn it off in Settings."
     }
 
     private fun openAppIntent(): PendingIntent = PendingIntent.getActivity(
