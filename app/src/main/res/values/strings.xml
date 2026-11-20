@@ -210,7 +210,10 @@
     <string name="usb_mode_always_description">Share over USB only; requires a cable</string>
     <string name="usb_mode_never_description">Share through the hotspot only</string>
     <string name="waiting_for_usb">Waiting for USB</string>
-    <string name="notification_usb_grace">Connect over USB within %1$d minutes to keep sharing</string>
+    <plurals name="notification_usb_grace">
+        <item quantity="one">Connect over USB within %1$d minute to keep sharing</item>
+        <item quantity="other">Connect over USB within %1$d minutes to keep sharing</item>
+    </plurals>
 
     <!-- Session and settings messages -->
     <string name="could_not_open">Couldn\'t open %1$s</string>

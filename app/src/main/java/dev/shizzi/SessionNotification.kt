@@ -46,7 +46,11 @@ class SessionNotification(private val context: Context) {
     private fun bodyFor(state: SessionUiState, isStopping: Boolean): String = when {
         state.lastError.isNotEmpty() -> userFacingError(state.lastError)
         state.status == UiStatus.LOADING -> loadingBody(isStopping)
-        state.isWaitingForUsb -> context.getString(R.string.notification_usb_grace, USB_GRACE_MINUTES)
+        state.isWaitingForUsb -> context.resources.getQuantityString(
+            R.plurals.notification_usb_grace,
+            USB_GRACE_MINUTES,
+            USB_GRACE_MINUTES,
+        )
         state.status == UiStatus.CONNECTED -> connectedBody(state)
         else -> context.getString(R.string.notification_not_sharing)
     }
@@ -113,6 +117,6 @@ class SessionNotification(private val context: Context) {
         const val DOWN_ARROW = "\u2193"
         const val UP_ARROW = "\u2191"
 
-        const val USB_GRACE_MINUTES = UsbReconnect.GIVE_UP_AFTER_MS / 60_000
+        const val USB_GRACE_MINUTES = (UsbReconnect.GIVE_UP_AFTER_MS / 60_000).toInt()
     }
 }
