@@ -19,7 +19,11 @@ func TestEchoOverPingSocket(t *testing.T) {
 	binding := &networkBinding{}
 	payload := []byte("shizzi-echo")
 
-	reply, err := binding.echo(tcpip.AddrFrom4([4]byte{127, 0, 0, 1}), 42, payload, 2*time.Second)
+	reply, err := binding.echo(echoRequest{
+		destination: tcpip.AddrFrom4([4]byte{127, 0, 0, 1}),
+		seq:         42,
+		payload:     payload,
+	}, 2*time.Second)
 	if errors.Is(err, syscall.EACCES) || errors.Is(err, syscall.EPERM) {
 		t.Skipf("ping sockets not permitted here: %v", err)
 	}

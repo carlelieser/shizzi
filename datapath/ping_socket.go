@@ -9,64 +9,86 @@ import (
 	"time"
 
 	"golang.org/x/sys/unix"
-	"gvisor.dev/gvisor/pkg/tcpip"
 	"gvisor.dev/gvisor/pkg/tcpip/header"
 )
 
-// echo sends one ICMPv4 echo through an unprivileged ping socket
-// (SOCK_DGRAM/IPPROTO_ICMP), which Android opens to every UID, and waits for
-// the matching reply.
-//
-// The socket is pinned like every TCP and UDP dial: to the bound network when
-// there is one, failing rather than leaving over another network if pinning
-// fails. The kernel chooses the echo identifier and fills in the checksum; the
-// caller restores the client's identifier on the reply.
-func (b *networkBinding) echo(dst tcpip.Address, seq uint16, payload []byte, timeout time.Duration) ([]byte, error) {
-	if dst.Len() != 4 {
+// pingSocket is an unprivileged ping socket (SOCK_DGRAM/IPPROTO_ICMP), which
+// Android opens to every UID, aimed at one IPv4 destination. The kernel
+// chooses the echo identifier and fills in the checksum.
+type pingSocket struct {
+	fd     int
+	target unix.SockaddrInet4
+}
+
+// echo sends request's echo through a ping socket pinned like every TCP and
+// UDP dial, and waits for the matching reply.
+func (b *networkBinding) echo(request echoRequest, timeout time.Duration) ([]byte, error) {
+	if request.destination.Len() != 4 {
 		return nil, errors.New("echo: not an IPv4 address")
 	}
 
-	fd, err := unix.Socket(unix.AF_INET, unix.SOCK_DGRAM|unix.SOCK_CLOEXEC, unix.IPPROTO_ICMP)
+	socket, err := b.openPingSocket(request)
 	if err != nil {
-		return nil, fmt.Errorf("echo: ping socket: %w", err)
+		return nil, err
 	}
-	defer unix.Close(fd)
-
-	if handle := b.handle.Load(); handle != unbound {
-		if err := bindToNetwork(handle, uintptr(fd)); err != nil {
-			return nil, err
-		}
-	}
+	defer unix.Close(socket.fd)
 
 	deadline := time.Now().Add(timeout)
 	timeval := unix.NsecToTimeval(timeout.Nanoseconds())
-	if err := unix.SetsockoptTimeval(fd, unix.SOL_SOCKET, unix.SO_RCVTIMEO, &timeval); err != nil {
+	if err := unix.SetsockoptTimeval(socket.fd, unix.SOL_SOCKET, unix.SO_RCVTIMEO, &timeval); err != nil {
 		return nil, fmt.Errorf("echo: set timeout: %w", err)
 	}
-
-	request := make([]byte, header.ICMPv4MinimumSize+len(payload))
-	request[0] = byte(header.ICMPv4Echo)
-	binary.BigEndian.PutUint16(request[6:], seq)
-	copy(request[header.ICMPv4MinimumSize:], payload)
-
-	to := &unix.SockaddrInet4{Addr: dst.As4()}
-	if err := unix.Sendto(fd, request, 0, to); err != nil {
+	if err := socket.send(request); err != nil {
 		return nil, fmt.Errorf("echo: send: %w", err)
 	}
+	return socket.awaitReply(request.seq, deadline)
+}
 
-	buffer := make([]byte, 65535)
+// openPingSocket opens a ping socket pinned to the bound network when there is
+// one, failing rather than leaving over another network if pinning fails.
+func (b *networkBinding) openPingSocket(request echoRequest) (pingSocket, error) {
+	fd, err := unix.Socket(unix.AF_INET, unix.SOCK_DGRAM|unix.SOCK_CLOEXEC, unix.IPPROTO_ICMP)
+	if err != nil {
+		return pingSocket{}, fmt.Errorf("echo: ping socket: %w", err)
+	}
+	if handle := b.handle.Load(); handle != unbound {
+		if err := bindToNetwork(handle, uintptr(fd)); err != nil {
+			unix.Close(fd)
+			return pingSocket{}, err
+		}
+	}
+	return pingSocket{fd: fd, target: unix.SockaddrInet4{Addr: request.destination.As4()}}, nil
+}
+
+func (s pingSocket) send(request echoRequest) error {
+	message := make([]byte, header.ICMPv4MinimumSize+len(request.payload))
+	message[0] = byte(header.ICMPv4Echo)
+	binary.BigEndian.PutUint16(message[6:], request.seq)
+	copy(message[header.ICMPv4MinimumSize:], request.payload)
+	return unix.Sendto(s.fd, message, 0, &s.target)
+}
+
+// awaitReply reads until the reply to seq arrives from the target.
+func (s pingSocket) awaitReply(seq uint16, deadline time.Time) ([]byte, error) {
+	buffer := make([]byte, maxDatagramSize)
 	for time.Now().Before(deadline) {
-		read, from, err := unix.Recvfrom(fd, buffer, 0)
+		read, from, err := unix.Recvfrom(s.fd, buffer, 0)
 		if err != nil {
 			return nil, fmt.Errorf("echo: receive: %w", err)
 		}
-		source, ok := from.(*unix.SockaddrInet4)
 		reply := header.ICMPv4(buffer[:read])
-		if !ok || source.Addr != to.Addr || read < header.ICMPv4MinimumSize ||
-			reply.Type() != header.ICMPv4EchoReply || reply.Sequence() != seq {
-			continue
+		if s.isReplyTo(from, reply, seq) {
+			return append([]byte(nil), reply.Payload()...), nil
 		}
-		return append([]byte(nil), reply.Payload()...), nil
 	}
 	return nil, errors.New("echo: timed out")
+}
+
+func (s pingSocket) isReplyTo(from unix.Sockaddr, reply header.ICMPv4, seq uint16) bool {
+	source, isInet4 := from.(*unix.SockaddrInet4)
+	if !isInet4 || source.Addr != s.target.Addr {
+		return false
+	}
+	isComplete := len(reply) >= header.ICMPv4MinimumSize
+	return isComplete && reply.Type() == header.ICMPv4EchoReply && reply.Sequence() == seq
 }

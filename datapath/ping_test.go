@@ -54,15 +54,17 @@ func newPingTestStack(t *testing.T) (*stack.Stack, *channel.Endpoint) {
 	return netStack, link
 }
 
-// echoRequest renders an IPv4 echo request as a tethered client's ping
+// clientPing renders an IPv4 echo request as a tethered client's ping
 // arrives on the TUN (source already NATed to the TUN address).
-func echoRequest(ident, seq uint16, payload []byte) []byte {
-	packet := buildEchoReply(pingClient, pingTarget, ident, seq, payload)
-	message := header.ICMPv4(packet[header.IPv4MinimumSize:])
-	message.SetType(header.ICMPv4Echo)
-	message.SetChecksum(0)
-	message.SetChecksum(^checksum.Checksum(message, 0))
-	return packet
+func clientPing(ident, seq uint16, payload []byte) []byte {
+	return encodeEcho(echoMessage{
+		kind:        header.ICMPv4Echo,
+		source:      pingClient,
+		destination: pingTarget,
+		ident:       ident,
+		seq:         seq,
+		payload:     payload,
+	})
 }
 
 func inject(link *channel.Endpoint, packet []byte) {
@@ -73,16 +75,10 @@ func inject(link *channel.Endpoint, packet []byte) {
 	link.InjectInbound(header.IPv4ProtocolNumber, pkt)
 }
 
-type recordedEcho struct {
-	dst     tcpip.Address
-	seq     uint16
-	payload []byte
-}
-
 // fakeUpstream stands in for the ping socket and the TUN write.
 type fakeUpstream struct {
 	mu      sync.Mutex
-	echoes  []recordedEcho
+	echoes  []echoRequest
 	err     error
 	written chan []byte
 }
@@ -91,14 +87,14 @@ func newFakeUpstream() *fakeUpstream {
 	return &fakeUpstream{written: make(chan []byte, 4)}
 }
 
-func (u *fakeUpstream) echo(dst tcpip.Address, seq uint16, payload []byte, _ time.Duration) ([]byte, error) {
+func (u *fakeUpstream) echo(request echoRequest, _ time.Duration) ([]byte, error) {
 	u.mu.Lock()
 	defer u.mu.Unlock()
-	u.echoes = append(u.echoes, recordedEcho{dst, seq, append([]byte(nil), payload...)})
+	u.echoes = append(u.echoes, request)
 	if u.err != nil {
 		return nil, u.err
 	}
-	return payload, nil
+	return request.payload, nil
 }
 
 func (u *fakeUpstream) write(packet []byte) error {
@@ -118,7 +114,7 @@ func (u *fakeUpstream) echoCount() int {
 func TestStackLeavesIPv4PingsUnanswered(t *testing.T) {
 	_, link := newPingTestStack(t)
 
-	inject(link, echoRequest(0x1234, 1, []byte("probe")))
+	inject(link, clientPing(0x1234, 1, []byte("probe")))
 
 	if pkt := link.Read(); pkt != nil {
 		pkt.DecRef()
@@ -132,7 +128,7 @@ func TestPingForwarderRepliesThroughUpstream(t *testing.T) {
 	newPingForwarder(upstream.echo, upstream.write).install(netStack)
 
 	payload := []byte("unifi-internet-monitor")
-	inject(link, echoRequest(0x1234, 7, payload))
+	inject(link, clientPing(0x1234, 7, payload))
 
 	var packet []byte
 	select {
@@ -141,7 +137,7 @@ func TestPingForwarderRepliesThroughUpstream(t *testing.T) {
 		t.Fatal("no echo reply written to the TUN")
 	}
 
-	if got := upstream.echoes[0]; got.dst != pingTarget || got.seq != 7 || !bytes.Equal(got.payload, payload) {
+	if got := upstream.echoes[0]; got.destination != pingTarget || got.seq != 7 || !bytes.Equal(got.payload, payload) {
 		t.Fatalf("upstream echo = %+v, want dst %v seq 7 payload %q", got, pingTarget, payload)
 	}
 
@@ -183,7 +179,7 @@ func TestPingForwarderStaysSilentWhenUpstreamFails(t *testing.T) {
 	upstream.err = errors.New("echo: timed out")
 	newPingForwarder(upstream.echo, upstream.write).install(netStack)
 
-	inject(link, echoRequest(0x1, 1, []byte("x")))
+	inject(link, clientPing(0x1, 1, []byte("x")))
 
 	select {
 	case <-upstream.written:
@@ -201,7 +197,14 @@ func TestPingForwarderIgnoresOtherICMP(t *testing.T) {
 	newPingForwarder(upstream.echo, upstream.write).install(netStack)
 
 	// An echo reply arriving from the client is not a request to forward.
-	inject(link, buildEchoReply(pingClient, pingTarget, 0x1, 1, []byte("x")))
+	inject(link, encodeEcho(echoMessage{
+		kind:        header.ICMPv4EchoReply,
+		source:      pingClient,
+		destination: pingTarget,
+		ident:       0x1,
+		seq:         1,
+		payload:     []byte("x"),
+	}))
 
 	select {
 	case <-upstream.written:
@@ -221,9 +224,9 @@ func TestPingForwarderWritesNothingAfterClose(t *testing.T) {
 	release := make(chan struct{})
 	written := make(chan []byte, 1)
 	forwarder := newPingForwarder(
-		func(_ tcpip.Address, _ uint16, payload []byte, _ time.Duration) ([]byte, error) {
+		func(request echoRequest, _ time.Duration) ([]byte, error) {
 			<-release
-			return payload, nil
+			return request.payload, nil
 		},
 		func(packet []byte) error {
 			written <- packet
@@ -232,7 +235,7 @@ func TestPingForwarderWritesNothingAfterClose(t *testing.T) {
 	)
 	forwarder.install(netStack)
 
-	inject(link, echoRequest(0x7, 1, []byte("in flight at stop")))
+	inject(link, clientPing(0x7, 1, []byte("in flight at stop")))
 	time.Sleep(50 * time.Millisecond)
 	forwarder.close()
 	close(release)
@@ -251,7 +254,7 @@ func TestPingForwarderDropsCorruptRequests(t *testing.T) {
 	upstream := newFakeUpstream()
 	newPingForwarder(upstream.echo, upstream.write).install(netStack)
 
-	packet := echoRequest(0x1234, 3, []byte("corrupt"))
+	packet := clientPing(0x1234, 3, []byte("corrupt"))
 	message := header.ICMPv4(packet[header.IPv4MinimumSize:])
 	message.SetChecksum(message.Checksum() ^ 0x00ff)
 	inject(link, packet)
