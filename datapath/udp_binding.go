@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net"
 	"net/netip"
+	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -23,9 +24,12 @@ type udpBinding struct {
 	handle   uint64 // network the upstream socket was pinned to
 	upstream net.PacketConn
 
-	// Guarded by mapper.mu.
-	flows     map[netip.AddrPort]*udpFlow
-	isRetired bool
+	isRetired bool // guarded by mapper.mu
+
+	// mu guards flows. Lock order is mapper.mu, then mu, so the receive path
+	// takes only this binding's lock.
+	mu    sync.Mutex
+	flows map[netip.AddrPort]*udpFlow
 }
 
 // udpFlow is one client-to-peer association: the netstack endpoint the client
@@ -110,9 +114,9 @@ func (b *udpBinding) receive() {
 			source = netip.AddrPortFrom(source.Addr().Unmap(), source.Port())
 		}
 
-		b.mapper.mu.Lock()
+		b.mu.Lock()
 		flow := b.flows[source]
-		b.mapper.mu.Unlock()
+		b.mu.Unlock()
 		if flow == nil {
 			continue
 		}
@@ -127,20 +131,22 @@ func (b *udpBinding) drop(flow *udpFlow) {
 
 	b.mapper.mu.Lock()
 	defer b.mapper.mu.Unlock()
+	b.mu.Lock()
 	if b.flows[flow.peer] == flow {
 		delete(b.flows, flow.peer)
 	}
+	b.mu.Unlock()
 	b.mapper.releaseLocked(b)
 }
 
 // closeAll ends every flow after the upstream socket closes or fails.
 func (b *udpBinding) closeAll() {
-	b.mapper.mu.Lock()
+	b.mu.Lock()
 	flows := make([]*udpFlow, 0, len(b.flows))
 	for _, flow := range b.flows {
 		flows = append(flows, flow)
 	}
-	b.mapper.mu.Unlock()
+	b.mu.Unlock()
 
 	for _, flow := range flows {
 		flow.conn.Close()

@@ -77,12 +77,14 @@ func (m *udpMapper) forward(request *udp.ForwarderRequest) bool {
 		return false
 	}
 
+	flow := &udpFlow{peer: peer, conn: gonet.NewUDPConn(&queue, endpoint)}
+	flow.touch()
+	binding.mu.Lock()
 	if previous := binding.flows[peer]; previous != nil {
 		previous.conn.Close()
 	}
-	flow := &udpFlow{peer: peer, conn: gonet.NewUDPConn(&queue, endpoint)}
-	flow.touch()
 	binding.flows[peer] = flow
+	binding.mu.Unlock()
 	m.mu.Unlock()
 
 	// Send the first datagram before accepting the flow, so a destination
@@ -133,8 +135,7 @@ func (m *udpMapper) tryBindingFor(client netip.AddrPort) (*udpBinding, error) {
 	}
 	m.mu.Unlock()
 
-	// Opened outside the lock: pinning is a netd round trip, and the lock
-	// also serves every binding's receive path.
+	// Opened outside the lock: pinning is a netd round trip.
 	upstream, err := m.listen(udpFamily(client))
 	if err != nil {
 		return nil, err
@@ -237,7 +238,10 @@ func (m *udpMapper) retireLocked(binding *udpBinding) {
 
 // releaseLocked retires the binding once it carries no flow. Callers hold m.mu.
 func (m *udpMapper) releaseLocked(binding *udpBinding) {
-	if len(binding.flows) == 0 {
+	binding.mu.Lock()
+	isIdle := len(binding.flows) == 0
+	binding.mu.Unlock()
+	if isIdle {
 		m.retireLocked(binding)
 	}
 }
