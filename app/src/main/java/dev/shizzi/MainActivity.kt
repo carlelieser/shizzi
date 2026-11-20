@@ -100,7 +100,6 @@ class MainActivity : ComponentActivity() {
                         actions = AppActions(
                             onToggle = viewModel::toggle,
                             onCancel = viewModel::cancel,
-                            onRequestPermission = viewModel::requestPermission,
                             onRequestAllPermissions = ::requestAllPermissions,
                             onGrantPermission = ::grantPermission,
                             onShizukuAction = viewModel::actOnShizuku,

@@ -14,6 +14,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -75,8 +77,15 @@ class SessionService : Service() {
             return
         }
         val attempt = ++generation
+        recovery.cancel()
         internalState.update {
-            it.copy(isBusy = true, status = UiStatus.LOADING, lastError = "", detail = "")
+            it.copy(
+                isBusy = true,
+                status = UiStatus.LOADING,
+                lastError = "",
+                detail = "",
+                isHotspotPossiblyOn = false,
+            )
         }
 
         startJob = scope.launch {
@@ -133,6 +142,7 @@ class SessionService : Service() {
         val abandoned = startJob
         startJob = null
 
+        recovery.cancel()
         statusPoller.stop()
 
         internalState.update {
@@ -160,33 +170,67 @@ class SessionService : Service() {
 
     private fun handleSessionLost() {
         statusPoller.stop()
-
         isStopping = false
-        SessionLog.error("shell process died; recovering any downstream it left up")
 
-        internalState.update {
-            it.copy(
-                isBusy = false,
-                status = UiStatus.ERROR,
-                interfaceName = "",
-                lastError = "Session ended unexpectedly — dropping the hotspot…",
-            )
+        SessionLog.error("shell process died")
+        recovery.onHelperLost(internalState.value.downstreams)
+    }
+
+    private val recoveryHost = object : RecoveryHost {
+
+        override fun showReconnecting() {
+            internalState.update { current -> current.asReconnecting() }
+            publishState()
         }
-        publishState()
 
-        scope.launch {
-            val problem = runCatching { controller.releaseOrphanedDownstream() }
-                .getOrElse { failure -> "teardown failed: ${failure.message}" }
+        override fun showWaitingForShizuku() {
+            internalState.update { current -> current.asWaitingForShizuku() }
+            publishState()
+        }
 
-            when (problem) {
-                null -> SessionLog.info("orphan recovery: hotspot dropped")
-                else -> SessionLog.error("orphan recovery failed: $problem")
+        override suspend fun restartSession(): Boolean {
+            val settings = settingsStore().settings.first()
+            val outcome = sessionLock.withLock {
+                runCatching {
+                    controller.start(settings.isLogging, settings.vpnMode, settings.usbTethering)
+                }
+            }
+            currentCoroutineContext().ensureActive()
+
+            val restarted = internalState.value.applyOutcome(outcome)
+            if (restarted.status != UiStatus.CONNECTED) {
+                SessionLog.warn("restart did not come up: ${restarted.lastError}")
+                return false
             }
 
-            internalState.update { current -> current.copy(lastError = notification.describeLoss(problem)) }
+            internalState.update { restarted.copy(isReconnecting = false) }
             publishState()
+            followStatus()
+            return true
+        }
+
+        override suspend fun endSession(end: RecoveryAction.End) {
+            val problem = releaseOrphaned(end)
+            problem?.let { SessionLog.error("orphan recovery failed: $it") }
+
+            val isHotspotPossiblyOn = problem != null
+            internalState.update { current ->
+                current.asEnded(end.reason.message(isHotspotPossiblyOn), isHotspotPossiblyOn)
+            }
+            publishState()
+
+            sessionLock.withLock { controller.unbindAndStopDaemon() }
             stopSelf()
         }
+    }
+
+    private val recovery = SessionRecoveryRunner(scope, recoveryHost)
+
+    /** Null once the downstreams the lost helper started are down. */
+    private suspend fun releaseOrphaned(end: RecoveryAction.End): String? = when {
+        end.orphaned.isEmpty() -> null
+        end.reason == SessionEnd.SHIZUKU_STOPPED -> "Shizuku is not running"
+        else -> sessionLock.withLock { controller.releaseOrphanedDownstream(end.orphaned) }
     }
 
     private fun announceOutcome() {
@@ -206,6 +250,7 @@ class SessionService : Service() {
         getSystemService(NotificationManager::class.java)
 
     override fun onDestroy() {
+        recovery.cancel()
         controller.onSessionLost = null
         controller.unbind()
         scope.cancel()
@@ -229,6 +274,8 @@ class SessionService : Service() {
         val isSessionUp: Boolean get() = liveState.value.status == UiStatus.CONNECTED
 
         val isSessionBusy: Boolean get() = liveState.value.status == UiStatus.LOADING
+
+        val isSessionRecovering: Boolean get() = liveState.value.isRecovering
 
         fun start(context: Context, reportAs: AutomationCommand? = null) {
             context.startForegroundService(

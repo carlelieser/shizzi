@@ -22,6 +22,7 @@ class SessionNotification(private val context: Context) {
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentIntent(openAppIntent())
             .setOngoing(state.status != UiStatus.ERROR)
+            .apply { if (state.isWaitingForShizuku) openShizukuAction()?.let(::addAction) }
             .addAction(stopAction())
             .build()
     }
@@ -29,10 +30,17 @@ class SessionNotification(private val context: Context) {
     private fun titleFor(state: SessionUiState, isStopping: Boolean): String =
         when (state.status) {
             UiStatus.CONNECTED -> connectedTitle(state)
-            UiStatus.LOADING -> if (isStopping) "Cleaning up…" else "Getting ready…"
+            UiStatus.LOADING -> loadingTitle(state, isStopping)
             UiStatus.ERROR -> "Session ended"
             UiStatus.READY -> "Session ended"
         }
+
+    private fun loadingTitle(state: SessionUiState, isStopping: Boolean): String = when {
+        isStopping -> "Cleaning up…"
+        state.isWaitingForShizuku -> "Shizuku stopped"
+        state.isReconnecting -> "Reconnecting…"
+        else -> "Getting ready…"
+    }
 
     private fun connectedTitle(state: SessionUiState): String = when {
         state.isWaitingForUsb -> "Waiting for USB"
@@ -43,6 +51,7 @@ class SessionNotification(private val context: Context) {
 
     private fun bodyFor(state: SessionUiState, isStopping: Boolean): String = when {
         state.lastError.isNotEmpty() -> userFacingError(state.lastError)
+        state.isWaitingForShizuku -> "Start Shizuku to resume sharing."
         state.status == UiStatus.LOADING -> loadingBody(isStopping)
         state.isWaitingForUsb -> "Connect over USB within $USB_GRACE_MINUTES minutes to keep sharing"
         state.status == UiStatus.CONNECTED -> connectedBody(state)
@@ -69,20 +78,19 @@ class SessionNotification(private val context: Context) {
         else -> "$clients devices"
     }
 
-    fun describeLoss(problem: String?): String = when (problem) {
-        null -> "Shizuku stopped, so the session ended. The hotspot was turned off. " +
-            "Start again when you are ready."
-
-        else -> "The session ended but the hotspot may still be on: $problem — " +
-            "turn it off in Settings."
-    }
-
     private fun openAppIntent(): PendingIntent = PendingIntent.getActivity(
         context,
         0,
         Intent(context, MainActivity::class.java),
         PendingIntent.FLAG_IMMUTABLE,
     )
+
+    private fun openShizukuAction(): Notification.Action? {
+        val launch = ShizukuGate.launchIntent() ?: return null
+        val intent = PendingIntent.getActivity(context, 2, launch, PendingIntent.FLAG_IMMUTABLE)
+
+        return Notification.Action.Builder(null, "Open Shizuku", intent).build()
+    }
 
     private fun stopAction(): Notification.Action = Notification.Action.Builder(
         null,

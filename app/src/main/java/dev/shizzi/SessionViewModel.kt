@@ -69,10 +69,6 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
         localState.update { it.copy(shizukuState = ShizukuGate.currentState()) }
     }
 
-    fun requestPermission() {
-        ShizukuGate.requestPermission()
-    }
-
     fun actOnShizuku() {
         ShizukuGate.remedy(localState.value.shizukuState)
     }
@@ -131,6 +127,7 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
 
         when {
             SessionService.isSessionUp -> SessionService.stop(context)
+            SessionService.isSessionRecovering -> SessionService.stop(context)
             else -> SessionService.start(context)
         }
     }

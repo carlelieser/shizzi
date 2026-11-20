@@ -1,5 +1,6 @@
 package dev.shizzi
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -49,6 +50,35 @@ class SessionStatusTest {
     @Test
     fun `waiting for usb is carried across the service boundary`() {
         assertTrue(stateFrom("""{"state":"ACTIVE","isWaitingForUsb":true}""").isWaitingForUsb)
+    }
+
+    @Test
+    fun `the downstreams a session started are carried across the service boundary`() {
+        val state = stateFrom("""{"state":"ACTIVE","downstreams":["WIFI","USB"]}""")
+
+        assertEquals(setOf(TetheringType.WIFI, TetheringType.USB), state.downstreams)
+    }
+
+    @Test
+    fun `a status without downstreams reads as none started`() {
+        val started = stateFrom("""{"state":"ACTIVE","downstreams":["WIFI"]}""")
+
+        assertTrue(started.applyOutcome(Result.success("""{"state":"IDLE"}""")).downstreams.isEmpty())
+    }
+
+    @Test
+    fun `waiting for shizuku counts as recovering, not as an error`() {
+        val waiting = stateFrom("""{"state":"ACTIVE"}""").asWaitingForShizuku()
+
+        assertTrue(waiting.isRecovering)
+        assertTrue(waiting.lastError.isEmpty())
+    }
+
+    @Test
+    fun `stopping ends recovery`() {
+        val waiting = SessionUiState().asWaitingForShizuku()
+
+        assertFalse(waiting.asStopped().isRecovering)
     }
 
     @Test
