@@ -2,6 +2,7 @@ package datapath
 
 import (
 	"errors"
+	"fmt"
 	"net"
 	"net/netip"
 	"sync"
@@ -44,18 +45,19 @@ func (f *udpFlow) touch() { f.lastActive.Store(time.Now().UnixNano()) }
 
 func (f *udpFlow) lastSeen() time.Time { return time.Unix(0, f.lastActive.Load()) }
 
-// sendFirst forwards the datagram that created the flow. A nil return also
-// covers "nothing queued": the send loop takes over either way.
+// sendFirst forwards the datagram that created the flow.
 func (b *udpBinding) sendFirst(flow *udpFlow, buffer []byte) error {
 	if err := flow.conn.SetReadDeadline(time.Now().Add(firstDatagramWait)); err != nil {
-		return nil
+		return fmt.Errorf("udp %v -> %v: set first read deadline: %w", b.client, flow.peer, err)
 	}
 	read, err := flow.conn.Read(buffer)
-	if err != nil || read == 0 {
-		return nil
+	if err != nil {
+		return fmt.Errorf("udp %v -> %v: read first datagram: %w", b.client, flow.peer, err)
 	}
-	_, err = b.upstream.WriteTo(buffer[:read], net.UDPAddrFromAddrPort(flow.peer))
-	return err
+	if _, err := b.upstream.WriteTo(buffer[:read], net.UDPAddrFromAddrPort(flow.peer)); err != nil {
+		return fmt.Errorf("udp %v -> %v: send first datagram: %w", b.client, flow.peer, err)
+	}
+	return nil
 }
 
 // send copies the client's datagrams for one peer out the shared socket until
@@ -103,8 +105,8 @@ func (b *udpBinding) receive() {
 			b.closeAll()
 			return
 		}
-		address, ok := from.(*net.UDPAddr)
-		if !ok {
+		address, isUDPAddr := from.(*net.UDPAddr)
+		if !isUDPAddr {
 			continue
 		}
 		source := address.AddrPort()
@@ -121,7 +123,10 @@ func (b *udpBinding) receive() {
 			continue
 		}
 		flow.touch()
-		_, _ = flow.conn.Write(buffer[:read])
+		if _, err := flow.conn.Write(buffer[:read]); err != nil {
+			// The client's endpoint is gone; nothing more reaches it.
+			b.drop(flow)
+		}
 	}
 }
 

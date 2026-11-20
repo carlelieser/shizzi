@@ -11,6 +11,7 @@ import (
 
 	"gvisor.dev/gvisor/pkg/tcpip"
 	"gvisor.dev/gvisor/pkg/tcpip/adapters/gonet"
+	"gvisor.dev/gvisor/pkg/tcpip/stack"
 	"gvisor.dev/gvisor/pkg/tcpip/transport/udp"
 	"gvisor.dev/gvisor/pkg/waiter"
 )
@@ -60,10 +61,10 @@ func newUDPMapper(dialer *net.Dialer, idle time.Duration, network func() uint64)
 // unhandled, so the stack answers with ICMP port unreachable: the right reply
 // when no upstream socket could be opened or the destination has no route.
 func (m *udpMapper) forward(request *udp.ForwarderRequest) bool {
-	id := request.ID()
-	client := addrPortOf(id.RemoteAddress, id.RemotePort)
-	peer := addrPortOf(id.LocalAddress, id.LocalPort)
-
+	client, peer, isAddressable := flowAddresses(request.ID())
+	if !isAddressable {
+		return false
+	}
 	binding, err := m.bindingFor(client) // returns with m.mu held on success
 	if err != nil {
 		return false
@@ -87,10 +88,9 @@ func (m *udpMapper) forward(request *udp.ForwarderRequest) bool {
 	binding.mu.Unlock()
 	m.mu.Unlock()
 
-	// Send the first datagram before accepting the flow, so a destination
-	// with no route answers the client with port unreachable -- prompt
-	// happy-eyeballs fallback for a dual-stack client on a v4-only upstream --
-	// instead of silence until its own timeout.
+	// Send the first datagram before accepting the flow, so an unroutable
+	// destination gets port unreachable (prompt happy-eyeballs fallback).
+	// Any other failure loses only that datagram, as on a lossy path.
 	buffer := make([]byte, maxDatagramSize)
 	if err := binding.sendFirst(flow, buffer); isUnroutable(err) {
 		binding.drop(flow)
@@ -265,7 +265,15 @@ func isUnroutable(err error) bool {
 	return false
 }
 
-func addrPortOf(address tcpip.Address, port uint16) netip.AddrPort {
-	ip, _ := netip.AddrFromSlice(address.AsSlice())
-	return netip.AddrPortFrom(ip, port)
+// flowAddresses reports the client and peer of a new flow, and false when
+// either address is malformed.
+func flowAddresses(id stack.TransportEndpointID) (client, peer netip.AddrPort, isAddressable bool) {
+	client, isClientValid := addrPortOf(id.RemoteAddress, id.RemotePort)
+	peer, isPeerValid := addrPortOf(id.LocalAddress, id.LocalPort)
+	return client, peer, isClientValid && isPeerValid
+}
+
+func addrPortOf(address tcpip.Address, port uint16) (netip.AddrPort, bool) {
+	ip, isValid := netip.AddrFromSlice(address.AsSlice())
+	return netip.AddrPortFrom(ip, port), isValid
 }
