@@ -33,7 +33,6 @@ import dev.shizzi.ui.theme.ThemeChoice
 data class AppActions(
     val onToggle: () -> Unit,
     val onCancel: () -> Unit,
-    val onRequestPermission: () -> Unit,
     val onRequestAllPermissions: () -> Unit,
     val onGrantPermission: (AppPermission) -> Unit,
     val onShizukuAction: () -> Unit,
@@ -70,7 +69,7 @@ fun HomeScreen(state: AppState, actions: AppActions, startScreen: Screen = Scree
     SessionToasts(
         state = state.session,
         toasts = toasts,
-        onRequestPermission = actions.onRequestPermission,
+        onShizukuAction = actions.onShizukuAction,
     )
 
     DiagnosticsToast(

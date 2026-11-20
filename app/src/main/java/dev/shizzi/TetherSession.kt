@@ -3,6 +3,7 @@ package dev.shizzi
 import android.content.Context
 import android.os.Build
 import android.util.Log
+import org.json.JSONArray
 import org.json.JSONObject
 
 enum class SessionState { IDLE, STARTING, ACTIVE, ERROR }
@@ -252,10 +253,10 @@ class TetherSession(private val context: Context) {
         return describeSession(elapsed, traffic)
     }
 
-
     fun status(): String = JSONObject().apply {
         put("state", state.name)
         put("detail", detail)
+        put("downstreams", JSONArray(started.types.map { type -> type.name }))
         put("isWaitingForUsb", isActive && usbDownstream.isWaitingForUsb)
         put("interface", interfaceName ?: JSONObject.NULL)
 

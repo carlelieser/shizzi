@@ -63,14 +63,18 @@ object ShizukuGate {
         }
     }
 
-    private fun launchShizuku() {
+    /** Null when no Shizuku app is installed. */
+    fun launchIntent(): Intent? {
         val packageManager = App.instance.packageManager
 
-        val launch = SHIZUKU_PACKAGES.firstNotNullOfOrNull { candidate ->
+        return SHIZUKU_PACKAGES.firstNotNullOfOrNull { candidate ->
             packageManager.getLaunchIntentForPackage(candidate)
-        } ?: return openReleasesPage()
+        }?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
 
-        App.instance.startActivity(launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    private fun launchShizuku() {
+        val launch = launchIntent() ?: return openReleasesPage()
+        App.instance.startActivity(launch)
     }
 
     private fun openReleasesPage() {
