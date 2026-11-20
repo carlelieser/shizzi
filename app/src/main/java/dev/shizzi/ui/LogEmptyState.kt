@@ -16,8 +16,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import dev.shizzi.R
 import dev.shizzi.ui.theme.MinTouchTarget
 import dev.shizzi.ui.theme.ScreenPadding
 import dev.shizzi.ui.theme.ShizziTheme
@@ -45,7 +47,7 @@ fun EmptyLog(
         Spacer(Modifier.height(ShizziTheme.spacing.xl))
 
         Text(
-            text = if (isLogging) dev.shizzi.L10n.string(dev.shizzi.R.string.no_logs_yet) else dev.shizzi.L10n.string(dev.shizzi.R.string.logging_disabled),
+            text = if (isLogging) stringResource(R.string.no_logs_yet) else stringResource(R.string.logging_disabled),
             style = ShizziTheme.typography.subheading,
             color = ShizziTheme.colors.onSurface,
         )
@@ -54,7 +56,7 @@ fun EmptyLog(
             Spacer(Modifier.height(ShizziTheme.spacing.sm))
 
             Text(
-                text = dev.shizzi.L10n.string(dev.shizzi.R.string.logs_will_appear_here),
+                text = stringResource(R.string.logs_will_appear_here),
                 style = ShizziTheme.typography.body,
                 color = ShizziTheme.colors.onSurfaceMuted,
                 textAlign = TextAlign.Center,
@@ -64,7 +66,7 @@ fun EmptyLog(
         Spacer(Modifier.height(ShizziTheme.spacing.sm))
 
         EmptyAction(
-            label = if (isLogging) dev.shizzi.L10n.string(dev.shizzi.R.string.start_a_session) else dev.shizzi.L10n.string(dev.shizzi.R.string.enable_logging),
+            label = if (isLogging) stringResource(R.string.start_a_session) else stringResource(R.string.enable_logging),
             onClick = if (isLogging) onStartSession else onEnableLogging,
         )
     }

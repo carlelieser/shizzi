@@ -13,26 +13,31 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import dev.shizzi.L10n
 import dev.shizzi.R
 import dev.shizzi.UsbTethering
 import dev.shizzi.ui.theme.ShizziTheme
 
 private val CheckSize = 20.dp
 
+@Composable
+@ReadOnlyComposable
 fun usbTetheringLabel(mode: UsbTethering): String = when (mode) {
-    UsbTethering.AUTO -> L10n.string(R.string.usb_mode_auto)
-    UsbTethering.ALWAYS -> L10n.string(R.string.usb_mode_always)
-    UsbTethering.NEVER -> L10n.string(R.string.usb_mode_never)
+    UsbTethering.AUTO -> stringResource(R.string.usb_mode_auto)
+    UsbTethering.ALWAYS -> stringResource(R.string.usb_mode_always)
+    UsbTethering.NEVER -> stringResource(R.string.usb_mode_never)
 }
 
+@Composable
+@ReadOnlyComposable
 private fun descriptionOf(mode: UsbTethering): String = when (mode) {
-    UsbTethering.AUTO -> L10n.string(R.string.usb_mode_auto_description)
-    UsbTethering.ALWAYS -> L10n.string(R.string.usb_mode_always_description)
-    UsbTethering.NEVER -> L10n.string(R.string.usb_mode_never_description)
+    UsbTethering.AUTO -> stringResource(R.string.usb_mode_auto_description)
+    UsbTethering.ALWAYS -> stringResource(R.string.usb_mode_always_description)
+    UsbTethering.NEVER -> stringResource(R.string.usb_mode_never_description)
 }
 
 @Composable
@@ -43,7 +48,7 @@ fun UsbTetheringPicker(
 ) {
     ThemedBottomSheet(onDismiss = onDismiss) {
         Text(
-            text = L10n.string(R.string.usb_tethering),
+            text = stringResource(R.string.usb_tethering),
             style = ShizziTheme.typography.heading,
             color = ShizziTheme.colors.onSurface,
         )

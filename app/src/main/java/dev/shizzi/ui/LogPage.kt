@@ -31,6 +31,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -44,12 +45,16 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import dev.shizzi.LogEntry
 import dev.shizzi.LogLevel
+import dev.shizzi.R
 import dev.shizzi.SessionLog
 import dev.shizzi.ui.theme.MinTouchTarget
 import dev.shizzi.ui.theme.ScreenPadding
@@ -103,6 +108,7 @@ fun LogPage(
     var selected by remember { mutableStateOf(emptySet<Int>()) }
     var isConfirmingClear by remember { mutableStateOf(false) }
     val clipboard = LocalClipboardManager.current
+    val resources = LocalContext.current.resources
     val listState = rememberLazyListState()
 
     ClearLogToast(
@@ -113,7 +119,7 @@ fun LogPage(
             actions.onClear { problem ->
                 selected = emptySet()
                 log.reload()
-                toasts.show(clearedToast(problem))
+                toasts.show(clearedToast(resources, problem))
             }
         },
         onCancel = { isConfirmingClear = false },
@@ -121,7 +127,7 @@ fun LogPage(
 
     Column(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
         ScreenHeader(
-            title = dev.shizzi.L10n.string(dev.shizzi.R.string.log_title),
+            title = stringResource(R.string.log_title),
             onBack = actions.onBack,
             action = {
 
@@ -142,8 +148,8 @@ fun LogPage(
 
                         OverflowItem(
                             label = when {
-                                isAllSelected -> dev.shizzi.L10n.string(dev.shizzi.R.string.deselect_all)
-                                else -> dev.shizzi.L10n.string(dev.shizzi.R.string.select_all)
+                                isAllSelected -> stringResource(R.string.deselect_all)
+                                else -> stringResource(R.string.select_all)
                             },
                             onClick = {
                                 selected = when {
@@ -154,7 +160,7 @@ fun LogPage(
                         )
 
                         OverflowItem(
-                            label = dev.shizzi.L10n.string(dev.shizzi.R.string.clear_upper),
+                            label = stringResource(R.string.clear_upper),
                             onClick = { isConfirmingClear = true },
                         )
                     }
@@ -218,10 +224,12 @@ fun LogPage(
 }
 
 
+@Composable
+@ReadOnlyComposable
 private fun copyLabel(count: Int, total: Int): String = when {
-    count == 0 || count == total -> dev.shizzi.L10n.string(dev.shizzi.R.string.copy_all)
-    count == 1 -> dev.shizzi.L10n.quantity(dev.shizzi.R.plurals.copy_lines, 1, 1)
-    else -> dev.shizzi.L10n.quantity(dev.shizzi.R.plurals.copy_lines, count, count)
+    count == 0 || count == total -> stringResource(R.string.copy_all)
+    count == 1 -> pluralStringResource(R.plurals.copy_lines, 1, 1)
+    else -> pluralStringResource(R.plurals.copy_lines, count, count)
 }
 
 private fun copyText(entries: List<LogEntry>, selected: Set<Int>): String = entries

@@ -12,7 +12,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
+import dev.shizzi.R
 import dev.shizzi.ui.theme.standardTween
 
 data class AutomationState(
@@ -33,8 +36,8 @@ fun AutomationSection(
 ) {
     SettingsToggle(
         label = SettingsText(
-            title = dev.shizzi.L10n.string(dev.shizzi.R.string.automation),
-            subtitle = dev.shizzi.L10n.string(dev.shizzi.R.string.automation_description),
+            title = stringResource(R.string.automation),
+            subtitle = stringResource(R.string.automation_description),
         ),
         isChecked = state.isEnabled,
         onCheckedChange = actions.onSetEnabled,
@@ -60,11 +63,13 @@ private fun AutomationDetails(
     toasts: ToastState,
 ) {
     val clipboard = LocalClipboardManager.current
+    val resources = LocalContext.current.resources
+    val tokenLabel = stringResource(R.string.token)
     var isExpanded by remember { mutableStateOf(false) }
 
     Column {
         SettingsAction(
-            label = SettingsText(title = dev.shizzi.L10n.string(dev.shizzi.R.string.view_setup_instructions)),
+            label = SettingsText(title = stringResource(R.string.view_setup_instructions)),
             onClick = { isExpanded = true },
         )
 
@@ -73,7 +78,7 @@ private fun AutomationDetails(
             actions = TokenActions(
                 onCopy = {
                     clipboard.setText(AnnotatedString(state.token))
-                    toasts.show(copiedToast(dev.shizzi.L10n.string(dev.shizzi.R.string.token)))
+                    toasts.show(copiedToast(resources, tokenLabel))
                 },
                 onRegenerate = actions.onRegenerateToken,
             ),

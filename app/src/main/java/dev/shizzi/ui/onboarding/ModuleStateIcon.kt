@@ -4,18 +4,21 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import dev.shizzi.CompatibilityState
+import dev.shizzi.R
 import dev.shizzi.ui.theme.ShizziTheme
 
 private val IconSize = 24.dp
@@ -62,10 +65,12 @@ private fun tintFor(state: CompatibilityState): Color = when (state) {
     else -> ShizziTheme.colors.onSurfaceMuted
 }
 
+@Composable
+@ReadOnlyComposable
 private fun descriptionFor(state: CompatibilityState): String = when (state) {
-    is CompatibilityState.Staged -> dev.shizzi.L10n.string(dev.shizzi.R.string.module_restart_required)
-    is CompatibilityState.DownloadFailed -> dev.shizzi.L10n.string(dev.shizzi.R.string.module_download_failed)
-    is CompatibilityState.InstallFailed -> dev.shizzi.L10n.string(dev.shizzi.R.string.module_install_failed)
-    is CompatibilityState.Downloaded -> dev.shizzi.L10n.string(dev.shizzi.R.string.module_downloaded_verified)
-    else -> dev.shizzi.L10n.string(dev.shizzi.R.string.module_available)
+    is CompatibilityState.Staged -> stringResource(R.string.module_restart_required)
+    is CompatibilityState.DownloadFailed -> stringResource(R.string.module_download_failed)
+    is CompatibilityState.InstallFailed -> stringResource(R.string.module_install_failed)
+    is CompatibilityState.Downloaded -> stringResource(R.string.module_downloaded_verified)
+    else -> stringResource(R.string.module_available)
 }

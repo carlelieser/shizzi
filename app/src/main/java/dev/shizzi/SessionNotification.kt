@@ -29,50 +29,53 @@ class SessionNotification(private val context: Context) {
     private fun titleFor(state: SessionUiState, isStopping: Boolean): String =
         when (state.status) {
             UiStatus.CONNECTED -> connectedTitle(state)
-            UiStatus.LOADING -> if (isStopping) L10n.string(R.string.notification_cleaning_up) else L10n.string(R.string.notification_getting_ready)
-            UiStatus.ERROR -> L10n.string(R.string.notification_session_ended)
-            UiStatus.READY -> L10n.string(R.string.notification_session_ended)
+            UiStatus.LOADING -> context.getString(
+                if (isStopping) R.string.notification_cleaning_up else R.string.notification_getting_ready,
+            )
+            UiStatus.ERROR -> context.getString(R.string.notification_session_ended)
+            UiStatus.READY -> context.getString(R.string.notification_session_ended)
         }
 
     private fun connectedTitle(state: SessionUiState): String = when {
-        state.isWaitingForUsb -> L10n.string(R.string.waiting_for_usb)
-        state.isVpnBypassed -> L10n.string(R.string.notification_connected_vpn_ignored)
-        state.isVpnBound -> L10n.string(R.string.notification_connected_vpn)
-        else -> L10n.string(R.string.status_connected)
+        state.isWaitingForUsb -> context.getString(R.string.waiting_for_usb)
+        state.isVpnBypassed -> context.getString(R.string.notification_connected_vpn_ignored)
+        state.isVpnBound -> context.getString(R.string.notification_connected_vpn)
+        else -> context.getString(R.string.status_connected)
     }
 
     private fun bodyFor(state: SessionUiState, isStopping: Boolean): String = when {
         state.lastError.isNotEmpty() -> userFacingError(state.lastError)
         state.status == UiStatus.LOADING -> loadingBody(isStopping)
-        state.isWaitingForUsb -> L10n.string(R.string.notification_usb_grace, USB_GRACE_MINUTES)
+        state.isWaitingForUsb -> context.getString(R.string.notification_usb_grace, USB_GRACE_MINUTES)
         state.status == UiStatus.CONNECTED -> connectedBody(state)
-        else -> L10n.string(R.string.notification_not_sharing)
+        else -> context.getString(R.string.notification_not_sharing)
     }
 
     private fun userFacingError(raw: String): String = when {
-        raw.contains(EXCEPTION_MARKER) -> L10n.string(R.string.notification_generic_error)
-        raw == UsbDownstream.NO_USB_CABLE -> L10n.string(R.string.usb_cable_required)
+        raw.contains(EXCEPTION_MARKER) -> context.getString(R.string.notification_generic_error)
+        raw == UsbDownstream.NO_USB_CABLE -> context.getString(R.string.usb_cable_required)
         else -> raw
     }
 
     private fun loadingBody(isStopping: Boolean): String =
-        if (isStopping) L10n.string(R.string.notification_turning_hotspot_off) else L10n.string(R.string.notification_turning_hotspot_on)
+        context.getString(
+            if (isStopping) R.string.notification_turning_hotspot_off else R.string.notification_turning_hotspot_on,
+        )
 
     private fun connectedBody(state: SessionUiState): String = when (state.clientCount) {
-        0 -> L10n.string(R.string.notification_no_devices)
+        0 -> context.getString(R.string.notification_no_devices)
         else -> "${deviceCount(state.clientCount)} · " +
             "$DOWN_ARROW ${Traffic.format(state.traffic.down)} · " +
             "$UP_ARROW ${Traffic.format(state.traffic.up)}"
     }
 
-    private fun deviceCount(clients: Int): String = when (clients) {
-        else -> L10n.quantity(R.plurals.notification_device_count, clients, clients)
-    }
+    private fun deviceCount(clients: Int): String =
+        context.resources.getQuantityString(R.plurals.notification_device_count, clients, clients)
 
     fun describeLoss(problem: String?): String = when (problem) {
-        null -> L10n.string(R.string.notification_shizuku_loss)
+        null -> context.getString(R.string.notification_shizuku_loss)
 
-        else -> L10n.string(R.string.notification_session_loss_problem, problem)
+        else -> context.getString(R.string.notification_session_loss_problem, problem)
     }
 
     private fun openAppIntent(): PendingIntent = PendingIntent.getActivity(
@@ -84,7 +87,7 @@ class SessionNotification(private val context: Context) {
 
     private fun stopAction(): Notification.Action = Notification.Action.Builder(
         null,
-        L10n.string(R.string.stop),
+        context.getString(R.string.stop),
         PendingIntent.getService(
             context,
             1,
@@ -98,9 +101,9 @@ class SessionNotification(private val context: Context) {
 
         val channel = NotificationChannel(
             CHANNEL_ID,
-            L10n.string(R.string.notification_channel_name),
+            context.getString(R.string.notification_channel_name),
             NotificationManager.IMPORTANCE_LOW,
-        ).apply { description = L10n.string(R.string.notification_channel_description) }
+        ).apply { description = context.getString(R.string.notification_channel_description) }
 
         notificationManager().createNotificationChannel(channel)
     }

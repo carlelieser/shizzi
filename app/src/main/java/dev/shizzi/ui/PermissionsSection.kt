@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import dev.shizzi.AppPermission
 import dev.shizzi.PermissionStatus
 import dev.shizzi.ShizukuState
@@ -38,7 +39,10 @@ fun PermissionsSection(
 
 @Composable
 private fun PermissionSettingsRow(row: PermissionRowState) {
-    val label = SettingsText(title = row.title, subtitle = row.rationale)
+    val label = SettingsText(
+        title = stringResource(row.title),
+        subtitle = stringResource(row.rationale),
+    )
 
     if (row.isGranted) {
         SettingsStatusRow(label = label)

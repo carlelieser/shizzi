@@ -19,7 +19,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import dev.shizzi.R
 import dev.shizzi.ui.theme.ShizziTheme
 import kotlinx.coroutines.launch
 
@@ -72,7 +74,7 @@ fun JumpBand(
         ) {
 
             Text(
-                text = if (isTop) dev.shizzi.L10n.string(dev.shizzi.R.string.scroll_to_top) else dev.shizzi.L10n.string(dev.shizzi.R.string.scroll_to_bottom),
+                text = if (isTop) stringResource(R.string.scroll_to_top) else stringResource(R.string.scroll_to_bottom),
                 style = ShizziTheme.typography.label,
                 color = colors.onSurface,
                 modifier = Modifier

@@ -18,28 +18,6 @@ class SessionTileService : TileService() {
 
     private var isStopping = false
 
-    private val localizedTileText = object : SessionTileText {
-        override val stopping: String get() = L10n.string(R.string.tile_stopping)
-        override val starting: String get() = L10n.string(R.string.tile_starting)
-        override val tapToRetry: String get() = L10n.string(R.string.tile_tap_retry)
-        override val tapToShare: String get() = L10n.string(R.string.tile_tap_share)
-        override val shizukuNotInstalled: String
-            get() = L10n.string(R.string.tile_shizuku_not_installed)
-        override val shizukuNotRunning: String
-            get() = L10n.string(R.string.tile_shizuku_not_running)
-        override val permissionRequired: String
-            get() = L10n.string(R.string.permission_required)
-        override val noDevices: String get() = L10n.string(R.string.tile_no_devices)
-
-        override fun deviceCount(count: Int, bytesDown: Long): String =
-            L10n.quantity(
-                R.plurals.tile_device_count,
-                count,
-                count,
-                Traffic.format(bytesDown),
-            )
-    }
-
     override fun onStartListening() {
         super.onStartListening()
 
@@ -91,27 +69,24 @@ class SessionTileService : TileService() {
 
     private fun publish(session: SessionUiState) {
         val tile = qsTile ?: return
-        val render = SessionTile.render(
-            session = session,
-            shizuku = ShizukuGate.currentState(),
-            isStopping = isStopping,
-            text = localizedTileText,
-        )
+        val render = SessionTile.render(session, ShizukuGate.currentState(), isStopping)
 
         if (session.status != UiStatus.LOADING) isStopping = false
 
         tile.state = render.state
-        tile.label = SessionTile.LABEL
-        tile.subtitle = render.subtitle
-        tile.contentDescription = "${SessionTile.LABEL}, ${render.subtitle}"
+        val label = getString(R.string.app_name)
+        val subtitle = render.subtitle.resolve(resources)
+
+        tile.label = label
+        tile.subtitle = subtitle
+        tile.contentDescription = "$label, $subtitle"
         tile.updateTile()
     }
 
     private fun currentRender(): TileRender = SessionTile.render(
-        session = SessionService.liveState.value,
-        shizuku = ShizukuGate.currentState(),
-        isStopping = isStopping,
-        text = localizedTileText,
+        SessionService.liveState.value,
+        ShizukuGate.currentState(),
+        isStopping,
     )
 
     private fun openApp() {

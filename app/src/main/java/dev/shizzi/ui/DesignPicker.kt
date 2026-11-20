@@ -13,22 +13,29 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import dev.shizzi.R
 import dev.shizzi.ui.theme.DesignLanguage
 import dev.shizzi.ui.theme.ShizziTheme
 
 private val CheckSize = 20.dp
 
+@Composable
+@ReadOnlyComposable
 fun designLabel(design: DesignLanguage): String = when (design) {
-    DesignLanguage.NEOBRUTALISM -> dev.shizzi.L10n.string(dev.shizzi.R.string.design_neobrutalism)
-    DesignLanguage.MATERIAL_EXPRESSIVE -> dev.shizzi.L10n.string(dev.shizzi.R.string.design_material_expressive)
+    DesignLanguage.NEOBRUTALISM -> stringResource(R.string.design_neobrutalism)
+    DesignLanguage.MATERIAL_EXPRESSIVE -> stringResource(R.string.design_material_expressive)
 }
 
+@Composable
+@ReadOnlyComposable
 private fun descriptionOf(design: DesignLanguage): String = when (design) {
-    DesignLanguage.NEOBRUTALISM -> dev.shizzi.L10n.string(dev.shizzi.R.string.design_neobrutalism_description)
-    DesignLanguage.MATERIAL_EXPRESSIVE -> dev.shizzi.L10n.string(dev.shizzi.R.string.design_material_expressive_description)
+    DesignLanguage.NEOBRUTALISM -> stringResource(R.string.design_neobrutalism_description)
+    DesignLanguage.MATERIAL_EXPRESSIVE -> stringResource(R.string.design_material_expressive_description)
 }
 
 @Composable
@@ -39,7 +46,7 @@ fun DesignPicker(
 ) {
     ThemedBottomSheet(onDismiss = onDismiss) {
         Text(
-            text = dev.shizzi.L10n.string(dev.shizzi.R.string.design),
+            text = stringResource(R.string.design),
             style = ShizziTheme.typography.heading,
             color = ShizziTheme.colors.onSurface,
         )

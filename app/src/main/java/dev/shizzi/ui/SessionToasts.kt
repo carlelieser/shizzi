@@ -2,8 +2,12 @@ package dev.shizzi.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import dev.shizzi.ShizukuState
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.ui.res.stringResource
+import dev.shizzi.R
 import dev.shizzi.SessionUiState
+import dev.shizzi.ShizukuState
+import dev.shizzi.UsbDownstream
 
 @Composable
 fun SessionToasts(
@@ -17,6 +21,8 @@ fun SessionToasts(
 
 @Composable
 private fun ErrorToast(lastError: String, toasts: ToastState) {
+    val usbCableRequired = stringResource(R.string.usb_cable_required)
+
     LaunchedEffect(lastError) {
         if (lastError.isEmpty()) {
             toasts.dismiss(ToastKeys.SESSION)
@@ -26,7 +32,7 @@ private fun ErrorToast(lastError: String, toasts: ToastState) {
         toasts.show(
             Toast(
                 key = ToastKeys.SESSION,
-                message = if (lastError == dev.shizzi.UsbDownstream.NO_USB_CABLE) dev.shizzi.L10n.string(dev.shizzi.R.string.usb_cable_required) else lastError,
+                message = if (lastError == UsbDownstream.NO_USB_CABLE) usbCableRequired else lastError,
                 duration = ToastDuration.Indefinite,
             ),
         )
@@ -39,8 +45,10 @@ private fun ShizukuToast(
     toasts: ToastState,
     onRequestPermission: () -> Unit,
 ) {
+    val message = describe(state)
+    val grant = stringResource(R.string.grant)
+
     LaunchedEffect(state) {
-        val message = describe(state)
         if (message.isEmpty()) {
             toasts.dismiss(ToastKeys.SHIZUKU)
             return@LaunchedEffect
@@ -51,16 +59,18 @@ private fun ShizukuToast(
                 key = ToastKeys.SHIZUKU,
                 message = message,
                 duration = ToastDuration.Indefinite,
-                action = ToastAction(dev.shizzi.L10n.string(dev.shizzi.R.string.grant), onRequestPermission)
+                action = ToastAction(grant, onRequestPermission)
                     .takeIf { state is ShizukuState.PermissionRequired },
             ),
         )
     }
 }
 
+@Composable
+@ReadOnlyComposable
 private fun describe(state: ShizukuState): String = when (state) {
-    is ShizukuState.NotInstalled -> dev.shizzi.L10n.string(dev.shizzi.R.string.shizuku_not_installed)
-    is ShizukuState.NotRunning -> dev.shizzi.L10n.string(dev.shizzi.R.string.shizuku_not_running)
-    is ShizukuState.PermissionRequired -> dev.shizzi.L10n.string(dev.shizzi.R.string.shizuku_permission_needed)
+    is ShizukuState.NotInstalled -> stringResource(R.string.shizuku_not_installed)
+    is ShizukuState.NotRunning -> stringResource(R.string.shizuku_not_running)
+    is ShizukuState.PermissionRequired -> stringResource(R.string.shizuku_permission_needed)
     is ShizukuState.Ready -> ""
 }

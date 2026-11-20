@@ -12,8 +12,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import dev.shizzi.R
 import dev.shizzi.ui.shimmer
 import dev.shizzi.ui.theme.ShizziTheme
 
@@ -38,13 +40,13 @@ fun WelcomeStep() {
         )
 
         Text(
-            text = dev.shizzi.L10n.string(dev.shizzi.R.string.welcome),
+            text = stringResource(R.string.welcome),
             style = StepTitleStyle,
             color = ShizziTheme.colors.onSurface,
         )
 
         Text(
-            text = dev.shizzi.L10n.string(dev.shizzi.R.string.welcome_description),
+            text = stringResource(R.string.welcome_description),
             style = ShizziTheme.typography.body,
             color = ShizziTheme.colors.onSurfaceMuted,
             textAlign = TextAlign.Center,

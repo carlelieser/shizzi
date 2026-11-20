@@ -21,6 +21,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,7 +31,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import dev.shizzi.R
 import dev.shizzi.ui.theme.AccentChoice
 import dev.shizzi.ui.theme.DefaultAccentColor
 import dev.shizzi.ui.theme.PresetAccents
@@ -48,9 +51,11 @@ private const val MarkEnterScale = 0.4f
 
 private const val ContrastThreshold = 0.5f
 
+@Composable
+@ReadOnlyComposable
 fun accentLabel(accent: AccentChoice): String = when (accent) {
-    AccentChoice.Default -> dev.shizzi.L10n.string(dev.shizzi.R.string.accent_default)
-    AccentChoice.Expressive -> dev.shizzi.L10n.string(dev.shizzi.R.string.accent_wallpaper)
+    AccentChoice.Default -> stringResource(R.string.accent_default)
+    AccentChoice.Expressive -> stringResource(R.string.accent_wallpaper)
     is AccentChoice.Custom -> "#%06X".format(accent.argb and 0x00FFFFFF)
 }
 
@@ -60,7 +65,7 @@ fun AccentPicker(state: AccentPickerState, actions: AccentPickerActions) {
 
     ThemedBottomSheet(onDismiss = actions.onDismiss) {
         Text(
-            text = dev.shizzi.L10n.string(dev.shizzi.R.string.accent),
+            text = stringResource(R.string.accent),
             style = ShizziTheme.typography.heading,
             color = ShizziTheme.colors.onSurface,
         )

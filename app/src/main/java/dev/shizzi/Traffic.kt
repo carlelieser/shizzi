@@ -1,6 +1,5 @@
 package dev.shizzi
 
-import java.util.Locale
 import kotlin.math.roundToLong
 
 data class Traffic(val up: Long = 0, val down: Long = 0) {
@@ -9,9 +8,7 @@ data class Traffic(val up: Long = 0, val down: Long = 0) {
         private const val UNIT = 1000.0
         private val SCALE = listOf("B", "KB", "MB", "GB", "TB")
 
-        fun format(bytes: Long): String = format(bytes, Locale.getDefault())
-
-        fun format(bytes: Long, locale: Locale): String {
+        fun format(bytes: Long): String {
             if (bytes < UNIT) return "$bytes B"
 
             var value = bytes.toDouble()
@@ -22,7 +19,7 @@ data class Traffic(val up: Long = 0, val down: Long = 0) {
             }
 
             val rendered = when {
-                value < 10 -> String.format(locale, "%.1f", value)
+                value < 10 -> String.format("%.1f", value)
                 else -> value.roundToLong().toString()
             }
             return "$rendered ${SCALE[step]}"

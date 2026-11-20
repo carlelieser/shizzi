@@ -2,6 +2,7 @@ package dev.shizzi
 
 import android.Manifest
 import android.os.Build
+import androidx.annotation.StringRes
 
 enum class AppPermission {
     NOTIFICATIONS,
@@ -13,26 +14,14 @@ data class PermissionStatus(
     val isGranted: Boolean,
 )
 
-// English fallback text keeps this model usable in plain JVM tests and non-Android tooling.
-// Android UI resolves titleRes/rationaleRes so the visible text follows the device locale.
-val AppPermission.title: String
-    get() = when (this) {
-        AppPermission.NOTIFICATIONS -> "Notifications"
-        AppPermission.BATTERY_EXEMPTION -> "Background activity"
-    }
-
+@get:StringRes
 val AppPermission.titleRes: Int
     get() = when (this) {
         AppPermission.NOTIFICATIONS -> R.string.permission_notifications
         AppPermission.BATTERY_EXEMPTION -> R.string.permission_background_activity
     }
 
-val AppPermission.rationale: String
-    get() = when (this) {
-        AppPermission.NOTIFICATIONS -> "Required to keep your session running"
-        AppPermission.BATTERY_EXEMPTION -> "Required for external session management"
-    }
-
+@get:StringRes
 val AppPermission.rationaleRes: Int
     get() = when (this) {
         AppPermission.NOTIFICATIONS -> R.string.permission_notifications_rationale

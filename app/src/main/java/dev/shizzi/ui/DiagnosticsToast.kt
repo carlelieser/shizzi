@@ -5,7 +5,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import dev.shizzi.DiagnosticsState
+import dev.shizzi.R
 
 @Composable
 fun DiagnosticsToast(
@@ -16,6 +18,10 @@ fun DiagnosticsToast(
     val context = LocalContext.current
 
     val current by rememberUpdatedState(state)
+    val running = stringResource(R.string.running_diagnostics)
+    val completed = stringResource(R.string.diagnostics_completed)
+    val failed = stringResource(R.string.diagnostics_failed)
+    val export = stringResource(R.string.export)
 
     LaunchedEffect(state) {
         val toast = when (val phase = state) {
@@ -26,18 +32,18 @@ fun DiagnosticsToast(
 
             is DiagnosticsState.Running -> Toast(
                 key = ToastKeys.DIAGNOSTICS,
-                message = dev.shizzi.L10n.string(dev.shizzi.R.string.running_diagnostics),
+                message = running,
                 duration = ToastDuration.Indefinite,
                 isBusy = true,
             )
 
             is DiagnosticsState.Complete -> Toast(
                 key = ToastKeys.DIAGNOSTICS,
-                message = dev.shizzi.L10n.string(dev.shizzi.R.string.diagnostics_completed),
+                message = completed,
                 detail = phase.path,
 
                 duration = ToastDuration.Indefinite,
-                action = ToastAction(dev.shizzi.L10n.string(dev.shizzi.R.string.export)) {
+                action = ToastAction(export) {
                     (current as? DiagnosticsState.Complete)
                         ?.let { context.exportReport(it.report) }
                 },
@@ -46,7 +52,7 @@ fun DiagnosticsToast(
 
             is DiagnosticsState.Failed -> Toast(
                 key = ToastKeys.DIAGNOSTICS,
-                message = dev.shizzi.L10n.string(dev.shizzi.R.string.diagnostics_failed),
+                message = failed,
                 detail = phase.problem,
                 duration = ToastDuration.Indefinite,
                 onDismiss = onDismiss,

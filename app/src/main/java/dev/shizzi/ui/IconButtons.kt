@@ -9,7 +9,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import dev.shizzi.R
 import dev.shizzi.ui.theme.MinTouchTarget
 import dev.shizzi.ui.theme.ShizziTheme
 
@@ -63,7 +65,7 @@ fun ShizziCompactIconButton(
 fun BackButton(onBack: () -> Unit) {
     ShizziIconButton(
         icon = Icons.AutoMirrored.Filled.ArrowBack,
-        contentDescription = dev.shizzi.L10n.string(dev.shizzi.R.string.back),
+        contentDescription = stringResource(R.string.back),
         onClick = onBack,
     )
 }

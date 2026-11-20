@@ -7,9 +7,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import dev.shizzi.CompatibilityState
+import dev.shizzi.R
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.themedSurface
 
@@ -58,20 +61,24 @@ private fun InstallFailureDetail(reason: String) {
     )
 }
 
+@Composable
+@ReadOnlyComposable
 private fun titleFor(state: CompatibilityState): String = when (state) {
-    is CompatibilityState.Staged -> dev.shizzi.L10n.string(dev.shizzi.R.string.module_restart_to_finish)
-    is CompatibilityState.InstallFailed -> dev.shizzi.L10n.string(dev.shizzi.R.string.module_not_accepted)
-    else -> dev.shizzi.L10n.string(dev.shizzi.R.string.tethering_module)
+    is CompatibilityState.Staged -> stringResource(R.string.module_restart_to_finish)
+    is CompatibilityState.InstallFailed -> stringResource(R.string.module_not_accepted)
+    else -> stringResource(R.string.tethering_module)
 }
 
+@Composable
+@ReadOnlyComposable
 private fun bodyFor(state: CompatibilityState): String = when (state) {
-    is CompatibilityState.Installing -> dev.shizzi.L10n.string(dev.shizzi.R.string.module_installing)
+    is CompatibilityState.Installing -> stringResource(R.string.module_installing)
 
     is CompatibilityState.Staged ->
-        dev.shizzi.L10n.string(dev.shizzi.R.string.module_staged_description)
+        stringResource(R.string.module_staged_description)
 
     is CompatibilityState.InstallFailed ->
-        dev.shizzi.L10n.string(dev.shizzi.R.string.module_install_failed_description)
+        stringResource(R.string.module_install_failed_description)
 
-    else -> dev.shizzi.L10n.string(dev.shizzi.R.string.module_ready_to_install)
+    else -> stringResource(R.string.module_ready_to_install)
 }

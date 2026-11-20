@@ -11,8 +11,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import dev.shizzi.CompatibilityState
+import dev.shizzi.R
 import dev.shizzi.isCompatible
 import dev.shizzi.ui.theme.ShizziTheme
 
@@ -37,14 +39,14 @@ fun CompatibilityVerdict(state: CompatibilityState) {
 
             state.isCompatible -> Icon(
                 imageVector = Icons.Filled.Verified,
-                contentDescription = dev.shizzi.L10n.string(dev.shizzi.R.string.device_compatible),
+                contentDescription = stringResource(R.string.device_compatible),
                 tint = colors.primary,
                 modifier = Modifier.size(VerdictIconSize),
             )
 
             else -> Icon(
                 imageVector = Icons.Filled.Block,
-                contentDescription = dev.shizzi.L10n.string(dev.shizzi.R.string.device_not_compatible),
+                contentDescription = stringResource(R.string.device_not_compatible),
                 tint = colors.onSurfaceMuted,
                 modifier = Modifier.size(VerdictIconSize),
             )

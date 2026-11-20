@@ -1,9 +1,12 @@
 package dev.shizzi.ui
 
+import android.content.res.Resources
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.res.stringResource
+import dev.shizzi.R
 
 @Composable
 fun ClearLogToast(
@@ -15,6 +18,9 @@ fun ClearLogToast(
 
     val confirm by rememberUpdatedState(onConfirm)
     val cancel by rememberUpdatedState(onCancel)
+    val question = stringResource(R.string.clear_log_question)
+    val warning = stringResource(R.string.clear_log_warning)
+    val clear = stringResource(R.string.clear)
 
     LaunchedEffect(isConfirming) {
         if (!isConfirming) {
@@ -27,11 +33,11 @@ fun ClearLogToast(
         toasts.show(
             Toast(
                 key = ToastKeys.CLEAR_LOG,
-                message = dev.shizzi.L10n.string(dev.shizzi.R.string.clear_log_question),
-                detail = dev.shizzi.L10n.string(dev.shizzi.R.string.clear_log_warning),
+                message = question,
+                detail = warning,
 
                 duration = ToastDuration.Indefinite,
-                action = ToastAction(dev.shizzi.L10n.string(dev.shizzi.R.string.clear)) {
+                action = ToastAction(clear) {
                     isAnswered = true
                     confirm()
                 },
@@ -41,15 +47,15 @@ fun ClearLogToast(
     }
 }
 
-fun clearedToast(problem: String?): Toast = when (problem) {
+fun clearedToast(resources: Resources, problem: String?): Toast = when (problem) {
     null -> Toast(
         key = ToastKeys.CLEAR_LOG,
-        message = dev.shizzi.L10n.string(dev.shizzi.R.string.log_cleared),
+        message = resources.getString(R.string.log_cleared),
     )
 
     else -> Toast(
         key = ToastKeys.CLEAR_LOG,
-        message = dev.shizzi.L10n.string(dev.shizzi.R.string.app_log_entries_cleared),
+        message = resources.getString(R.string.app_log_entries_cleared),
         detail = problem,
         duration = ToastDuration.Indefinite,
     )

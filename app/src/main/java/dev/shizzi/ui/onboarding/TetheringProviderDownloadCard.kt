@@ -8,10 +8,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import dev.shizzi.CompatibilityState
 import dev.shizzi.DownloadProgress
+import dev.shizzi.R
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.themedSurface
 
@@ -32,7 +35,7 @@ fun TetheringProviderDownloadCard(state: CompatibilityState, hasNetwork: Boolean
             verticalArrangement = Arrangement.spacedBy(ShizziTheme.spacing.xs),
         ) {
             Text(
-                text = dev.shizzi.L10n.string(dev.shizzi.R.string.tethering_module),
+                text = stringResource(R.string.tethering_module),
                 style = ShizziTheme.typography.subheading,
                 color = ShizziTheme.colors.onSurface,
             )
@@ -79,18 +82,20 @@ private fun FailureDetail(reason: String) {
     )
 }
 
+@Composable
+@ReadOnlyComposable
 private fun bodyFor(state: CompatibilityState, hasNetwork: Boolean): String = when {
-    state is CompatibilityState.Downloading -> dev.shizzi.L10n.string(dev.shizzi.R.string.module_downloading)
+    state is CompatibilityState.Downloading -> stringResource(R.string.module_downloading)
 
     state is CompatibilityState.DownloadFailed && state.failure.isConnectivity ->
-        dev.shizzi.L10n.string(dev.shizzi.R.string.module_download_network_error)
+        stringResource(R.string.module_download_network_error)
 
     state is CompatibilityState.DownloadFailed ->
-        dev.shizzi.L10n.string(dev.shizzi.R.string.module_download_verify_error)
+        stringResource(R.string.module_download_verify_error)
 
     !hasNetwork ->
-        dev.shizzi.L10n.string(dev.shizzi.R.string.module_download_needed)
+        stringResource(R.string.module_download_needed)
 
     else ->
-        dev.shizzi.L10n.string(dev.shizzi.R.string.module_download_available)
+        stringResource(R.string.module_download_available)
 }

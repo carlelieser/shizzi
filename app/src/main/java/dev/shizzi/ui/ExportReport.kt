@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.content.FileProvider
 import dev.shizzi.BuildConfig
+import dev.shizzi.R
 import dev.shizzi.SessionLog
 import java.io.File
 
@@ -27,7 +28,7 @@ fun Context.exportReport(report: String) {
         .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
 
     try {
-        startActivity(Intent.createChooser(intent, dev.shizzi.L10n.string(dev.shizzi.R.string.export_report)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        startActivity(Intent.createChooser(intent, getString(R.string.export_report)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     } catch (absent: ActivityNotFoundException) {
         SessionLog.warn("no app to receive the report: ${absent.message}")
     }

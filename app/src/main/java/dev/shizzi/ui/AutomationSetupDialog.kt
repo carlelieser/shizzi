@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -19,11 +20,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.window.Dialog
 import dev.shizzi.Automation
 import dev.shizzi.AutomationCommand
+import dev.shizzi.R
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.themedSurface
 
@@ -50,19 +54,19 @@ private fun ColumnScope.SetupContent(token: String, toasts: ToastState) {
     var command by remember { mutableStateOf(AutomationCommand.START) }
 
     Text(
-        text = dev.shizzi.L10n.string(dev.shizzi.R.string.setup),
+        text = stringResource(R.string.setup),
         style = ShizziTheme.typography.heading,
         color = ShizziTheme.colors.onSurface,
     )
 
     Text(
-        text = dev.shizzi.L10n.string(dev.shizzi.R.string.setup_description),
+        text = stringResource(R.string.setup_description),
         style = ShizziTheme.typography.body,
         color = ShizziTheme.colors.onSurfaceMuted,
     )
 
     CopyableField(
-        field = SetupField(dev.shizzi.L10n.string(dev.shizzi.R.string.field_action), Automation.actionFor(command)),
+        field = SetupField(stringResource(R.string.field_action), Automation.actionFor(command)),
         toasts = toasts,
     )
 
@@ -73,17 +77,20 @@ private fun ColumnScope.SetupContent(token: String, toasts: ToastState) {
     }
 }
 
+@Composable
+@ReadOnlyComposable
 private fun connectionFields(token: String) = listOf(
-    SetupField(dev.shizzi.L10n.string(dev.shizzi.R.string.field_package), "dev.shizzi"),
-    SetupField(dev.shizzi.L10n.string(dev.shizzi.R.string.field_class), "dev.shizzi.AutomationReceiver"),
-    SetupField(dev.shizzi.L10n.string(dev.shizzi.R.string.field_target), dev.shizzi.L10n.string(dev.shizzi.R.string.broadcast_receiver)),
-    SetupField(dev.shizzi.L10n.string(dev.shizzi.R.string.field_extra_name), Automation.EXTRA_TOKEN),
-    SetupField(dev.shizzi.L10n.string(dev.shizzi.R.string.field_extra_value), token),
+    SetupField(stringResource(R.string.field_package), "dev.shizzi"),
+    SetupField(stringResource(R.string.field_class), "dev.shizzi.AutomationReceiver"),
+    SetupField(stringResource(R.string.field_target), stringResource(R.string.broadcast_receiver)),
+    SetupField(stringResource(R.string.field_extra_name), Automation.EXTRA_TOKEN),
+    SetupField(stringResource(R.string.field_extra_value), token),
 )
 
 @Composable
 private fun CopyableField(field: SetupField, toasts: ToastState) {
     val clipboard = LocalClipboardManager.current
+    val resources = LocalContext.current.resources
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -109,10 +116,10 @@ private fun CopyableField(field: SetupField, toasts: ToastState) {
 
         ShizziCompactIconButton(
             icon = Icons.Filled.ContentCopy,
-            contentDescription = dev.shizzi.L10n.string(dev.shizzi.R.string.copy_field, field.label.lowercase()),
+            contentDescription = stringResource(R.string.copy_field, field.label.lowercase()),
             onClick = {
                 clipboard.setText(AnnotatedString(field.value))
-                toasts.show(copiedToast(field.label))
+                toasts.show(copiedToast(resources, field.label))
             },
         )
     }

@@ -5,6 +5,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
+import dev.shizzi.R
 import dev.shizzi.ui.theme.AccentChoice
 import dev.shizzi.ui.theme.DesignLanguage
 import dev.shizzi.ui.theme.ThemeChoice
@@ -30,13 +32,13 @@ fun AppearanceSection(state: AppearanceState, actions: AppearanceActions) {
     ThemePicker(selected = state.theme, onSelect = actions.onSetTheme)
 
     SettingsChoice(
-        label = SettingsText(title = dev.shizzi.L10n.string(dev.shizzi.R.string.design)),
+        label = SettingsText(title = stringResource(R.string.design)),
         value = designLabel(state.design),
         onClick = { openSheet = AppearanceSheet.DESIGN },
     )
 
     SettingsChoice(
-        label = SettingsText(title = dev.shizzi.L10n.string(dev.shizzi.R.string.accent)),
+        label = SettingsText(title = stringResource(R.string.accent)),
         value = accentLabel(state.accent),
         onClick = { openSheet = AppearanceSheet.ACCENT },
     )

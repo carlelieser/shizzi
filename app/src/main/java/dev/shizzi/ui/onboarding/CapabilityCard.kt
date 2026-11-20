@@ -14,10 +14,13 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import dev.shizzi.Capability
+import dev.shizzi.R
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.themedSurface
 
@@ -89,14 +92,14 @@ private fun StatusMark(status: CapabilityStatus) {
 
             CapabilityStatus.SUCCESS -> Icon(
                 imageVector = Icons.Filled.Check,
-                contentDescription = dev.shizzi.L10n.string(dev.shizzi.R.string.supported),
+                contentDescription = stringResource(R.string.supported),
                 tint = colors.primary,
                 modifier = Modifier.size(MarkSize),
             )
 
             CapabilityStatus.FAILURE -> Icon(
                 imageVector = Icons.Filled.Close,
-                contentDescription = dev.shizzi.L10n.string(dev.shizzi.R.string.not_supported),
+                contentDescription = stringResource(R.string.not_supported),
                 tint = colors.onSurfaceMuted,
                 modifier = Modifier.size(MarkSize),
             )
@@ -104,15 +107,19 @@ private fun StatusMark(status: CapabilityStatus) {
     }
 }
 
+@Composable
+@ReadOnlyComposable
 private fun titleFor(capability: Capability): String = when (capability) {
-    Capability.TEST_NETWORK -> dev.shizzi.L10n.string(dev.shizzi.R.string.capability_test_network)
-    Capability.PREFER_TEST_NETWORKS -> dev.shizzi.L10n.string(dev.shizzi.R.string.capability_prefer_test_networks)
+    Capability.TEST_NETWORK -> stringResource(R.string.capability_test_network)
+    Capability.PREFER_TEST_NETWORKS -> stringResource(R.string.capability_prefer_test_networks)
 }
 
+@Composable
+@ReadOnlyComposable
 private fun descriptionFor(capability: Capability): String = when (capability) {
     Capability.TEST_NETWORK ->
-        dev.shizzi.L10n.string(dev.shizzi.R.string.capability_test_network_description)
+        stringResource(R.string.capability_test_network_description)
 
     Capability.PREFER_TEST_NETWORKS ->
-        dev.shizzi.L10n.string(dev.shizzi.R.string.capability_prefer_test_networks_description)
+        stringResource(R.string.capability_prefer_test_networks_description)
 }

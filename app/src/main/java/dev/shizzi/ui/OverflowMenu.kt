@@ -18,8 +18,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import dev.shizzi.R
 import dev.shizzi.ui.theme.DesignLanguage
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.themedSurface
@@ -45,7 +47,7 @@ fun OverflowMenu(
     Box {
         ShizziIconButton(
             icon = Icons.Filled.MoreVert,
-            contentDescription = dev.shizzi.L10n.string(dev.shizzi.R.string.more_options),
+            contentDescription = stringResource(R.string.more_options),
             onClick = { isOpen = true },
 
             tint = if (isMarked) colors.primary else colors.onSurface,

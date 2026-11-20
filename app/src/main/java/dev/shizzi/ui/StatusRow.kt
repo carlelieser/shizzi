@@ -19,12 +19,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -32,6 +34,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import dev.shizzi.BuildConfig
+import dev.shizzi.R
 import dev.shizzi.SessionUiState
 import dev.shizzi.UiStatus
 import dev.shizzi.ui.theme.ScreenPadding
@@ -99,7 +102,7 @@ private fun StatusLabel(status: String) {
     ) { word ->
         Text(
             text = buildAnnotatedString {
-                append(dev.shizzi.L10n.string(dev.shizzi.R.string.status).uppercase() + " ")
+                append(stringResource(R.string.status).uppercase() + " ")
                 withStyle(
                     SpanStyle(color = colors.onSurface, fontWeight = FontWeight.W700),
                 ) {
@@ -154,7 +157,7 @@ private fun TunnelSegment(name: String) {
     val interaction = remember { MutableInteractionSource() }
 
     Text(
-        text = if (isShowingName) name.uppercase() else dev.shizzi.L10n.string(dev.shizzi.R.string.tunnel_active),
+        text = if (isShowingName) name.uppercase() else stringResource(R.string.tunnel_active),
         style = ShizziTheme.typography.caption,
         color = ShizziTheme.colors.onSurfaceMuted,
         textAlign = TextAlign.Center,
@@ -178,9 +181,11 @@ private fun StatusDivider() {
     )
 }
 
+@Composable
+@ReadOnlyComposable
 private fun statusWord(state: SessionUiState): String = when (state.status) {
-    UiStatus.CONNECTED -> if (state.isWaitingForUsb) dev.shizzi.L10n.string(dev.shizzi.R.string.waiting_for_usb) else dev.shizzi.L10n.string(dev.shizzi.R.string.status_connected)
-    UiStatus.READY -> dev.shizzi.L10n.string(dev.shizzi.R.string.ready)
-    UiStatus.LOADING -> dev.shizzi.L10n.string(dev.shizzi.R.string.status_starting)
-    UiStatus.ERROR -> dev.shizzi.L10n.string(dev.shizzi.R.string.status_failed)
+    UiStatus.CONNECTED -> if (state.isWaitingForUsb) stringResource(R.string.waiting_for_usb) else stringResource(R.string.status_connected)
+    UiStatus.READY -> stringResource(R.string.ready)
+    UiStatus.LOADING -> stringResource(R.string.status_starting)
+    UiStatus.ERROR -> stringResource(R.string.status_failed)
 }

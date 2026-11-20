@@ -15,12 +15,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import dev.shizzi.R
 import dev.shizzi.ShizukuState
 import dev.shizzi.UiStatus
 import dev.shizzi.ui.theme.ShizziTheme
@@ -59,7 +62,7 @@ fun StatusIcon(status: UiStatus, isWaitingForUsb: Boolean) {
     ) { glyph ->
         Icon(
             imageVector = glyph,
-            contentDescription = if (isWaitingForUsb) dev.shizzi.L10n.string(dev.shizzi.R.string.waiting_for_usb) else descriptionFor(status),
+            contentDescription = if (isWaitingForUsb) stringResource(R.string.waiting_for_usb) else descriptionFor(status),
             tint = tint,
             modifier = Modifier
                 .size(StatusIconSize)
@@ -94,11 +97,13 @@ private fun glyphFor(status: UiStatus): ImageVector = when (status) {
     UiStatus.ERROR -> Icons.Filled.WifiTetheringError
 }
 
+@Composable
+@ReadOnlyComposable
 private fun descriptionFor(status: UiStatus): String = when (status) {
-    UiStatus.READY -> dev.shizzi.L10n.string(dev.shizzi.R.string.status_not_connected)
-    UiStatus.LOADING -> dev.shizzi.L10n.string(dev.shizzi.R.string.status_connecting)
-    UiStatus.CONNECTED -> dev.shizzi.L10n.string(dev.shizzi.R.string.status_connected)
-    UiStatus.ERROR -> dev.shizzi.L10n.string(dev.shizzi.R.string.status_failed)
+    UiStatus.READY -> stringResource(R.string.status_not_connected)
+    UiStatus.LOADING -> stringResource(R.string.status_connecting)
+    UiStatus.CONNECTED -> stringResource(R.string.status_connected)
+    UiStatus.ERROR -> stringResource(R.string.status_failed)
 }
 
 @Composable
@@ -118,9 +123,11 @@ fun ShizukuBadge(state: ShizukuState) {
     )
 }
 
+@Composable
+@ReadOnlyComposable
 private fun badgeText(state: ShizukuState): String? = when (state) {
     is ShizukuState.Ready -> null
-    is ShizukuState.NotInstalled -> dev.shizzi.L10n.string(dev.shizzi.R.string.badge_no_shizuku)
-    is ShizukuState.NotRunning -> dev.shizzi.L10n.string(dev.shizzi.R.string.badge_shizuku_off)
-    is ShizukuState.PermissionRequired -> dev.shizzi.L10n.string(dev.shizzi.R.string.badge_permission_needed)
+    is ShizukuState.NotInstalled -> stringResource(R.string.badge_no_shizuku)
+    is ShizukuState.NotRunning -> stringResource(R.string.badge_shizuku_off)
+    is ShizukuState.PermissionRequired -> stringResource(R.string.badge_permission_needed)
 }

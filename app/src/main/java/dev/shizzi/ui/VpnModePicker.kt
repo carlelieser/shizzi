@@ -13,24 +13,31 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import dev.shizzi.R
 import dev.shizzi.VpnMode
 import dev.shizzi.ui.theme.ShizziTheme
 
 private val CheckSize = 20.dp
 
+@Composable
+@ReadOnlyComposable
 fun vpnModeLabel(mode: VpnMode): String = when (mode) {
-    VpnMode.AUTO -> dev.shizzi.L10n.string(dev.shizzi.R.string.vpn_mode_auto)
-    VpnMode.ALWAYS -> dev.shizzi.L10n.string(dev.shizzi.R.string.vpn_mode_always)
-    VpnMode.NEVER -> dev.shizzi.L10n.string(dev.shizzi.R.string.vpn_mode_never)
+    VpnMode.AUTO -> stringResource(R.string.vpn_mode_auto)
+    VpnMode.ALWAYS -> stringResource(R.string.vpn_mode_always)
+    VpnMode.NEVER -> stringResource(R.string.vpn_mode_never)
 }
 
+@Composable
+@ReadOnlyComposable
 private fun descriptionOf(mode: VpnMode): String = when (mode) {
-    VpnMode.AUTO -> dev.shizzi.L10n.string(dev.shizzi.R.string.vpn_mode_auto_description)
-    VpnMode.ALWAYS -> dev.shizzi.L10n.string(dev.shizzi.R.string.vpn_mode_always_description)
-    VpnMode.NEVER -> dev.shizzi.L10n.string(dev.shizzi.R.string.vpn_mode_never_description)
+    VpnMode.AUTO -> stringResource(R.string.vpn_mode_auto_description)
+    VpnMode.ALWAYS -> stringResource(R.string.vpn_mode_always_description)
+    VpnMode.NEVER -> stringResource(R.string.vpn_mode_never_description)
 }
 
 @Composable
@@ -41,7 +48,7 @@ fun VpnModePicker(
 ) {
     ThemedBottomSheet(onDismiss = onDismiss) {
         Text(
-            text = dev.shizzi.L10n.string(dev.shizzi.R.string.vpn),
+            text = stringResource(R.string.vpn),
             style = ShizziTheme.typography.heading,
             color = ShizziTheme.colors.onSurface,
         )
