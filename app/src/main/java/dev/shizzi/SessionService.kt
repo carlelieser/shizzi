@@ -162,6 +162,7 @@ class SessionService : Service() {
         statusPoller.stop()
 
         isStopping = false
+        val orphaned = internalState.value.downstreams
         SessionLog.error("shell process died; recovering any downstream it left up")
 
         internalState.update {
@@ -175,7 +176,7 @@ class SessionService : Service() {
         publishState()
 
         scope.launch {
-            val problem = runCatching { controller.releaseOrphanedDownstream() }
+            val problem = runCatching { controller.releaseOrphanedDownstream(orphaned) }
                 .getOrElse { failure -> "teardown failed: ${failure.message}" }
 
             when (problem) {

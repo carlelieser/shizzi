@@ -156,15 +156,17 @@ class TetherClient {
         )
     }
 
-    suspend fun releaseOrphanedDownstream(): String? = withContext(Dispatchers.IO) {
-        runCatching { service().stop() }
-            .fold(
-                onSuccess = { null },
-                onFailure = { failure ->
-                    "could not reach Shizuku to drop the hotspot: ${failure.message}"
-                },
-            )
-    }
+    /** Null once released; otherwise why the downstreams may still be up. */
+    suspend fun releaseOrphanedDownstream(types: Set<TetheringType>): String? =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val bound = service()
+                verifyContract(bound)
+                bound.releaseOrphanedDownstream(types.map { type -> type.name }.toTypedArray())
+            }.getOrElse { failure ->
+                "could not reach Shizuku to drop the hotspot: ${failure.message}"
+            }
+        }
 
     suspend fun status(): String = withContext(Dispatchers.IO) {
         service().status

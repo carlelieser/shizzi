@@ -18,6 +18,8 @@ data class SessionUiState(
     val clientCount: Int = 0,
 
     val traffic: Traffic = Traffic(),
+
+    val downstreams: Set<TetheringType> = emptySet(),
 ) {
 
     val canStart: Boolean get() = shizukuState is ShizukuState.Ready && !isBusy
@@ -34,6 +36,7 @@ fun SessionUiState.asStopped(): SessionUiState = copy(
     isWaitingForUsb = false,
     clientCount = 0,
     traffic = Traffic(),
+    downstreams = emptySet(),
 )
 
 fun SessionUiState.applyOutcome(outcome: Result<String>): SessionUiState {
@@ -50,6 +53,7 @@ fun SessionUiState.applyOutcome(outcome: Result<String>): SessionUiState {
             isWaitingForUsb = false,
             clientCount = 0,
             traffic = Traffic(),
+            downstreams = emptySet(),
         )
     }
 
@@ -72,7 +76,15 @@ fun SessionUiState.applyOutcome(outcome: Result<String>): SessionUiState {
             up = parsed?.optLong("bytesUp") ?: 0,
             down = parsed?.optLong("bytesDown") ?: 0,
         ),
+        downstreams = downstreamsIn(parsed),
     )
+}
+
+private fun downstreamsIn(parsed: JSONObject?): Set<TetheringType> {
+    val reported = parsed?.optJSONArray("downstreams") ?: return emptySet()
+    val names = (0 until reported.length()).map(reported::optString).toSet()
+
+    return TetheringType.entries.filter { type -> type.name in names }.toSet()
 }
 
 private fun statusFor(sessionState: String): UiStatus = when (sessionState) {
