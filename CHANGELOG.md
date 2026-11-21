@@ -7,6 +7,9 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Builds for 32-bit ARM (armeabi-v7a) alongside arm64. The tethering module
+  offered on Android 11 and 12 is 64-bit only, so it is not offered to 32-bit
+  devices.
 - A session whose privileged helper dies restarts in the background with the
   same settings. It tries three times before ending.
 - When Shizuku stops, the session waits up to 10 minutes for it to come back

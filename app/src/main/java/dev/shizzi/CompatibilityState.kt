@@ -1,7 +1,5 @@
 package dev.shizzi
 
-import android.os.Build
-
 sealed interface CompatibilityState {
 
     data object Idle : CompatibilityState
@@ -64,12 +62,13 @@ val CompatibilityState.reportedResults: List<CapabilityResult>
         else -> emptyList()
     }
 
-fun List<CapabilityResult>.isFixableByModuleInstall(): Boolean {
+fun List<CapabilityResult>.isFixableByModuleInstall(device: DeviceProfile = DeviceProfile.current()): Boolean {
     val hasTestNetwork = isPresent(Capability.TEST_NETWORK)
     val needsPreference = !isPresent(Capability.PREFER_TEST_NETWORKS)
-    val isInstallableRelease = Build.VERSION.SDK_INT in TetheringApex.INSTALLABLE_SDK_INTS
+    val canInstallModule = device.sdkInt in TetheringApex.INSTALLABLE_SDK_INTS &&
+        TetheringApex.ABI in device.supportedAbis
 
-    return hasTestNetwork && needsPreference && isInstallableRelease
+    return hasTestNetwork && needsPreference && canInstallModule
 }
 
 private fun List<CapabilityResult>.isPresent(capability: Capability): Boolean =
