@@ -31,7 +31,7 @@ import dev.shizzi.AppPermission
 import dev.shizzi.PermissionStatus
 import dev.shizzi.R
 import dev.shizzi.ShizukuState
-import dev.shizzi.UsbTethering
+import dev.shizzi.SharingSetup
 import dev.shizzi.VpnMode
 import dev.shizzi.ui.theme.AccentChoice
 import dev.shizzi.ui.theme.DesignLanguage
@@ -59,7 +59,7 @@ data class SettingsState(
     val customAccents: List<Int>,
     val isLogging: Boolean,
     val vpnMode: VpnMode,
-    val usbTethering: UsbTethering,
+    val sharing: SharingSetup,
     val isRunningDiagnostics: Boolean,
     val automation: AutomationState,
 )
@@ -71,7 +71,7 @@ data class SettingsActions(
     val onAddCustomAccent: (Int) -> Unit,
     val onSetLogging: (Boolean) -> Unit,
     val onSetVpnMode: (VpnMode) -> Unit,
-    val onSetUsbTethering: (UsbTethering) -> Unit,
+    val tethering: TetheringActions,
     val onOpenLog: () -> Unit,
     val onRunProbes: () -> Unit,
     val onGrantPermission: (AppPermission) -> Unit,
@@ -129,8 +129,8 @@ private fun settingsSections(
 ): List<SettingsSectionSpec> = listOf(
     SettingsSectionSpec(stringResource(R.string.tethering)) {
         TetheringSection(
-            selected = state.usbTethering,
-            onSelect = actions.onSetUsbTethering,
+            sharing = state.sharing,
+            actions = actions.tethering,
             toasts = toasts,
         )
     },

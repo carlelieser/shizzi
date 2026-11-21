@@ -26,7 +26,7 @@ data class Settings(
     val isLogging: Boolean = true,
 
     val vpnMode: VpnMode = VpnMode.AUTO,
-    val usbTethering: UsbTethering = UsbTethering.NEVER,
+    val sharing: SharingSetup = SharingSetup(WiredTethering.AUTO, isWifiHotspotChosen = true),
 
     val hasCompletedOnboarding: Boolean = false,
 
@@ -36,7 +36,7 @@ data class Settings(
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
     name = "settings",
-    produceMigrations = { listOf(RenamedKeys.migration()) },
+    produceMigrations = { listOf(RenamedKeys.migration(), RetiredUsbTethering.migration()) },
 )
 
 class SettingsStore(private val context: Context) {
@@ -80,8 +80,12 @@ class SettingsStore(private val context: Context) {
         context.dataStore.edit { it[VPN_MODE] = mode.name }
     }
 
-    suspend fun setUsbTethering(mode: UsbTethering) {
-        context.dataStore.edit { it[USB_TETHERING] = mode.name }
+    suspend fun setWiredTethering(mode: WiredTethering) {
+        context.dataStore.edit { it[WIRED_TETHERING] = mode.name }
+    }
+
+    suspend fun setWifiHotspot(isOn: Boolean) {
+        context.dataStore.edit { it[WIFI_HOTSPOT] = isOn }
     }
 
     suspend fun setOnboardingComplete(hasCompleted: Boolean) {
@@ -113,7 +117,8 @@ internal val ACCENT = stringPreferencesKey("accent")
 internal val CUSTOM_ACCENTS = stringPreferencesKey("custom_accents")
 internal val LOGGING = booleanPreferencesKey("logging")
 internal val VPN_MODE = stringPreferencesKey("vpn_mode")
-internal val USB_TETHERING = stringPreferencesKey("usb_tethering")
+internal val WIRED_TETHERING = stringPreferencesKey("wired_tethering")
+internal val WIFI_HOTSPOT = booleanPreferencesKey("wifi_hotspot")
 internal val ONBOARDED = booleanPreferencesKey("onboarded")
 internal val AUTOMATION = booleanPreferencesKey("automation")
 internal val AUTOMATION_TOKEN = stringPreferencesKey("automation_token")
@@ -127,7 +132,10 @@ internal fun toSettings(preferences: Preferences) = Settings(
     customAccents = parseAccents(preferences[CUSTOM_ACCENTS]),
     isLogging = preferences[LOGGING] ?: true,
     vpnMode = parseVpnMode(preferences[VPN_MODE]),
-    usbTethering = parseUsbTethering(preferences[USB_TETHERING]),
+    sharing = SharingSetup(
+        wired = parseWiredTethering(preferences[WIRED_TETHERING]),
+        isWifiHotspotChosen = preferences[WIFI_HOTSPOT] ?: true,
+    ),
     hasCompletedOnboarding = preferences[ONBOARDED] ?: false,
     isAutomationEnabled = preferences[AUTOMATION] ?: false,
     automationToken = preferences[AUTOMATION_TOKEN].orEmpty(),

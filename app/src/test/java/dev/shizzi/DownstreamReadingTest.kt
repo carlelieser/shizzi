@@ -46,4 +46,29 @@ class DownstreamReadingTest {
 
         assertEquals(listOf("wlan1"), (reading as DownstreamReading.Tethered).names)
     }
+
+    private val configured = """
+        Tethering:
+          Configuration:
+            tetherableUsbRegexs: [ncm\d]
+            tetherableWifiRegexs: [wlan\d]
+          Tether state:
+            ncm0 - TetheredState - lastError = 0
+            eth0 - TetheredState - lastError = 0
+            usb0 - TetheredState - lastError = 0
+    """.trimIndent()
+
+    @Test
+    fun `reads ethernet tethering by tethering's own regexes`() {
+        val reading = readDownstream(observed(configured), listOf(TetheringType.ETHERNET))
+
+        assertEquals(listOf("eth0", "usb0"), (reading as DownstreamReading.Tethered).names)
+    }
+
+    @Test
+    fun `an ethernet adapter named like usb is not read as usb tethering`() {
+        val reading = readDownstream(observed(configured), listOf(TetheringType.USB))
+
+        assertEquals(listOf("ncm0"), (reading as DownstreamReading.Tethered).names)
+    }
 }

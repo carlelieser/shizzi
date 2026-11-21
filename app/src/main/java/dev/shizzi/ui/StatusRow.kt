@@ -27,10 +27,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import dev.shizzi.BuildConfig
@@ -55,12 +58,33 @@ fun StatusRow(
     onVersionClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val status = statusWord(state)
+    var isStatusExpanded by remember(status) { mutableStateOf(false) }
+
+    Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        Box(modifier = Modifier.padding(ScreenPadding)) {
+            StatusSegments(state, onExpandStatus = { isStatusExpanded = true }, onVersionClick)
+        }
+
+        AnimatedVisibility(
+            visible = isStatusExpanded,
+            enter = fadeIn(standardTween()),
+            exit = fadeOut(standardTween()),
+            modifier = Modifier.matchParentSize(),
+        ) {
+            ExpandedStatus(statusText(status), onCollapse = { isStatusExpanded = false })
+        }
+    }
+}
+
+@Composable
+private fun StatusSegments(state: SessionUiState, onExpandStatus: () -> Unit, onVersionClick: () -> Unit) {
     Row(
-        modifier = modifier.fillMaxWidth().padding(ScreenPadding),
+        modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        StatusLabel(statusWord(state))
+        StatusLabel(statusWord(state), Modifier.weight(1f, fill = false), onExpand = onExpandStatus)
 
         AnimatedVisibility(
             visible = hasTunnel(state),
@@ -85,6 +109,7 @@ private fun StatusText(text: String) {
         style = ShizziTheme.typography.caption,
         color = ShizziTheme.colors.onSurfaceMuted,
         textAlign = TextAlign.Center,
+        softWrap = false,
     )
 }
 
@@ -92,27 +117,41 @@ private fun hasTunnel(state: SessionUiState): Boolean =
     state.status == UiStatus.CONNECTED && state.interfaceName.isNotEmpty()
 
 @Composable
-private fun StatusLabel(status: String) {
-    val colors = ShizziTheme.colors
+private fun statusText(status: String): AnnotatedString {
+    val emphasis = SpanStyle(color = ShizziTheme.colors.onSurface, fontWeight = FontWeight.W700)
+
+    return buildAnnotatedString {
+        append(stringResource(R.string.status).uppercase(currentLocale()) + " ")
+        withStyle(emphasis) { append(status.uppercase(currentLocale())) }
+    }
+}
+
+/** The only segment that gives way: a long status truncates, and a tap shows it in full over the row. */
+@Composable
+private fun StatusLabel(status: String, modifier: Modifier, onExpand: () -> Unit) {
     val fadeSpec = standardTween<Float>()
+    var isTruncated by remember(status) { mutableStateOf(false) }
+    val interaction = remember { MutableInteractionSource() }
 
     AnimatedContent(
         targetState = status,
         transitionSpec = { fadeIn(fadeSpec) togetherWith fadeOut(fadeSpec) },
         label = "statusWord",
+        modifier = modifier.clickable(
+            enabled = isTruncated,
+            interactionSource = interaction,
+            indication = themedIndication(),
+            onClick = onExpand,
+        ),
     ) { word ->
         Text(
-            text = buildAnnotatedString {
-                append(stringResource(R.string.status).uppercase(currentLocale()) + " ")
-                withStyle(
-                    SpanStyle(color = colors.onSurface, fontWeight = FontWeight.W700),
-                ) {
-                    append(word.uppercase(currentLocale()))
-                }
-            },
+            text = statusText(word),
             style = ShizziTheme.typography.caption,
-            color = colors.onSurfaceMuted,
+            color = ShizziTheme.colors.onSurfaceMuted,
             textAlign = TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            onTextLayout = { layout -> if (word == status) isTruncated = layout.isTruncated() },
         )
     }
 }
@@ -162,6 +201,7 @@ private fun TunnelSegment(name: String) {
         style = ShizziTheme.typography.caption,
         color = ShizziTheme.colors.onSurfaceMuted,
         textAlign = TextAlign.Center,
+        softWrap = false,
         modifier = Modifier.clickable(
             interactionSource = interaction,
             indication = themedIndication(),
@@ -194,9 +234,12 @@ private fun loadingWord(state: SessionUiState): String = when {
 @ReadOnlyComposable
 private fun statusWord(state: SessionUiState): String = when (state.status) {
     UiStatus.CONNECTED -> stringResource(
-        if (state.isWaitingForUsb) R.string.waiting_for_usb else R.string.status_connected,
+        if (state.isWaitingForWired) R.string.waiting_for_wired else R.string.status_connected,
     )
     UiStatus.READY -> stringResource(R.string.ready)
     UiStatus.LOADING -> loadingWord(state)
     UiStatus.ERROR -> stringResource(R.string.status_failed)
 }
+
+private fun TextLayoutResult.isTruncated(): Boolean =
+    multiParagraph.intrinsics.maxIntrinsicWidth > size.width

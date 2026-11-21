@@ -18,8 +18,10 @@ val DownstreamReading.problem: String?
 fun readDownstream(observation: UpstreamObservation, types: Collection<TetheringType>): DownstreamReading {
     if (observation.didTimeout) return DownstreamReading.Unknown
 
-    val tethered = tetheredInterfaces(observation.rawOutput)
-        .filter { name -> tetheringTypeOf(name) in types }
+    val tethered = typedTetheredInterfacesOrGuess(observation.rawOutput)
+        .filterValues { type -> type in types }
+        .keys
+        .toList()
 
     return when {
         tethered.isEmpty() -> DownstreamReading.None
@@ -37,6 +39,8 @@ internal fun tetheredInterfaces(output: String): List<String> =
 
 class DownstreamInspector(private val inspector: UpstreamInspector = UpstreamInspector()) {
 
+    private val ethernetClients = EthernetClients(inspector)
+
     private var cachedCount = 0
     private var lastReadAt = 0L
 
@@ -51,9 +55,10 @@ class DownstreamInspector(private val inspector: UpstreamInspector = UpstreamIns
 
         val wifi = if (TetheringType.WIFI in types) readWifiClients() ?: return cachedCount else 0
         val usb = if (TetheringType.USB in types) readUsbClients() ?: return cachedCount else 0
+        val ethernet = if (TetheringType.ETHERNET in types) readEthernetClients() ?: return cachedCount else 0
 
         lastReadAt = now
-        cachedCount = wifi + usb
+        cachedCount = wifi + usb + ethernet
         logCountChange(cachedCount)
         return cachedCount
     }
@@ -70,8 +75,19 @@ class DownstreamInspector(private val inspector: UpstreamInspector = UpstreamIns
         val observation = inspector.observe()
         if (observation.didTimeout) return null
 
-        return tetheredInterfaces(observation.rawOutput)
-            .count { name -> tetheringTypeOf(name) == TetheringType.USB }
+        return typedTetheredInterfacesOrGuess(observation.rawOutput)
+            .count { (_, type) -> type == TetheringType.USB }
+    }
+
+    private fun readEthernetClients(): Int? {
+        val observation = inspector.observe()
+        if (observation.didTimeout) return null
+
+        val interfaces = typedTetheredInterfacesOrGuess(observation.rawOutput)
+            .filterValues { type -> type == TetheringType.ETHERNET }
+            .keys
+            .toList()
+        return ethernetClients.count(interfaces)
     }
 
     private fun logCountChange(count: Int) {

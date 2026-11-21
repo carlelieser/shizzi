@@ -19,42 +19,44 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import dev.shizzi.R
-import dev.shizzi.UsbTethering
+import dev.shizzi.WiredTethering
 import dev.shizzi.ui.theme.ShizziTheme
 
 private val CheckSize = 20.dp
 
 @Composable
 @ReadOnlyComposable
-fun usbTetheringLabel(mode: UsbTethering): String = when (mode) {
-    UsbTethering.AUTO -> stringResource(R.string.usb_mode_auto)
-    UsbTethering.ALWAYS -> stringResource(R.string.usb_mode_always)
-    UsbTethering.NEVER -> stringResource(R.string.usb_mode_never)
+fun wiredTetheringLabel(mode: WiredTethering): String = when (mode) {
+    WiredTethering.OFF -> stringResource(R.string.wired_mode_off)
+    WiredTethering.AUTO -> stringResource(R.string.wired_mode_auto)
+    WiredTethering.USB -> stringResource(R.string.wired_mode_usb)
+    WiredTethering.ETHERNET -> stringResource(R.string.wired_mode_ethernet)
 }
 
 @Composable
 @ReadOnlyComposable
-private fun descriptionOf(mode: UsbTethering): String = when (mode) {
-    UsbTethering.AUTO -> stringResource(R.string.usb_mode_auto_description)
-    UsbTethering.ALWAYS -> stringResource(R.string.usb_mode_always_description)
-    UsbTethering.NEVER -> stringResource(R.string.usb_mode_never_description)
+private fun descriptionOf(mode: WiredTethering): String = when (mode) {
+    WiredTethering.OFF -> stringResource(R.string.wired_mode_off_description)
+    WiredTethering.AUTO -> stringResource(R.string.wired_mode_auto_description)
+    WiredTethering.USB -> stringResource(R.string.wired_mode_usb_description)
+    WiredTethering.ETHERNET -> stringResource(R.string.wired_mode_ethernet_description)
 }
 
 @Composable
-fun UsbTetheringPicker(
-    selected: UsbTethering,
-    onSelect: (UsbTethering) -> Unit,
+fun WiredTetheringPicker(
+    selected: WiredTethering,
+    onSelect: (WiredTethering) -> Unit,
     onDismiss: () -> Unit,
 ) {
     ThemedBottomSheet(onDismiss = onDismiss) {
         Text(
-            text = stringResource(R.string.usb_tethering),
+            text = stringResource(R.string.wired_tethering),
             style = ShizziTheme.typography.heading,
             color = ShizziTheme.colors.onSurface,
         )
 
-        UsbTethering.entries.forEach { mode ->
-            UsbTetheringOption(
+        WiredTethering.entries.forEach { mode ->
+            WiredTetheringOption(
                 mode = mode,
                 isSelected = mode == selected,
                 onSelect = {
@@ -69,8 +71,8 @@ fun UsbTetheringPicker(
 }
 
 @Composable
-private fun UsbTetheringOption(
-    mode: UsbTethering,
+private fun WiredTetheringOption(
+    mode: WiredTethering,
     isSelected: Boolean,
     onSelect: () -> Unit,
 ) {
@@ -83,7 +85,7 @@ private fun UsbTetheringOption(
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = usbTetheringLabel(mode),
+                text = wiredTetheringLabel(mode),
                 style = ShizziTheme.typography.subheading,
                 color = ShizziTheme.colors.onSurface,
             )

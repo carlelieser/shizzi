@@ -64,22 +64,22 @@ class SettingsKeysTest {
     }
 
     @Test
-    fun `reads a stored usb tethering mode`() {
-        val stored = preferencesOf(USB_TETHERING to UsbTethering.ALWAYS.name)
+    fun `reads stored wired tethering and hotspot choices`() {
+        val stored = preferencesOf(WIRED_TETHERING to WiredTethering.ETHERNET.name, WIFI_HOTSPOT to false)
 
-        assertEquals(UsbTethering.ALWAYS, toSettings(stored).usbTethering)
+        assertEquals(SharingSetup(WiredTethering.ETHERNET, isWifiHotspotChosen = false), toSettings(stored).sharing)
     }
 
     @Test
-    fun `defaults to never when no usb tethering mode is stored`() {
-        assertEquals(UsbTethering.NEVER, toSettings(preferencesOf()).usbTethering)
+    fun `defaults to auto with the hotspot on`() {
+        assertEquals(SharingSetup(WiredTethering.AUTO, isWifiHotspotChosen = true), toSettings(preferencesOf()).sharing)
     }
 
     @Test
-    fun `falls back to never when the usb tethering mode is unreadable`() {
-        val stored = preferencesOf(USB_TETHERING to "carrier pigeon")
+    fun `falls back to auto when the wired tethering mode is unreadable`() {
+        val stored = preferencesOf(WIRED_TETHERING to "carrier pigeon")
 
-        assertEquals(UsbTethering.NEVER, toSettings(stored).usbTethering)
+        assertEquals(WiredTethering.AUTO, toSettings(stored).sharing.wired)
     }
 
     @Test

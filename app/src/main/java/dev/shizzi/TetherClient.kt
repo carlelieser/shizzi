@@ -129,11 +129,11 @@ class TetherClient {
     suspend fun start(
         logging: Boolean,
         vpnMode: VpnMode,
-        usbTethering: UsbTethering,
+        sharing: SharingSetup,
     ): String = withContext(Dispatchers.IO) {
         val bound = service()
         verifyContract(bound)
-        bound.start(logging, vpnMode.name, usbTethering.name)
+        bound.start(logging, vpnMode.name, sharing.wired.name, sharing.isWifiHotspotOn)
     }
 
     fun setLogging(enabled: Boolean) {

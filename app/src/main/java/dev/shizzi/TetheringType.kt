@@ -14,9 +14,9 @@ private val USB_INTERFACE_PATTERN = Regex("""^(rndis|ncm|usb)\d*$""")
 private val UNSHARED_INTERFACE_PATTERN = Regex("""^(bt-pan|eth\d+)$""")
 
 /**
- * Classifies a tethered interface. Null for Bluetooth and Ethernet tethering,
- * which Shizzi neither starts nor stops; hotspot names vary by OEM, so anything
- * else counts as the hotspot.
+ * Guesses a tethered interface's type from its name, for when tethering lists no
+ * interface regexes. Null for Bluetooth and Ethernet tethering; hotspot names
+ * vary by OEM, so anything else counts as the hotspot.
  */
 fun tetheringTypeOf(interfaceName: String): TetheringType? = when {
     USB_INTERFACE_PATTERN.matches(interfaceName) -> TetheringType.USB

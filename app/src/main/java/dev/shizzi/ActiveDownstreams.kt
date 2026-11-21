@@ -17,21 +17,28 @@ private val TYPE_BY_CONFIG_NAME = mapOf(
 private class TetherableRegexes(val type: TetheringType?, val patterns: List<Regex>)
 
 /**
- * The types of the downstreams tethering has up, matched against tethering's own
- * interface regexes. Ethernet tethering has none, so a tethered interface no
- * regex claims is Ethernet. Null when `dumpsys tethering` lists no regexes.
+ * Each tethered interface with its type, matched against tethering's own
+ * interface regexes. Ethernet tethering has none, so an interface no regex
+ * claims is Ethernet; Wi-Fi Direct groups have no type. Null when `dumpsys
+ * tethering` lists no regexes.
  */
-fun activeDownstreamTypes(output: String): Set<TetheringType>? {
+fun typedTetheredInterfaces(output: String): Map<String, TetheringType?>? {
     val regexes = tetherableRegexes(output)
     if (regexes.isEmpty()) return null
 
-    return tetheredInterfaces(output)
-        .mapNotNull { name ->
-            val claimed = regexes.firstOrNull { entry -> entry.patterns.any { it.matches(name) } }
-            if (claimed == null) TetheringType.ETHERNET else claimed.type
-        }
-        .toSet()
+    return tetheredInterfaces(output).associateWith { name ->
+        val claimed = regexes.firstOrNull { entry -> entry.patterns.any { it.matches(name) } }
+        if (claimed == null) TetheringType.ETHERNET else claimed.type
+    }
 }
+
+/** Like [typedTetheredInterfaces], guessing from interface names when tethering lists no regexes. */
+fun typedTetheredInterfacesOrGuess(output: String): Map<String, TetheringType?> =
+    typedTetheredInterfaces(output) ?: tetheredInterfaces(output).associateWith(::tetheringTypeOf)
+
+/** The types of the downstreams tethering has up; null when they cannot be typed. */
+fun activeDownstreamTypes(output: String): Set<TetheringType>? =
+    typedTetheredInterfaces(output)?.values?.filterNotNull()?.toSet()
 
 private fun tetherableRegexes(output: String): List<TetherableRegexes> =
     TETHERABLE_REGEXES_PATTERN.findAll(output)
