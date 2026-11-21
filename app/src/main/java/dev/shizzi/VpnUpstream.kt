@@ -18,6 +18,8 @@ class VpnUpstream(
 
     fun isVpnPresent(): Boolean = locator().currentVpnHandle() != UNBOUND
 
+    fun dnsServers(): Result<List<java.net.InetAddress>> = locator().currentVpnDnsServers()
+
     fun follow(group: SessionResources) {
         val watcher = VpnWatchdog(locator()) { binding ->
             apply(group, binding)

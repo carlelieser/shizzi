@@ -56,6 +56,11 @@
     <string name="vpn_mode_never_description">Ignore active VPN</string>
     <string name="vpn_connected_badge">VPN CONNECTED</string>
     <string name="vpn_ignored_badge">VPN IGNORED</string>
+    <string name="dns">DNS</string>
+    <string name="dns_automatic">Auto</string>
+    <string name="dns_servers_description">Leave empty to use the VPN\'s DNS, or Google DNS when no VPN is connected.</string>
+    <string name="dns_servers_hint">192.168.1.2, 1.1.1.1</string>
+    <string name="dns_server_invalid">%1$s is not an IP address</string>
 
     <string name="automation">Automation</string>
     <string name="automation_description">Allows tasker apps to manage Shizzi</string>

@@ -54,6 +54,11 @@
     <string name="vpn_mode_never_description">忽略活动 VPN</string>
     <string name="vpn_connected_badge">VPN 已连接</string>
     <string name="vpn_ignored_badge">已忽略 VPN</string>
+    <string name="dns">DNS</string>
+    <string name="dns_automatic">自动</string>
+    <string name="dns_servers_description">留空则使用 VPN 的 DNS；未连接 VPN 时使用 Google DNS。</string>
+    <string name="dns_servers_hint">192.168.1.2, 1.1.1.1</string>
+    <string name="dns_server_invalid">%1$s 不是 IP 地址</string>
 
     <string name="automation">自动化</string>
     <string name="automation_description">允许 Tasker 类应用管理 Shizzi</string>

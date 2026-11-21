@@ -54,6 +54,11 @@
     <string name="vpn_mode_never_description">Etkin VPN\'i yok say</string>
     <string name="vpn_connected_badge">VPN BAĞLI</string>
     <string name="vpn_ignored_badge">VPN YOK SAYILDI</string>
+    <string name="dns">DNS</string>
+    <string name="dns_automatic">Otomatik</string>
+    <string name="dns_servers_description">VPN\'in DNS\'ini, VPN bağlı değilse Google DNS\'i kullanmak için boş bırakın.</string>
+    <string name="dns_servers_hint">192.168.1.2, 1.1.1.1</string>
+    <string name="dns_server_invalid">%1$s bir IP adresi değil</string>
 
     <string name="automation">Otomasyon</string>
     <string name="automation_description">Tasker gibi uygulamaların Shizzi\'yi yönetmesine izin verir</string>

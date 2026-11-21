@@ -43,6 +43,7 @@ data class AppActions(
     val onAddCustomAccent: (Int) -> Unit,
     val onSetLogging: (Boolean) -> Unit,
     val onSetVpnMode: (VpnMode) -> Unit,
+    val onSetCustomDns: (String) -> Unit,
     val onSetWiredTethering: (WiredTethering) -> Unit,
     val onSetWifiHotspot: (Boolean) -> Unit,
     val onRunProbes: () -> Unit,
@@ -155,6 +156,7 @@ private fun settingsState(state: AppState): SettingsState {
         customAccents = settings.customAccents,
         isLogging = settings.isLogging,
         vpnMode = settings.vpnMode,
+        customDns = settings.customDns,
         sharing = settings.sharing,
         isRunningDiagnostics = state.diagnostics is DiagnosticsState.Running,
         automation = AutomationState(
@@ -174,6 +176,7 @@ private fun settingsActions(context: ScreenContext): SettingsActions {
         onAddCustomAccent = actions.onAddCustomAccent,
         onSetLogging = actions.onSetLogging,
         onSetVpnMode = actions.onSetVpnMode,
+        onSetCustomDns = actions.onSetCustomDns,
         tethering = TetheringActions(
             onSetWiredTethering = actions.onSetWiredTethering,
             onSetWifiHotspot = actions.onSetWifiHotspot,

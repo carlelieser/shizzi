@@ -41,11 +41,21 @@ class TetherService : ITetherService.Stub {
         exitProcess(0)
     }
 
-    override fun start(logging: Boolean, vpnMode: String?, wiredTethering: String?, isWifiHotspotOn: Boolean): String {
+    override fun start(
+        logging: Boolean,
+        vpnMode: String?,
+        wiredTethering: String?,
+        isWifiHotspotOn: Boolean,
+        dnsServers: String?,
+    ): String {
         SessionLog.setEnabled(logging)
         return runCatching {
             succession.retirePredecessors()
-            session.start(parseVpnMode(vpnMode), SharingSetup(parseWiredTethering(wiredTethering), isWifiHotspotOn))
+            session.start(
+                parseVpnMode(vpnMode),
+                SharingSetup(parseWiredTethering(wiredTethering), isWifiHotspotOn),
+                customDnsServers(dnsServers.orEmpty()),
+            )
         }
             .getOrElse { failure -> sessionError("start", failure) }
     }

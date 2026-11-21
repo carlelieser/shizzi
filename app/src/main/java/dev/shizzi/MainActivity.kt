@@ -109,6 +109,7 @@ class MainActivity : ComponentActivity() {
                             onAddCustomAccent = viewModel::addCustomAccent,
                             onSetLogging = viewModel::setLogging,
                             onSetVpnMode = viewModel::setVpnMode,
+                            onSetCustomDns = viewModel::setCustomDns,
                             onSetWiredTethering = viewModel::setWiredTethering,
                             onSetWifiHotspot = viewModel::setWifiHotspot,
                             onRunProbes = viewModel::runProbes,
