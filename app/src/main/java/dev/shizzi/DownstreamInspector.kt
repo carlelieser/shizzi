@@ -18,8 +18,10 @@ val DownstreamReading.problem: String?
 fun readDownstream(observation: UpstreamObservation, types: Collection<TetheringType>): DownstreamReading {
     if (observation.didTimeout) return DownstreamReading.Unknown
 
-    val tethered = tetheredInterfaces(observation.rawOutput)
-        .filter { name -> tetheringTypeOf(name) in types }
+    val tethered = typedTetheredInterfacesOrGuess(observation.rawOutput)
+        .filterValues { type -> type in types }
+        .keys
+        .toList()
 
     return when {
         tethered.isEmpty() -> DownstreamReading.None
@@ -70,8 +72,8 @@ class DownstreamInspector(private val inspector: UpstreamInspector = UpstreamIns
         val observation = inspector.observe()
         if (observation.didTimeout) return null
 
-        return tetheredInterfaces(observation.rawOutput)
-            .count { name -> tetheringTypeOf(name) == TetheringType.USB }
+        return typedTetheredInterfacesOrGuess(observation.rawOutput)
+            .count { (_, type) -> type == TetheringType.USB }
     }
 
     private fun logCountChange(count: Int) {
