@@ -117,6 +117,13 @@ reflects into, and the emulator verification behind the module covered the call
 rather than a carried hotspot. After the reboot the check runs again and answers
 from the device rather than from the API level.
 
+### 32-bit devices
+
+The app ships for `arm64-v8a` and `armeabi-v7a`. The tethering APEX carries
+`arm64-v8a` libraries only, so the app offers it only to a device that lists
+that ABI. A 32-bit device on 30-32 is told it cannot tether instead; on 33 and
+up it is in the same position as any other device.
+
 ## What the shell UID buys
 
 Shizuku runs as shell (UID 2000), which holds the permissions gating these APIs

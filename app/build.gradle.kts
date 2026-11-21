@@ -44,7 +44,7 @@ val gomobileBind by tasks.registering(Exec::class) {
     commandLine(
         File(goBin, "gomobile").absolutePath,
         "bind",
-        "-target=android/arm64",
+        "-target=android/arm64,android/arm",
         "-androidapi", "24",
         "-o", outputAar.get().asFile.absolutePath,
         ".",
@@ -66,7 +66,7 @@ android {
         buildConfigField("int", "SERVICE_BUILD_ID", "${sourceFingerprint(projectDir)}")
 
         ndk {
-            abiFilters += "arm64-v8a"
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
         }
     }
 

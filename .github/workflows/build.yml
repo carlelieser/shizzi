@@ -74,6 +74,8 @@ jobs:
           CC="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang"
           cd datapath
           CGO_ENABLED=1 GOOS=android GOARCH=arm64 CC="$CC" go vet ./...
+          CC="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi24-clang"
+          CGO_ENABLED=1 GOOS=android GOARCH=arm GOARM=7 CC="$CC" go vet ./...
 
       - name: Build debug APK
         run: ./gradlew assembleDebug --no-daemon

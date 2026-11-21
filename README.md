@@ -13,12 +13,13 @@ forwards hotspot traffic through a Go datapath. Supports IPv4 and IPv6.
 
 ## Requirements
 
-- Android 11 (API 30+), arm64
+- Android 11 (API 30+), 64-bit or 32-bit ARM (arm64-v8a or armeabi-v7a)
 - [Shizuku](https://shizuku.rikka.app/) 13.6.0+
 
 Android 13 and up work outright. On Android 11 and 12 it depends on the device's
 tethering module; the app checks on first launch and offers to install the
-module it needs. See [compatibility](docs/android-compatibility.md).
+module it needs. That module is 64-bit only, so a 32-bit device needs Android
+13. See [compatibility](docs/android-compatibility.md).
 
 ## Install
 
