@@ -20,7 +20,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import dev.shizzi.Capability
+import dev.shizzi.CompatibilityDetail
 import dev.shizzi.R
+import dev.shizzi.ui.resolve
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.themedSurface
 
@@ -68,7 +70,7 @@ fun CapabilityCard(capability: Capability, status: CapabilityStatus, detail: Str
 @Composable
 private fun CapabilityDetail(detail: String) {
     Text(
-        text = breakableIdentifiers(detail),
+        text = breakableIdentifiers(CompatibilityDetail.describe(detail).resolve()),
         style = ShizziTheme.typography.log,
         color = ShizziTheme.colors.onSurfaceMuted,
         modifier = Modifier.padding(top = ShizziTheme.spacing.xs),

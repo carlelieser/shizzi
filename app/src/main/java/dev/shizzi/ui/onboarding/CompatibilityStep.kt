@@ -13,9 +13,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import dev.shizzi.Capability
 import dev.shizzi.CapabilityResult
 import dev.shizzi.CompatibilityState
+import dev.shizzi.R
 import dev.shizzi.isOnFixPath
 import dev.shizzi.reportedResults
 import dev.shizzi.ui.theme.ShizziTheme
@@ -89,12 +91,21 @@ private fun FixPathCard(state: CompatibilityState) {
 
 @Composable
 private fun CheckFailure(problem: String) {
-    Text(
-        text = problem,
-        style = ShizziTheme.typography.log,
-        color = ShizziTheme.colors.onSurfaceMuted,
+    Column(
         modifier = Modifier.padding(top = ShizziTheme.spacing.lg),
-    )
+        verticalArrangement = Arrangement.spacedBy(ShizziTheme.spacing.xs),
+    ) {
+        Text(
+            text = stringResource(R.string.compatibility_check_failed),
+            style = ShizziTheme.typography.body,
+            color = ShizziTheme.colors.onSurface,
+        )
+        Text(
+            text = problem,
+            style = ShizziTheme.typography.log,
+            color = ShizziTheme.colors.onSurfaceMuted,
+        )
+    }
 }
 
 private fun statusFor(state: CompatibilityState, capability: Capability): CapabilityStatus =

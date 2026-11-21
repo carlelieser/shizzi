@@ -11,8 +11,10 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import dev.shizzi.CompatibilityDetail
 import dev.shizzi.CompatibilityState
 import dev.shizzi.R
+import dev.shizzi.ui.resolve
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.themedSurface
 
@@ -54,7 +56,7 @@ fun TetheringProviderInstallCard(state: CompatibilityState) {
 @Composable
 private fun InstallFailureDetail(reason: String) {
     Text(
-        text = breakableIdentifiers(reason),
+        text = breakableIdentifiers(CompatibilityDetail.describe(reason).resolve()),
         style = ShizziTheme.typography.log,
         color = ShizziTheme.colors.onSurfaceMuted,
         modifier = Modifier.padding(top = ShizziTheme.spacing.xs),

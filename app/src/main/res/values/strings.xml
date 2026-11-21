@@ -164,6 +164,11 @@
     <string name="module_staged_description">The module is ready and will finish installing the next time your phone starts up. Come back here afterwards to check compatibility.</string>
     <string name="module_install_failed_description">Your phone refused this module, which some manufacturers\' builds do. Nothing was changed.</string>
     <string name="module_ready_to_install">The module is downloaded and verified, ready to install.</string>
+    <string name="module_install_timed_out">The installer didn\'t finish in time.</string>
+    <string name="compatibility_check_failed">The check couldn\'t run. Make sure Shizuku is running, then try again.</string>
+    <string name="compatibility_not_reported">Shizuku didn\'t report this check.</string>
+    <string name="compatibility_test_network_unavailable">This phone doesn\'t provide the test network service.</string>
+    <string name="detail_with_output" translatable="false">%1$s\n%2$s</string>
 
     <string name="notification_cleaning_up">Cleaning up…</string>
     <string name="notification_getting_ready">Getting ready…</string>

@@ -28,7 +28,7 @@ class CompatibilityCheck(private val context: Context) {
             isPresent = api.isAvailable,
             detail = when {
                 api.isAvailable -> "getSystemService(\"test_network\") returned an instance"
-                else -> "test_network service or TestNetworkManager class unavailable"
+                else -> CompatibilityDetail.TEST_NETWORK_UNAVAILABLE
             },
         )
     }
@@ -66,7 +66,7 @@ fun parseCapabilities(report: String): List<CapabilityResult> {
             capability = capability,
             isPresent = entry?.optBoolean("present") == true,
             detail = entry?.optString("detail").orEmpty()
-                .ifEmpty { "not reported by the privileged process" },
+                .ifEmpty { CompatibilityDetail.NOT_REPORTED },
         )
     }
 }
