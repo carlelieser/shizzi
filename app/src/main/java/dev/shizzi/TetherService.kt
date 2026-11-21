@@ -5,6 +5,7 @@ import android.content.Context
 import android.os.Build
 import android.os.ParcelFileDescriptor
 import android.util.Log
+import kotlin.system.exitProcess
 
 class TetherService : ITetherService.Stub {
 
@@ -16,6 +17,7 @@ class TetherService : ITetherService.Stub {
     private val teardown: SessionTeardown by lazy { SessionTeardown(shellContext) }
     private val compatibility: CompatibilityCheck by lazy { CompatibilityCheck(shellContext) }
     private val apexInstaller: ApexInstaller by lazy { ApexInstaller() }
+    private val succession: HelperSuccession by lazy { HelperSuccession() }
 
     @Suppress("unused")
     constructor() : this(acquireSystemContext())
@@ -27,9 +29,22 @@ class TetherService : ITetherService.Stub {
 
     override fun getContractVersion(): Int = CONTRACT_VERSION
 
+    /**
+     * Shizuku stops a user service only by asking it to exit, when the app
+     * unbinds it or a newer version replaces it. A session still running here
+     * would otherwise be left with nothing controlling it.
+     */
+    override fun destroy() {
+        Log.i(TAG, "destroy: helper replaced or unbound, exiting")
+        if (session.isActive) runCatching { session.stop() }
+            .onFailure { failure -> Log.e(TAG, "destroy: session teardown failed", failure) }
+        exitProcess(0)
+    }
+
     override fun start(logging: Boolean, vpnMode: String?, wiredTethering: String?, isWifiHotspotOn: Boolean): String {
         SessionLog.setEnabled(logging)
         return runCatching {
+            succession.retirePredecessors()
             session.start(parseVpnMode(vpnMode), SharingSetup(parseWiredTethering(wiredTethering), isWifiHotspotOn))
         }
             .getOrElse { failure -> sessionError("start", failure) }

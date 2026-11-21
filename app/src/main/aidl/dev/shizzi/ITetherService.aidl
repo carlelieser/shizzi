@@ -4,25 +4,28 @@ import android.os.ParcelFileDescriptor;
 
 interface ITetherService {
 
-    String start(boolean logging, String vpnMode, String wiredTethering, boolean isWifiHotspotOn);
+    String start(boolean logging, String vpnMode, String wiredTethering, boolean isWifiHotspotOn) = 0;
 
-    void setLogging(boolean enabled);
+    void setLogging(boolean enabled) = 1;
 
-    String stop();
+    String stop() = 2;
 
-    String releaseOrphanedDownstream(in String[] types);
+    String releaseOrphanedDownstream(in String[] types) = 3;
 
-    String getStatus();
+    String getStatus() = 4;
 
-    String runProbes(boolean attemptTethering, int availabilityTimeoutMs);
+    String runProbes(boolean attemptTethering, int availabilityTimeoutMs) = 5;
 
-    void clearLog();
+    void clearLog() = 6;
 
-    String checkCompatibility();
+    String checkCompatibility() = 7;
 
-    String installTetheringApex(in ParcelFileDescriptor apex);
+    String installTetheringApex(in ParcelFileDescriptor apex) = 8;
 
-    String rebootDevice();
+    String rebootDevice() = 9;
 
-    int getContractVersion();
+    int getContractVersion() = 10;
+
+    // Shizuku calls this on an old helper when a new version starts or the app unbinds with remove.
+    void destroy() = 16777114;
 }
