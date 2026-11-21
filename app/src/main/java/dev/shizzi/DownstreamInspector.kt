@@ -27,9 +27,9 @@ fun readDownstream(observation: UpstreamObservation, types: Collection<Tethering
     }
 }
 
-private val TETHERED_STATE_PATTERN = Regex("""^\s*(\w+)\s+-\s+TetheredState\s+-""")
+private val TETHERED_STATE_PATTERN = Regex("""^\s*(\S+)\s+-\s+TetheredState\s+-""")
 
-private fun tetheredInterfaces(output: String): List<String> =
+internal fun tetheredInterfaces(output: String): List<String> =
     output.lineSequence()
         .mapNotNull { line -> TETHERED_STATE_PATTERN.find(line)?.groupValues?.get(1) }
         .distinct()
