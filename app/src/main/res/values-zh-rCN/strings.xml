@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="start">开始</string>
+    <string name="stop">停止</string>
+    <string name="cancel">取消</string>
+    <string name="settings">设置</string>
+    <string name="back">返回</string>
+    <string name="more_options">更多选项</string>
+    <string name="grant">授权</string>
+    <string name="clear">清空</string>
+    <string name="export">导出</string>
+    <string name="continue_label">继续</string>
+    <string name="finish">完成</string>
+    <string name="check">检查</string>
+    <string name="install">安装</string>
+    <string name="installing">安装中</string>
+    <string name="restart">重启</string>
+    <string name="retry">重试</string>
+    <string name="download">下载</string>
+
+    <string name="appearance">外观</string>
+    <string name="permissions">权限</string>
+    <string name="advanced">高级</string>
+    <string name="developer">开发者</string>
+    <string name="about">关于</string>
+    <string name="logging">日志记录</string>
+    <string name="view_logs">查看日志</string>
+    <string name="run_diagnostics">运行诊断</string>
+    <string name="restart_onboarding">重新开始引导</string>
+    <string name="github">GitHub</string>
+    <string name="report_a_bug">报告问题</string>
+    <string name="author">作者</string>
+
+    <string name="theme_match_system">跟随系统</string>
+    <string name="theme_light">浅色</string>
+    <string name="theme_dark">深色</string>
+    <string name="design">设计</string>
+    <string name="accent">强调色</string>
+    <string name="accent_default">默认</string>
+    <string name="accent_wallpaper">壁纸</string>
+    <string name="color_picker">取色器</string>
+    <string name="add_color">添加颜色</string>
+    <string name="design_neobrutalism">新粗野主义</string>
+    <string name="design_material_expressive">Material Expressive</string>
+    <string name="design_neobrutalism_description">硬朗边角、粗边框、偏移阴影</string>
+    <string name="design_material_expressive_description">圆润表面、色调配色、柔和动效</string>
+
+    <string name="vpn">VPN</string>
+    <string name="vpn_mode_auto">自动</string>
+    <string name="vpn_mode_always">始终</string>
+    <string name="vpn_mode_never">从不</string>
+    <string name="vpn_mode_auto_description">如有活动 VPN 则绑定</string>
+    <string name="vpn_mode_always_description">没有活动 VPN 时拒绝连接</string>
+    <string name="vpn_mode_never_description">忽略活动 VPN</string>
+    <string name="vpn_connected_badge">VPN 已连接</string>
+    <string name="vpn_ignored_badge">已忽略 VPN</string>
+
+    <string name="automation">自动化</string>
+    <string name="automation_description">允许 Tasker 类应用管理 Shizzi</string>
+    <string name="view_setup_instructions">查看设置说明</string>
+    <string name="setup">配置</string>
+    <string name="setup_description">使用以下值发送广播 Intent。</string>
+    <string name="field_action">Action</string>
+    <string name="field_package">包名</string>
+    <string name="field_class">类名</string>
+    <string name="field_target">目标</string>
+    <string name="field_extra_name">Extra 名称</string>
+    <string name="field_extra_value">Extra 值</string>
+    <string name="broadcast_receiver">广播接收器</string>
+    <string name="copy_field">复制%1$s</string>
+    <string name="copied">已复制%1$s</string>
+    <string name="token">令牌</string>
+    <string name="copy_token">复制令牌</string>
+    <string name="regenerate_token">重新生成令牌</string>
+    <string name="command_start">开始</string>
+    <string name="command_stop">停止</string>
+    <string name="command_toggle">切换</string>
+    <string name="command_status">状态</string>
+
+    <string name="clear_log_question">清空日志？</string>
+    <string name="clear_log_warning">此操作无法撤销。</string>
+    <string name="log_cleared">日志已清空</string>
+    <string name="app_log_entries_cleared">仅清空了本应用的条目</string>
+    <string name="running_diagnostics">正在运行诊断…</string>
+    <string name="diagnostics_completed">诊断完成</string>
+    <string name="diagnostics_failed">诊断失败</string>
+    <string name="export_report">导出报告</string>
+    <string name="log_title">日志</string>
+    <string name="no_logs_yet">暂无日志</string>
+    <string name="logging_disabled">日志记录已关闭</string>
+    <string name="logs_will_appear_here">日志会显示在这里</string>
+    <string name="start_a_session">开始会话</string>
+    <string name="enable_logging">开启日志记录</string>
+    <string name="scroll_to_top">滚动到顶部</string>
+    <string name="scroll_to_bottom">滚动到底部</string>
+    <string name="select_all">全选</string>
+    <string name="deselect_all">取消全选</string>
+    <string name="clear_upper">清空</string>
+    <string name="copy_all">全部复制</string>
+    <plurals name="copy_lines">
+        <item quantity="other">复制 %d 行</item>
+    </plurals>
+
+    <string name="permission_notifications">通知</string>
+    <string name="permission_background_activity">后台活动</string>
+    <string name="permission_notifications_rationale">保持会话运行所必需</string>
+    <string name="permission_background_activity_rationale">外部会话管理所必需</string>
+    <string name="shizuku">Shizuku</string>
+    <string name="shizuku_rationale">核心功能所必需</string>
+    <string name="status">状态</string>
+    <string name="service">服务</string>
+    <string name="version">版本</string>
+    <string name="not_installed">未安装</string>
+    <string name="not_running">未运行</string>
+    <string name="permission_required">需要授权</string>
+    <string name="ready">就绪</string>
+    <string name="grant_permission_upper">授予权限</string>
+    <string name="shizuku_not_installed">未安装 Shizuku</string>
+    <string name="shizuku_not_running">Shizuku 已安装，但未运行</string>
+    <string name="shizuku_permission_needed">需要 Shizuku 权限</string>
+
+    <string name="status_not_connected">未连接</string>
+    <string name="status_connecting">正在连接</string>
+    <string name="status_connected">已连接</string>
+    <string name="status_starting">正在启动</string>
+    <string name="status_reconnecting">正在重新连接</string>
+    <string name="status_waiting_for_shizuku">正在等待 Shizuku</string>
+    <string name="status_failed">失败</string>
+    <string name="badge_no_shizuku">无 SHIZUKU</string>
+    <string name="badge_shizuku_off">SHIZUKU 已关闭</string>
+    <string name="badge_permission_needed">需要权限</string>
+    <string name="tunnel_active">隧道已启用</string>
+
+    <string name="welcome">欢迎使用</string>
+    <string name="welcome_description">借助 Shizuku 实现免 Root 的 Wi-Fi 网络共享。</string>
+    <string name="get_started">开始使用</string>
+    <string name="grant_permissions">授予权限</string>
+    <string name="compatibility">兼容性</string>
+    <string name="capability_test_network">测试网络 API</string>
+    <string name="capability_prefer_test_networks">优先测试网络</string>
+    <string name="capability_test_network_description">允许应用创建测试网络隧道，热点流量将经由该隧道传输。</string>
+    <string name="capability_prefer_test_networks_description">允许应用将热点流量路由到测试网络隧道。此功能于 Android 13 加入。</string>
+    <string name="supported">支持</string>
+    <string name="not_supported">不支持</string>
+    <string name="device_compatible">此设备兼容</string>
+    <string name="device_not_compatible">此设备不兼容</string>
+    <string name="module_restart_required">需要重启</string>
+    <string name="module_download_failed">下载失败</string>
+    <string name="module_install_failed">安装失败</string>
+    <string name="module_downloaded_verified">已下载并通过校验</string>
+    <string name="module_available">模块可用</string>
+    <string name="tethering_module">网络共享模块</string>
+    <string name="module_downloading">正在下载模块…</string>
+    <string name="module_download_network_error">无法连接网络下载模块。请重新连接后重试。</string>
+    <string name="module_download_verify_error">下载内容未能通过校验，因此未安装任何内容。</string>
+    <string name="module_download_needed">你的手机需要更新的网络共享模块才能路由热点流量。请连接网络以下载。</string>
+    <string name="module_download_available">安装更新的网络共享模块后，你的手机即可运行此应用。模块约 3 MB，安装后需重启一次。</string>
+    <string name="module_restart_to_finish">重启手机以完成安装</string>
+    <string name="module_not_accepted">模块未被接受</string>
+    <string name="module_installing">正在安装模块…</string>
+    <string name="module_staged_description">模块已就绪，将在手机下次启动时完成安装。之后请回到此处检查兼容性。</string>
+    <string name="module_install_failed_description">你的手机拒绝了此模块，部分厂商的系统会这样做。未做任何更改。</string>
+    <string name="module_ready_to_install">模块已下载并通过校验，可以安装。</string>
+    <string name="module_install_timed_out">安装程序未能及时完成。</string>
+    <string name="compatibility_check_failed">检查无法运行。请确认 Shizuku 正在运行，然后重试。</string>
+    <string name="compatibility_not_reported">Shizuku 未报告此项检查。</string>
+    <string name="compatibility_test_network_unavailable">此手机不提供测试网络服务。</string>
+
+    <string name="notification_cleaning_up">正在清理…</string>
+    <string name="notification_getting_ready">正在准备…</string>
+    <string name="notification_shizuku_stopped">Shizuku 已停止</string>
+    <string name="notification_reconnecting">正在重新连接…</string>
+    <string name="notification_start_shizuku">启动 Shizuku 以恢复共享。</string>
+    <string name="notification_session_ended">会话已结束</string>
+    <string name="notification_connected_vpn_ignored">已连接 · 已忽略 VPN</string>
+    <string name="notification_connected_vpn">已连接 · VPN</string>
+    <string name="notification_not_sharing">未共享</string>
+    <string name="notification_turning_hotspot_off">正在关闭热点…</string>
+    <string name="notification_turning_hotspot_on">正在开启热点…</string>
+    <string name="notification_no_devices">暂无设备连接</string>
+    <plurals name="notification_device_count">
+        <item quantity="other">%d 台设备</item>
+    </plurals>
+    <string name="notification_channel_name">网络共享会话</string>
+    <string name="notification_channel_description">网络共享会话运行时显示</string>
+
+    <string name="tile_stopping">正在停止…</string>
+    <string name="tile_starting">正在启动…</string>
+    <string name="tile_reconnecting">正在重新连接…</string>
+    <string name="tile_tap_retry">点按重试</string>
+    <string name="tile_tap_share">点按开始共享</string>
+    <string name="tile_shizuku_not_installed">未安装 Shizuku</string>
+    <string name="tile_shizuku_not_running">Shizuku 未运行</string>
+    <string name="tile_no_devices">无设备</string>
+    <plurals name="tile_device_count">
+        <item quantity="other">%1$d 台设备 · %2$s</item>
+    </plurals>
+
+    <string name="vpn_disconnected_session_stopped">VPN 已断开。会话已停止，以保护设备安全。</string>
+    <string name="session_end_restart_failed">无法自动重新开始共享。</string>
+    <string name="session_end_restart_failed_hotspot_on">无法自动重新开始共享。热点可能仍处于开启状态。</string>
+    <string name="session_end_shizuku_stopped">Shizuku 未运行，共享已停止。</string>
+    <string name="session_end_shizuku_stopped_hotspot_on">Shizuku 未运行，共享已停止。热点可能仍处于开启状态。</string>
+    <string name="session_error_generic">共享时出现问题。详情请查看日志。</string>
+    <string name="session_error_vpn_required">未开始共享，因为 VPN 模式为“始终”且未连接 VPN。</string>
+    <string name="session_error_hotspot_not_started">无法开启热点。</string>
+    <string name="session_error_upstream_not_verified">未开始共享，因为 Android 未通过此应用路由热点流量。</string>
+    <string name="session_error_upstream_lost">共享已停止，因为 Android 不再通过此应用路由热点流量。</string>
+    <string name="session_error_teardown_incomplete">共享已停止，但热点可能仍处于开启状态。</string>
+    <string name="session_error_hotspot_may_be_on">%1$s热点可能仍处于开启状态。</string>
+
+    <!-- USB tethering and reconnect states (0.5.0) -->
+    <string name="tethering">网络共享</string>
+    <string name="usb_tethering">USB 网络共享</string>
+    <string name="open_system_settings">打开系统设置</string>
+    <string name="open_shizuku">打开 Shizuku</string>
+    <string name="hotspot_settings">热点设置</string>
+    <string name="system_settings">系统设置</string>
+    <string name="usb_mode_auto">自动</string>
+    <string name="usb_mode_always">始终</string>
+    <string name="usb_mode_never">从不</string>
+    <string name="usb_mode_auto_description">连接数据线时同时通过 USB 共享</string>
+    <string name="usb_mode_always_description">仅通过 USB 共享；需要连接数据线</string>
+    <string name="usb_mode_never_description">仅通过热点共享</string>
+    <string name="waiting_for_usb">正在等待 USB</string>
+    <plurals name="notification_usb_grace">
+        <item quantity="other">请在 %1$d 分钟内通过 USB 连接以继续共享</item>
+    </plurals>
+
+    <!-- Session and settings messages -->
+    <string name="could_not_open">无法打开%1$s</string>
+    <string name="usb_cable_required">启动失败。需要 USB 连接。</string>
+    <string name="issue_tracker_label">问题跟踪器</string>
+</resources>
