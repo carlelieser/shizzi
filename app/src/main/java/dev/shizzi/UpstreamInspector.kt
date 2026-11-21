@@ -34,6 +34,8 @@ class UpstreamInspector(private val deadlineMs: Long = DEFAULT_DEADLINE_MS) {
 
     fun observeInterface(name: String): UpstreamObservation = runCommand(listOf("ip", "addr", "show", name))
 
+    fun observeNeighbors(name: String): UpstreamObservation = runCommand(listOf("ip", "neigh", "show", "dev", name))
+
     private fun run(service: String): UpstreamObservation = runCommand(listOf("dumpsys", service))
 
     private fun runCommand(command: List<String>): UpstreamObservation {
