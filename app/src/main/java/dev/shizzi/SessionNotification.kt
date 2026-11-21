@@ -50,7 +50,7 @@ class SessionNotification(private val context: Context) {
     }
 
     private fun bodyFor(state: SessionUiState, isStopping: Boolean): String = when {
-        state.lastError.isNotEmpty() -> userFacingError(state.lastError)
+        state.lastError.isNotEmpty() -> SessionError.describe(state.lastError).resolve(context.resources)
         state.isWaitingForShizuku -> context.getString(R.string.notification_start_shizuku)
         state.status == UiStatus.LOADING -> loadingBody(isStopping)
         state.isWaitingForUsb -> context.resources.getQuantityString(
@@ -60,11 +60,6 @@ class SessionNotification(private val context: Context) {
         )
         state.status == UiStatus.CONNECTED -> connectedBody(state)
         else -> context.getString(R.string.notification_not_sharing)
-    }
-
-    private fun userFacingError(raw: String): String = when {
-        raw.contains(EXCEPTION_MARKER) -> context.getString(R.string.notification_generic_error)
-        else -> SessionError.describe(raw).resolve(context.resources)
     }
 
     private fun loadingBody(isStopping: Boolean): String =
@@ -78,7 +73,6 @@ class SessionNotification(private val context: Context) {
             "$DOWN_ARROW ${Traffic.format(state.traffic.down)} · " +
             "$UP_ARROW ${Traffic.format(state.traffic.up)}"
     }
-
     private fun deviceCount(clients: Int): String =
         context.resources.getQuantityString(R.plurals.notification_device_count, clients, clients)
 
@@ -125,8 +119,6 @@ class SessionNotification(private val context: Context) {
 
     private companion object {
         const val CHANNEL_ID = "tethering-session"
-
-        const val EXCEPTION_MARKER = "Exception"
 
         const val DOWN_ARROW = "\u2193"
         const val UP_ARROW = "\u2191"

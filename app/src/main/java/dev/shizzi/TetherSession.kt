@@ -113,7 +113,7 @@ class TetherSession(private val context: Context) {
         }
 
         check(vpnMode != VpnMode.ALWAYS || vpn.isVpnPresent()) {
-            "followVpn: vpn mode always requires an active VPN, none is connected"
+            SessionError.VPN_REQUIRED
         }
         vpn.follow(group)
     }
@@ -145,7 +145,7 @@ class TetherSession(private val context: Context) {
         state = SessionState.ERROR
         detail = when (teardownProblem) {
             null -> problem
-            else -> "$problem; teardown incomplete: $teardownProblem"
+            else -> "$problem${SessionError.TEARDOWN_INCOMPLETE}$teardownProblem"
         }
     }
 
@@ -170,7 +170,9 @@ class TetherSession(private val context: Context) {
         succeeded.forEach { (type, _) -> started.add(type) }
 
         val failures = failed.map { (type, outcome) -> "${type.label} did not start (${outcome.second})" }
-        check(succeeded.isNotEmpty()) { "restartDownstream: ${failures.joinToString("; ")}" }
+        check(succeeded.isNotEmpty()) {
+            "${SessionError.DOWNSTREAM_NOT_STARTED} ${failures.joinToString("; ")}"
+        }
 
         failures.forEach(SessionLog::warn)
         return awaitDownstreamTethered(succeeded.map { it.key })
@@ -203,7 +205,7 @@ class TetherSession(private val context: Context) {
             Thread.sleep(UPSTREAM_POLL_MS)
             observed = liveUpstreams(name)
         }
-        error("verifyUpstream: expected only $name, tethering reports $observed")
+        error("${SessionError.UPSTREAM_NOT_VERIFIED} expected only $name, tethering reports $observed")
     }
 
     private fun liveUpstreams(owned: String): List<String> =

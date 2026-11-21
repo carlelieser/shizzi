@@ -174,7 +174,6 @@
     <string name="notification_connected_vpn_ignored">Connected · VPN ignored</string>
     <string name="notification_connected_vpn">Connected · VPN</string>
     <string name="notification_not_sharing">Not sharing</string>
-    <string name="notification_generic_error">Something went wrong. Check the app for details.</string>
     <string name="notification_turning_hotspot_off">Turning the hotspot off…</string>
     <string name="notification_turning_hotspot_on">Turning the hotspot on…</string>
     <string name="notification_no_devices">No devices connected</string>
@@ -203,6 +202,13 @@
     <string name="session_end_restart_failed_hotspot_on">Sharing could not be restarted automatically. The hotspot may still be on.</string>
     <string name="session_end_shizuku_stopped">Sharing stopped because Shizuku is not running.</string>
     <string name="session_end_shizuku_stopped_hotspot_on">Sharing stopped because Shizuku is not running. The hotspot may still be on.</string>
+    <string name="session_error_generic">Something went wrong while sharing. The log has the details.</string>
+    <string name="session_error_vpn_required">Sharing didn\'t start because the VPN mode is Always and no VPN is connected.</string>
+    <string name="session_error_hotspot_not_started">The hotspot couldn\'t be turned on.</string>
+    <string name="session_error_upstream_not_verified">Sharing didn\'t start because Android didn\'t route the hotspot through the app.</string>
+    <string name="session_error_upstream_lost">Sharing stopped because Android stopped routing the hotspot through the app.</string>
+    <string name="session_error_teardown_incomplete">Sharing stopped, but the hotspot may still be on.</string>
+    <string name="session_error_hotspot_may_be_on">%1$s The hotspot may still be on.</string>
 
     <!-- USB tethering and reconnect states (0.5.0) -->
     <string name="tethering">Tethering</string>

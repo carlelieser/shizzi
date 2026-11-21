@@ -21,7 +21,10 @@ sealed interface UiText {
 }
 
 fun UiText.resolve(resources: Resources): String = when (this) {
-    is UiText.Resource -> resources.getString(id, *formatArgs.toTypedArray())
-    is UiText.Plural -> resources.getQuantityString(id, quantity, *formatArgs.toTypedArray())
+    is UiText.Resource -> resources.getString(id, *formatArgs.resolve(resources))
+    is UiText.Plural -> resources.getQuantityString(id, quantity, *formatArgs.resolve(resources))
     is UiText.Verbatim -> text
 }
+
+private fun List<Any>.resolve(resources: Resources): Array<Any> =
+    map { arg -> if (arg is UiText) arg.resolve(resources) else arg }.toTypedArray()
