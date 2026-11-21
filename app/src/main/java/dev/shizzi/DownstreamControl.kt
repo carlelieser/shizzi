@@ -69,12 +69,32 @@ class DownstreamControl(private val context: Context) {
         val viaTethering = startViaTetheringManager(type)
         if (viaTethering.first || type != TetheringType.WIFI) return viaTethering
 
+        val viaBandFallback = startWithBandFallback()
+        if (viaBandFallback.first) return viaBandFallback
+
         val viaWifiManager = startViaWifiManager()
         return when {
             viaWifiManager.first -> viaWifiManager
-            else -> false to "tethering[${viaTethering.second}]; wifiManager[${viaWifiManager.second}]"
+            else -> false to "tethering[${viaTethering.second}]; " +
+                "bandFallback[${viaBandFallback.second}]; wifiManager[${viaWifiManager.second}]"
         }
     }
+
+    private fun startWithBandFallback(): Pair<Boolean, String> =
+        when (val fallback = SavedHotspot(context).bandFallback()) {
+            is BandFallback.NotNeeded -> false to "saved band ${fallback.savedBand} already allows 2.4 GHz"
+            is BandFallback.Unavailable -> false to fallback.reason
+            is BandFallback.Ready -> {
+                val (didStart, detail) = startViaTetheringManager(TetheringType.WIFI, fallback.config)
+                if (didStart) {
+                    SessionLog.warn(
+                        "hotspot refused saved band ${fallback.savedBand}; " +
+                            "started with band ${fallback.band} to allow 2.4 GHz",
+                    )
+                }
+                didStart to "band ${fallback.savedBand} -> ${fallback.band}: $detail"
+            }
+        }
 
     private fun startViaWifiManager(): Pair<Boolean, String> = runCatching {
         val wifiManager = context.getSystemService(Context.WIFI_SERVICE)
@@ -92,11 +112,14 @@ class DownstreamControl(private val context: Context) {
         false to "startTetheredHotspot: ${failure.cause?.message ?: failure.message}"
     }
 
-    private fun startViaTetheringManager(type: TetheringType): Pair<Boolean, String> {
-        val exempt = startTetheringRequest(type, isExemptFromEntitlement = true)
+    private fun startViaTetheringManager(
+        type: TetheringType,
+        softApConfig: Any? = null,
+    ): Pair<Boolean, String> {
+        val exempt = startTetheringRequest(type, isExemptFromEntitlement = true, softApConfig)
         if (exempt.first) return exempt
 
-        val plain = startTetheringRequest(type, isExemptFromEntitlement = false)
+        val plain = startTetheringRequest(type, isExemptFromEntitlement = false, softApConfig)
         return when {
             plain.first -> plain
             else -> false to "exempt[${exempt.second}]; plain[${plain.second}]"
@@ -106,8 +129,9 @@ class DownstreamControl(private val context: Context) {
     private fun startTetheringRequest(
         type: TetheringType,
         isExemptFromEntitlement: Boolean,
+        softApConfig: Any?,
     ): Pair<Boolean, String> {
-        val request = runCatching { buildTetheringRequest(type, isExemptFromEntitlement) }
+        val request = runCatching { buildTetheringRequest(type, isExemptFromEntitlement, softApConfig) }
             .getOrElse { return false to "buildTetheringRequest: ${it.message}" }
 
         val latch = CountDownLatch(1)
@@ -124,7 +148,11 @@ class DownstreamControl(private val context: Context) {
         }.getOrElse { false to "startTethering: ${it.message}" }
     }
 
-    private fun buildTetheringRequest(type: TetheringType, isExemptFromEntitlement: Boolean): Any {
+    private fun buildTetheringRequest(
+        type: TetheringType,
+        isExemptFromEntitlement: Boolean,
+        softApConfig: Any?,
+    ): Any {
         val builderClass = Class.forName("android.net.TetheringManager\$TetheringRequest\$Builder")
         val builder = builderClass
             .getConstructor(Int::class.javaPrimitiveType)
@@ -136,6 +164,11 @@ class DownstreamControl(private val context: Context) {
                     .getDeclaredMethod("setExemptFromEntitlementCheck", Boolean::class.java)
                     .invoke(builder, true)
             }
+        }
+        if (softApConfig != null) {
+            builderClass
+                .getMethod("setSoftApConfiguration", softApConfig.javaClass)
+                .invoke(builder, softApConfig)
         }
         return builderClass.getMethod("build").invoke(builder)!!
     }
