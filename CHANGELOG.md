@@ -23,6 +23,13 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   used to time out, so devices that check connectivity with ping, such as
   travel routers, reported no internet while traffic was flowing. Shizzi now
   sends each ping out over the session's network and relays the reply.
+- **Peer-to-peer UDP works over tethering.** Each tethered device now keeps
+  one outside UDP port for every destination it talks to, and only hosts it
+  has sent to can reply, the way a home router behaves. Before, every
+  destination got its own port, which broke STUN and hole punching: calls,
+  games, and site-to-site VPNs such as UniFi Teleport failed or reconnected
+  every few seconds. When a VPN connects, drops, or is replaced, open UDP
+  flows are cut and each device's outside port changes.
 
 ## [0.5.0] - 2026-10-30
 
