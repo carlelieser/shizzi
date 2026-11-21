@@ -164,6 +164,10 @@
     <string name="module_staged_description">Модуль подготовлен и завершит установку при следующем запуске телефона. После перезагрузки вернитесь сюда и снова проверьте совместимость.</string>
     <string name="module_install_failed_description">Телефон отказался устанавливать этот модуль — такое бывает в прошивках некоторых производителей. Ничего не было изменено.</string>
     <string name="module_ready_to_install">Модуль загружен и проверен, можно устанавливать.</string>
+    <string name="module_install_timed_out">Установщик не успел завершить работу.</string>
+    <string name="compatibility_check_failed">Не удалось выполнить проверку. Убедитесь, что Shizuku запущен, и повторите попытку.</string>
+    <string name="compatibility_not_reported">Shizuku не сообщил результат этой проверки.</string>
+    <string name="compatibility_test_network_unavailable">На этом телефоне нет службы тестовой сети.</string>
 
     <string name="notification_cleaning_up">Завершение…</string>
     <string name="notification_getting_ready">Подготовка…</string>
@@ -174,7 +178,6 @@
     <string name="notification_connected_vpn_ignored">Подключено · VPN игнорируется</string>
     <string name="notification_connected_vpn">Подключено · VPN</string>
     <string name="notification_not_sharing">Раздача не запущена</string>
-    <string name="notification_generic_error">Произошла ошибка. Подробности смотрите в приложении.</string>
     <string name="notification_turning_hotspot_off">Выключение точки доступа…</string>
     <string name="notification_turning_hotspot_on">Включение точки доступа…</string>
     <string name="notification_no_devices">Нет подключённых устройств</string>
@@ -207,6 +210,13 @@
     <string name="session_end_restart_failed_hotspot_on">Не удалось автоматически перезапустить раздачу. Точка доступа может оставаться включённой.</string>
     <string name="session_end_shizuku_stopped">Раздача остановлена, так как Shizuku не запущен.</string>
     <string name="session_end_shizuku_stopped_hotspot_on">Раздача остановлена, так как Shizuku не запущен. Точка доступа может оставаться включённой.</string>
+    <string name="session_error_generic">Во время раздачи что-то пошло не так. Подробности в журнале.</string>
+    <string name="session_error_vpn_required">Раздача не началась: выбран режим VPN «Всегда», но VPN не подключён.</string>
+    <string name="session_error_hotspot_not_started">Не удалось включить точку доступа.</string>
+    <string name="session_error_upstream_not_verified">Раздача не началась: Android не направил трафик точки доступа через приложение.</string>
+    <string name="session_error_upstream_lost">Раздача остановлена: Android перестал направлять трафик точки доступа через приложение.</string>
+    <string name="session_error_teardown_incomplete">Раздача остановлена, но точка доступа может оставаться включённой.</string>
+    <string name="session_error_hotspot_may_be_on">%1$s Точка доступа может оставаться включённой.</string>
 
     <!-- USB tethering and reconnect states (0.5.0) -->
     <string name="tethering">Раздача интернета</string>
