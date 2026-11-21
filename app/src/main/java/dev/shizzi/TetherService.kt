@@ -5,6 +5,7 @@ import android.content.Context
 import android.os.Build
 import android.os.ParcelFileDescriptor
 import android.util.Log
+import kotlin.system.exitProcess
 
 class TetherService : ITetherService.Stub {
 
@@ -26,6 +27,18 @@ class TetherService : ITetherService.Stub {
     }
 
     override fun getContractVersion(): Int = CONTRACT_VERSION
+
+    /**
+     * Shizuku stops a user service only by asking it to exit, when the app
+     * unbinds it or a newer version replaces it. A session still running here
+     * would otherwise be left with nothing controlling it.
+     */
+    override fun destroy() {
+        Log.i(TAG, "destroy: helper replaced or unbound, exiting")
+        if (session.isActive) runCatching { session.stop() }
+            .onFailure { failure -> Log.e(TAG, "destroy: session teardown failed", failure) }
+        exitProcess(0)
+    }
 
     override fun start(logging: Boolean, vpnMode: String?, usbTethering: String?): String {
         SessionLog.setEnabled(logging)
