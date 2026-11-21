@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Shizzi</string>
-
     <string name="start">Запустить</string>
     <string name="stop">Остановить</string>
     <string name="cancel">Отмена</string>
@@ -122,17 +120,18 @@
     <string name="grant_permission_upper">ДАТЬ РАЗРЕШЕНИЕ</string>
     <string name="shizuku_not_installed">Shizuku не установлен</string>
     <string name="shizuku_not_running">Shizuku установлен, но не запущен</string>
-    <string name="shizuku_permission_needed">Shizzi требуется разрешение Shizuku</string>
+    <string name="shizuku_permission_needed">Требуется разрешение Shizuku</string>
 
     <string name="status_not_connected">Не подключено</string>
     <string name="status_connecting">Подключение</string>
     <string name="status_connected">Подключено</string>
     <string name="status_starting">Запуск</string>
+    <string name="status_reconnecting">Переподключение</string>
+    <string name="status_waiting_for_shizuku">Ожидание Shizuku</string>
     <string name="status_failed">Ошибка</string>
     <string name="badge_no_shizuku">НЕТ SHIZUKU</string>
     <string name="badge_shizuku_off">SHIZUKU ВЫКЛ.</string>
     <string name="badge_permission_needed">НУЖНО РАЗРЕШЕНИЕ</string>
-    <string name="status_prefix">СТАТУС %1$s</string>
     <string name="tunnel_active">ТУННЕЛЬ АКТИВЕН</string>
 
     <string name="welcome">Добро пожаловать</string>
@@ -168,6 +167,9 @@
 
     <string name="notification_cleaning_up">Завершение…</string>
     <string name="notification_getting_ready">Подготовка…</string>
+    <string name="notification_shizuku_stopped">Shizuku остановлен</string>
+    <string name="notification_reconnecting">Переподключение…</string>
+    <string name="notification_start_shizuku">Запустите Shizuku, чтобы возобновить раздачу.</string>
     <string name="notification_session_ended">Раздача завершена</string>
     <string name="notification_connected_vpn_ignored">Подключено · VPN игнорируется</string>
     <string name="notification_connected_vpn">Подключено · VPN</string>
@@ -182,13 +184,12 @@
         <item quantity="many">%d устройств</item>
         <item quantity="other">%d устройства</item>
     </plurals>
-    <string name="notification_shizuku_loss">Shizuku остановился, поэтому раздача завершена, а точка доступа выключена. Запустите снова, когда будете готовы.</string>
-    <string name="notification_session_loss_problem">Раздача завершена, но точка доступа могла остаться включённой: %1$s — выключите её в настройках.</string>
     <string name="notification_channel_name">Раздача интернета</string>
     <string name="notification_channel_description">Показывается во время активной раздачи</string>
 
     <string name="tile_stopping">Остановка…</string>
     <string name="tile_starting">Запуск…</string>
+    <string name="tile_reconnecting">Переподключение…</string>
     <string name="tile_tap_retry">Нажмите, чтобы повторить</string>
     <string name="tile_tap_share">Нажмите для раздачи</string>
     <string name="tile_shizuku_not_installed">Shizuku не установлен</string>
@@ -201,13 +202,18 @@
         <item quantity="other">%1$d устройства · %2$s</item>
     </plurals>
 
-    <string name="session_ended_unexpectedly">Раздача неожиданно завершилась — выключаю точку доступа…</string>
     <string name="vpn_disconnected_session_stopped">VPN отключился. Раздача остановлена, чтобы устройства не вышли в сеть напрямую.</string>
+    <string name="session_end_restart_failed">Не удалось автоматически перезапустить раздачу.</string>
+    <string name="session_end_restart_failed_hotspot_on">Не удалось автоматически перезапустить раздачу. Точка доступа может оставаться включённой.</string>
+    <string name="session_end_shizuku_stopped">Раздача остановлена, так как Shizuku не запущен.</string>
+    <string name="session_end_shizuku_stopped_hotspot_on">Раздача остановлена, так как Shizuku не запущен. Точка доступа может оставаться включённой.</string>
 
     <!-- USB tethering and reconnect states (0.5.0) -->
     <string name="tethering">Раздача интернета</string>
     <string name="usb_tethering">Раздача по USB</string>
     <string name="open_system_settings">Открыть системные настройки</string>
+    <string name="open_shizuku">Открыть Shizuku</string>
+    <string name="hotspot_settings">Настройки точки доступа</string>
     <string name="system_settings">системные настройки</string>
     <string name="usb_mode_auto">Авто</string>
     <string name="usb_mode_always">Всегда</string>
@@ -216,7 +222,12 @@
     <string name="usb_mode_always_description">Раздавать только по USB; требуется кабель</string>
     <string name="usb_mode_never_description">Раздавать только через точку доступа Wi-Fi</string>
     <string name="waiting_for_usb">Ожидание USB</string>
-    <string name="notification_usb_grace">Подключите USB в течение %1$d мин., чтобы продолжить раздачу</string>
+    <plurals name="notification_usb_grace">
+        <item quantity="one">Подключите USB в течение %1$d минуты, чтобы продолжить раздачу</item>
+        <item quantity="few">Подключите USB в течение %1$d минут, чтобы продолжить раздачу</item>
+        <item quantity="many">Подключите USB в течение %1$d минут, чтобы продолжить раздачу</item>
+        <item quantity="other">Подключите USB в течение %1$d минуты, чтобы продолжить раздачу</item>
+    </plurals>
 
     <!-- Session and settings messages -->
     <string name="could_not_open">Не удалось открыть %1$s</string>
