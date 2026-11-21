@@ -123,6 +123,6 @@ class SessionNotification(private val context: Context) {
         const val DOWN_ARROW = "\u2193"
         const val UP_ARROW = "\u2191"
 
-        const val USB_GRACE_MINUTES = (UsbReconnect.GIVE_UP_AFTER_MS / 60_000).toInt()
+        const val USB_GRACE_MINUTES = (WiredReconnect.GIVE_UP_AFTER_MS / 60_000).toInt()
     }
 }

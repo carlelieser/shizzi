@@ -232,5 +232,7 @@
 
     <string name="could_not_open">%1$s açılamadı</string>
     <string name="usb_cable_required">Başlatılamadı. USB bağlantısı gerekli.</string>
+    <string name="ethernet_connection_required">Başlatılamadı. Ethernet bağlantısı gerekli.</string>
+    <string name="wired_connection_required">Başlatılamadı. Kablolu bağlantı gerekli.</string>
     <string name="issue_tracker_label">hata takip sistemi</string>
 </resources>

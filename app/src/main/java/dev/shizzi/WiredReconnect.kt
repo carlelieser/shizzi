@@ -1,12 +1,12 @@
 package dev.shizzi
 
 /**
- * Android drops USB tethering when the cable is pulled and leaves it off when
- * it returns, so a session asks for it again once a host is back.
+ * Android drops USB and Ethernet tethering when the cable or adapter is pulled
+ * and leaves it off when it returns, so a session asks for it again then.
  *
  * Kept free of Android types so the decisions are directly testable.
  */
-class UsbReconnect(private val onEvent: (String) -> Unit = {}) {
+class WiredReconnect(private val label: String, private val onEvent: (String) -> Unit = {}) {
 
     @Volatile
     var isWaiting = false
@@ -15,16 +15,16 @@ class UsbReconnect(private val onEvent: (String) -> Unit = {}) {
     private var lastAttemptAt: Long? = null
     private var waitingSince: Long? = null
 
-    /** True once USB has been down for longer than the session should wait. */
+    /** True once the link has been down for longer than the session should wait. */
     fun hasGivenUp(now: Long): Boolean {
         val since = waitingSince ?: return false
         return now - since >= GIVE_UP_AFTER_MS
     }
 
-    /** True when USB tethering should be requested again right now. */
+    /** True when tethering should be requested again right now. */
     fun shouldRestart(isTethered: Boolean, isCableConnected: Boolean, now: Long): Boolean {
         if (isTethered) {
-            if (isWaiting) onEvent("usb tethering back up")
+            if (isWaiting) onEvent("$label back up")
             isWaiting = false
             lastAttemptAt = null
             waitingSince = null
@@ -32,7 +32,7 @@ class UsbReconnect(private val onEvent: (String) -> Unit = {}) {
         }
 
         if (!isWaiting) {
-            onEvent("usb tethering down; waiting for a usb host")
+            onEvent("$label down; waiting for a cable")
             waitingSince = now
         }
         isWaiting = true
@@ -42,7 +42,7 @@ class UsbReconnect(private val onEvent: (String) -> Unit = {}) {
         if (last != null && now - last < RETRY_INTERVAL_MS) return false
 
         lastAttemptAt = now
-        onEvent("usb host connected; restarting usb tethering")
+        onEvent("cable connected; restarting $label")
         return true
     }
 

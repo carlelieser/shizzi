@@ -30,8 +30,14 @@ class UpstreamInspector(private val deadlineMs: Long = DEFAULT_DEADLINE_MS) {
 
     fun observeUsb(): UpstreamObservation = run("usb")
 
-    private fun run(service: String): UpstreamObservation {
-        val process = ProcessBuilder("dumpsys", service).start()
+    fun observeEthernet(): UpstreamObservation = run("ethernet")
+
+    fun observeInterface(name: String): UpstreamObservation = runCommand(listOf("ip", "addr", "show", name))
+
+    private fun run(service: String): UpstreamObservation = runCommand(listOf("dumpsys", service))
+
+    private fun runCommand(command: List<String>): UpstreamObservation {
+        val process = ProcessBuilder(command).start()
         val drainPool = Executors.newFixedThreadPool(2)
 
         val stdout = drainPool.submit<String> { process.inputStream.drain() }

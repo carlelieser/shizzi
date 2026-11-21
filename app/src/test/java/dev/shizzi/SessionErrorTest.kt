@@ -9,7 +9,7 @@ class SessionErrorTest {
 
     @Test
     fun `translates errors the app raises itself`() {
-        assertEquals(resource(R.string.usb_cable_required), SessionError.describe(UsbDownstream.NO_USB_CABLE))
+        assertEquals(resource(R.string.usb_cable_required), SessionError.describe(WiredDownstream.NO_USB_CABLE))
         assertEquals(
             resource(R.string.vpn_disconnected_session_stopped),
             SessionError.describe(SessionError.VPN_LOST),

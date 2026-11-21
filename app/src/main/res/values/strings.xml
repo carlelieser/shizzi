@@ -237,5 +237,7 @@
     <!-- Session and settings messages -->
     <string name="could_not_open">Couldn\'t open %1$s</string>
     <string name="usb_cable_required">Failed to start. USB connection required.</string>
+    <string name="ethernet_connection_required">Failed to start. Ethernet connection required.</string>
+    <string name="wired_connection_required">Failed to start. Wired connection required.</string>
     <string name="issue_tracker_label">the issue tracker</string>
 </resources>

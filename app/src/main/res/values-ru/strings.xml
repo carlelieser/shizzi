@@ -242,5 +242,7 @@
     <!-- Session and settings messages -->
     <string name="could_not_open">Не удалось открыть %1$s</string>
     <string name="usb_cable_required">Не удалось начать раздачу: требуется подключение USB.</string>
+    <string name="ethernet_connection_required">Не удалось начать раздачу: требуется подключение Ethernet.</string>
+    <string name="wired_connection_required">Не удалось начать раздачу: требуется проводное подключение.</string>
     <string name="issue_tracker_label">список ошибок</string>
 </resources>

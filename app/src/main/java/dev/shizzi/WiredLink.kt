@@ -2,34 +2,41 @@ package dev.shizzi
 
 import android.content.Context
 
-/** The USB reads and requests a session makes, apart from the decisions made on them. */
-interface UsbLink {
+/** The reads and requests a session makes about one kind of cable, apart from the decisions made on them. */
+interface WiredLink {
 
-    /** Null when `dumpsys usb` could not be read. */
-    fun isHostConnected(): Boolean?
+    val type: TetheringType
+
+    /** Whether the other end is connected; null when it could not be read. */
+    fun isConnected(): Boolean?
 
     fun startTethering(): Pair<Boolean, String>
+}
+
+/** Starts [type] tethering and records it as the session's own. */
+fun startOwnedTethering(context: Context, started: StartedDownstreams, type: TetheringType): Pair<Boolean, String> {
+    val outcome = DownstreamControl(context).startTethering(type)
+    if (outcome.first) started.add(type)
+    return outcome
 }
 
 class AndroidUsbLink(
     private val context: Context,
     private val started: StartedDownstreams,
-) : UsbLink {
+) : WiredLink {
 
     private val inspector = UpstreamInspector()
 
-    override fun isHostConnected(): Boolean? {
+    override val type = TetheringType.USB
+
+    override fun isConnected(): Boolean? {
         val observation = inspector.observeUsb()
         if (observation.didTimeout) return null
 
         return parseUsbHostConnected(observation.rawOutput)
     }
 
-    override fun startTethering(): Pair<Boolean, String> {
-        val outcome = DownstreamControl(context).startTethering(TetheringType.USB)
-        if (outcome.first) started.add(TetheringType.USB)
-        return outcome
-    }
+    override fun startTethering(): Pair<Boolean, String> = startOwnedTethering(context, started, type)
 }
 
 private val DEVICE_CONNECTED_PATTERN = Regex("""^\s*connected=(true|false)\s*$""", RegexOption.MULTILINE)
