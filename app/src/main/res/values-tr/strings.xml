@@ -162,6 +162,10 @@
     <string name="module_staged_description">Modül hazır ve telefonunuz bir sonraki açılışında yüklemeyi tamamlayacak. Ardından uyumluluğu kontrol etmek için buraya dönün.</string>
     <string name="module_install_failed_description">Telefonunuz bu modülü reddetti; bazı üreticilerin yazılımları bunu yapar. Hiçbir şey değiştirilmedi.</string>
     <string name="module_ready_to_install">Modül indirildi, doğrulandı ve yüklenmeye hazır.</string>
+    <string name="module_install_timed_out">Yükleyici zamanında tamamlanmadı.</string>
+    <string name="compatibility_check_failed">Kontrol çalıştırılamadı. Shizuku\'nun çalıştığından emin olup tekrar deneyin.</string>
+    <string name="compatibility_not_reported">Shizuku bu kontrolü bildirmedi.</string>
+    <string name="compatibility_test_network_unavailable">Bu telefon test ağı hizmetini sağlamıyor.</string>
 
     <string name="notification_cleaning_up">Temizleniyor…</string>
     <string name="notification_getting_ready">Hazırlanıyor…</string>
@@ -172,7 +176,6 @@
     <string name="notification_connected_vpn_ignored">Bağlı · VPN yok sayıldı</string>
     <string name="notification_connected_vpn">Bağlı · VPN</string>
     <string name="notification_not_sharing">Paylaşım yapılmıyor</string>
-    <string name="notification_generic_error">Bir sorun oluştu. Ayrıntılar için uygulamaya bakın.</string>
     <string name="notification_turning_hotspot_off">Hotspot kapatılıyor…</string>
     <string name="notification_turning_hotspot_on">Hotspot açılıyor…</string>
     <string name="notification_no_devices">Bağlı cihaz yok</string>
@@ -201,6 +204,13 @@
     <string name="session_end_restart_failed_hotspot_on">Paylaşım otomatik olarak yeniden başlatılamadı. Hotspot hâlâ açık olabilir.</string>
     <string name="session_end_shizuku_stopped">Shizuku çalışmadığı için paylaşım durduruldu.</string>
     <string name="session_end_shizuku_stopped_hotspot_on">Shizuku çalışmadığı için paylaşım durduruldu. Hotspot hâlâ açık olabilir.</string>
+    <string name="session_error_generic">Paylaşım sırasında bir sorun oluştu. Ayrıntılar günlükte.</string>
+    <string name="session_error_vpn_required">VPN modu Her zaman olarak ayarlı ve bağlı bir VPN olmadığı için paylaşım başlamadı.</string>
+    <string name="session_error_hotspot_not_started">Hotspot açılamadı.</string>
+    <string name="session_error_upstream_not_verified">Android hotspot trafiğini uygulama üzerinden yönlendirmediği için paylaşım başlamadı.</string>
+    <string name="session_error_upstream_lost">Android hotspot trafiğini uygulama üzerinden yönlendirmeyi bıraktığı için paylaşım durduruldu.</string>
+    <string name="session_error_teardown_incomplete">Paylaşım durduruldu ancak hotspot hâlâ açık olabilir.</string>
+    <string name="session_error_hotspot_may_be_on">%1$s Hotspot hâlâ açık olabilir.</string>
 
     <string name="tethering">Paylaşım</string>
     <string name="usb_tethering">USB paylaşımı</string>
