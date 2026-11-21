@@ -20,15 +20,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import dev.shizzi.AppPermission
-import dev.shizzi.UsbTethering
 import dev.shizzi.PermissionStatus
+import dev.shizzi.R
 import dev.shizzi.ShizukuState
+import dev.shizzi.UsbTethering
 import dev.shizzi.VpnMode
 import dev.shizzi.ui.theme.AccentChoice
 import dev.shizzi.ui.theme.DesignLanguage
@@ -94,7 +97,7 @@ fun SettingsPage(
 
     Column(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
 
-        ScreenHeader(title = "Settings", onBack = onBack)
+        ScreenHeader(title = stringResource(R.string.settings), onBack = onBack)
 
         Column(
             modifier = Modifier
@@ -118,12 +121,13 @@ private data class SettingsSectionSpec(
     val content: @Composable () -> Unit,
 )
 
+@Composable
 private fun settingsSections(
     state: SettingsState,
     actions: SettingsActions,
     toasts: ToastState,
 ): List<SettingsSectionSpec> = listOf(
-    SettingsSectionSpec("Tethering") {
+    SettingsSectionSpec(stringResource(R.string.tethering)) {
         TetheringSection(
             selected = state.usbTethering,
             onSelect = actions.onSetUsbTethering,
@@ -131,7 +135,7 @@ private fun settingsSections(
         )
     },
 
-    SettingsSectionSpec("Appearance") {
+    SettingsSectionSpec(stringResource(R.string.appearance)) {
         AppearanceSection(
             state = AppearanceState(
                 theme = state.theme,
@@ -148,7 +152,7 @@ private fun settingsSections(
         )
     },
 
-    SettingsSectionSpec("Permissions") {
+    SettingsSectionSpec(stringResource(R.string.permissions)) {
         PermissionsSection(
             state = PermissionsSectionState(
                 shizuku = state.shizuku,
@@ -159,7 +163,7 @@ private fun settingsSections(
         )
     },
 
-    SettingsSectionSpec("Advanced") {
+    SettingsSectionSpec(stringResource(R.string.advanced)) {
         VpnSection(selected = state.vpnMode, onSelect = actions.onSetVpnMode)
 
         AutomationSection(
@@ -169,11 +173,11 @@ private fun settingsSections(
         )
     },
 
-    SettingsSectionSpec("Developer") {
+    SettingsSectionSpec(stringResource(R.string.developer)) {
         DeveloperSection(isLogging = state.isLogging, actions = actions)
     },
 
-    SettingsSectionSpec("About") { AboutSection(toasts) },
+    SettingsSectionSpec(stringResource(R.string.about)) { AboutSection(toasts) },
 )
 
 /** Staggers each section in on first composition so the page assembles itself. */
@@ -222,23 +226,23 @@ private fun Modifier.inert(isBusy: Boolean): Modifier = when {
 @Composable
 private fun DeveloperSection(isLogging: Boolean, actions: SettingsActions) {
     SettingsToggle(
-        label = SettingsText(title = "Logging"),
+        label = SettingsText(title = stringResource(R.string.logging)),
         isChecked = isLogging,
         onCheckedChange = actions.onSetLogging,
     )
 
     SettingsAction(
-        label = SettingsText(title = "View logs"),
+        label = SettingsText(title = stringResource(R.string.view_logs)),
         onClick = actions.onOpenLog,
     )
 
     SettingsAction(
-        label = SettingsText(title = "Run diagnostics"),
+        label = SettingsText(title = stringResource(R.string.run_diagnostics)),
         onClick = actions.onRunProbes,
     )
 
     SettingsAction(
-        label = SettingsText(title = "Restart onboarding"),
+        label = SettingsText(title = stringResource(R.string.restart_onboarding)),
         onClick = actions.onRestartOnboarding,
     )
 }
@@ -246,24 +250,26 @@ private fun DeveloperSection(isLogging: Boolean, actions: SettingsActions) {
 @Composable
 private fun AboutSection(toasts: ToastState) {
     val context = LocalContext.current
+    val resources = LocalResources.current
+    val issueTracker = stringResource(R.string.issue_tracker_label)
     val open = { label: String, url: String ->
-        if (!context.openUrl(url)) toasts.show(unopenedToast(label))
+        if (!context.openUrl(url)) toasts.show(unopenedToast(resources, label))
     }
 
     SettingsAction(
-        label = SettingsText(title = "GitHub"),
+        label = SettingsText(title = stringResource(R.string.github)),
         isExternal = true,
         onClick = { open("GitHub", SOURCE_URL) },
     )
 
     SettingsAction(
-        label = SettingsText(title = "Report a bug"),
+        label = SettingsText(title = stringResource(R.string.report_a_bug)),
         isExternal = true,
-        onClick = { open("the issue tracker", ISSUE_URL) },
+        onClick = { open(issueTracker, ISSUE_URL) },
     )
 
     SettingsAction(
-        label = SettingsText(title = "Author", subtitle = "carlelieser.dev"),
+        label = SettingsText(title = stringResource(R.string.author), subtitle = "carlelieser.dev"),
         isExternal = true,
         onClick = { open("carlelieser.dev", AUTHOR_URL) },
     )

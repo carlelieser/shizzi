@@ -31,52 +31,51 @@ class SessionNotification(private val context: Context) {
         when (state.status) {
             UiStatus.CONNECTED -> connectedTitle(state)
             UiStatus.LOADING -> loadingTitle(state, isStopping)
-            UiStatus.ERROR -> "Session ended"
-            UiStatus.READY -> "Session ended"
+            UiStatus.ERROR -> context.getString(R.string.notification_session_ended)
+            UiStatus.READY -> context.getString(R.string.notification_session_ended)
         }
 
     private fun loadingTitle(state: SessionUiState, isStopping: Boolean): String = when {
-        isStopping -> "Cleaning up…"
-        state.isWaitingForShizuku -> "Shizuku stopped"
-        state.isReconnecting -> "Reconnecting…"
-        else -> "Getting ready…"
+        isStopping -> context.getString(R.string.notification_cleaning_up)
+        state.isWaitingForShizuku -> context.getString(R.string.notification_shizuku_stopped)
+        state.isReconnecting -> context.getString(R.string.notification_reconnecting)
+        else -> context.getString(R.string.notification_getting_ready)
     }
 
     private fun connectedTitle(state: SessionUiState): String = when {
-        state.isWaitingForUsb -> "Waiting for USB"
-        state.isVpnBypassed -> "Connected · VPN ignored"
-        state.isVpnBound -> "Connected · VPN"
-        else -> "Connected"
+        state.isWaitingForUsb -> context.getString(R.string.waiting_for_usb)
+        state.isVpnBypassed -> context.getString(R.string.notification_connected_vpn_ignored)
+        state.isVpnBound -> context.getString(R.string.notification_connected_vpn)
+        else -> context.getString(R.string.status_connected)
     }
 
     private fun bodyFor(state: SessionUiState, isStopping: Boolean): String = when {
-        state.lastError.isNotEmpty() -> userFacingError(state.lastError)
-        state.isWaitingForShizuku -> "Start Shizuku to resume sharing."
+        state.lastError.isNotEmpty() -> SessionError.describe(state.lastError).resolve(context.resources)
+        state.isWaitingForShizuku -> context.getString(R.string.notification_start_shizuku)
         state.status == UiStatus.LOADING -> loadingBody(isStopping)
-        state.isWaitingForUsb -> "Connect over USB within $USB_GRACE_MINUTES minutes to keep sharing"
+        state.isWaitingForUsb -> context.resources.getQuantityString(
+            R.plurals.notification_usb_grace,
+            USB_GRACE_MINUTES,
+            USB_GRACE_MINUTES,
+        )
         state.status == UiStatus.CONNECTED -> connectedBody(state)
-        else -> "Not sharing"
-    }
-
-    private fun userFacingError(raw: String): String = when {
-        raw.contains(EXCEPTION_MARKER) -> "Something went wrong. Check the app for details."
-        else -> raw
+        else -> context.getString(R.string.notification_not_sharing)
     }
 
     private fun loadingBody(isStopping: Boolean): String =
-        if (isStopping) "Turning the hotspot off…" else "Turning the hotspot on…"
+        context.getString(
+            if (isStopping) R.string.notification_turning_hotspot_off else R.string.notification_turning_hotspot_on,
+        )
 
     private fun connectedBody(state: SessionUiState): String = when (state.clientCount) {
-        0 -> "No devices connected"
+        0 -> context.getString(R.string.notification_no_devices)
         else -> "${deviceCount(state.clientCount)} · " +
             "$DOWN_ARROW ${Traffic.format(state.traffic.down)} · " +
             "$UP_ARROW ${Traffic.format(state.traffic.up)}"
     }
+    private fun deviceCount(clients: Int): String =
+        context.resources.getQuantityString(R.plurals.notification_device_count, clients, clients)
 
-    private fun deviceCount(clients: Int): String = when (clients) {
-        1 -> "1 device"
-        else -> "$clients devices"
-    }
 
     private fun openAppIntent(): PendingIntent = PendingIntent.getActivity(
         context,
@@ -89,12 +88,12 @@ class SessionNotification(private val context: Context) {
         val launch = ShizukuGate.launchIntent() ?: return null
         val intent = PendingIntent.getActivity(context, 2, launch, PendingIntent.FLAG_IMMUTABLE)
 
-        return Notification.Action.Builder(null, "Open Shizuku", intent).build()
+        return Notification.Action.Builder(null, context.getString(R.string.open_shizuku), intent).build()
     }
 
     private fun stopAction(): Notification.Action = Notification.Action.Builder(
         null,
-        "Stop",
+        context.getString(R.string.stop),
         PendingIntent.getService(
             context,
             1,
@@ -108,9 +107,9 @@ class SessionNotification(private val context: Context) {
 
         val channel = NotificationChannel(
             CHANNEL_ID,
-            "Tethering session",
+            context.getString(R.string.notification_channel_name),
             NotificationManager.IMPORTANCE_LOW,
-        ).apply { description = "Shown while a tethering session is running" }
+        ).apply { description = context.getString(R.string.notification_channel_description) }
 
         notificationManager().createNotificationChannel(channel)
     }
@@ -121,11 +120,9 @@ class SessionNotification(private val context: Context) {
     private companion object {
         const val CHANNEL_ID = "tethering-session"
 
-        const val EXCEPTION_MARKER = "Exception"
-
         const val DOWN_ARROW = "\u2193"
         const val UP_ARROW = "\u2191"
 
-        const val USB_GRACE_MINUTES = UsbReconnect.GIVE_UP_AFTER_MS / 60_000
+        const val USB_GRACE_MINUTES = (UsbReconnect.GIVE_UP_AFTER_MS / 60_000).toInt()
     }
 }

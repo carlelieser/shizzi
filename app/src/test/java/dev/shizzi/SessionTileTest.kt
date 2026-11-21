@@ -8,12 +8,20 @@ class SessionTileTest {
 
     private val ready = ShizukuState.Ready(uid = 2000, isRoot = false)
 
+    private fun text(id: Int) = UiText.Resource(id)
+
+    private fun devices(count: Int) = UiText.Plural(
+        id = R.plurals.tile_device_count,
+        quantity = count,
+        formatArgs = listOf(count, Traffic.format(2_000)),
+    )
+
     @Test
     fun `is unavailable and opens the app while shizuku is missing`() {
         val render = SessionTile.render(SessionUiState(), ShizukuState.NotInstalled, false)
 
         assertEquals(Tile.STATE_UNAVAILABLE, render.state)
-        assertEquals("Shizuku not installed", render.subtitle)
+        assertEquals(text(R.string.tile_shizuku_not_installed), render.subtitle)
         assertEquals(TileAction.OPEN_APP, render.action)
     }
 
@@ -23,8 +31,8 @@ class SessionTileTest {
         val ungranted =
             SessionTile.render(SessionUiState(), ShizukuState.PermissionRequired, false)
 
-        assertEquals("Shizuku not running", stopped.subtitle)
-        assertEquals("Permission required", ungranted.subtitle)
+        assertEquals(text(R.string.tile_shizuku_not_running), stopped.subtitle)
+        assertEquals(text(R.string.permission_required), ungranted.subtitle)
     }
 
     @Test
@@ -32,7 +40,7 @@ class SessionTileTest {
         val render = SessionTile.render(SessionUiState(status = UiStatus.READY), ready, false)
 
         assertEquals(Tile.STATE_INACTIVE, render.state)
-        assertEquals("Tap to share", render.subtitle)
+        assertEquals(text(R.string.tile_tap_share), render.subtitle)
         assertEquals(TileAction.START, render.action)
     }
 
@@ -41,7 +49,7 @@ class SessionTileTest {
         val render = SessionTile.render(SessionUiState(status = UiStatus.LOADING), ready, false)
 
         assertEquals(Tile.STATE_UNAVAILABLE, render.state)
-        assertEquals("Starting…", render.subtitle)
+        assertEquals(text(R.string.tile_starting), render.subtitle)
         assertEquals(TileAction.NONE, render.action)
     }
 
@@ -49,7 +57,7 @@ class SessionTileTest {
     fun `says it is stopping while tearing a session down`() {
         val render = SessionTile.render(SessionUiState(status = UiStatus.LOADING), ready, true)
 
-        assertEquals("Stopping…", render.subtitle)
+        assertEquals(text(R.string.tile_stopping), render.subtitle)
         assertEquals(TileAction.NONE, render.action)
     }
 
@@ -58,7 +66,7 @@ class SessionTileTest {
         val render = SessionTile.render(SessionUiState().asReconnecting(), ready, false)
 
         assertEquals(Tile.STATE_UNAVAILABLE, render.state)
-        assertEquals("Reconnecting…", render.subtitle)
+        assertEquals(text(R.string.tile_reconnecting), render.subtitle)
         assertEquals(TileAction.NONE, render.action)
     }
 
@@ -78,9 +86,9 @@ class SessionTileTest {
         val one = none.copy(clientCount = 1, traffic = Traffic(down = 2_000))
         val many = none.copy(clientCount = 3, traffic = Traffic(down = 2_000))
 
-        assertEquals("No devices", SessionTile.render(none, ready, false).subtitle)
-        assertEquals("1 device · 2.0 KB", SessionTile.render(one, ready, false).subtitle)
-        assertEquals("3 devices · 2.0 KB", SessionTile.render(many, ready, false).subtitle)
+        assertEquals(text(R.string.tile_no_devices), SessionTile.render(none, ready, false).subtitle)
+        assertEquals(devices(1), SessionTile.render(one, ready, false).subtitle)
+        assertEquals(devices(3), SessionTile.render(many, ready, false).subtitle)
     }
 
     @Test
@@ -88,7 +96,7 @@ class SessionTileTest {
         val render = SessionTile.render(SessionUiState(status = UiStatus.ERROR), ready, false)
 
         assertEquals(Tile.STATE_INACTIVE, render.state)
-        assertEquals("Tap to retry", render.subtitle)
+        assertEquals(text(R.string.tile_tap_retry), render.subtitle)
         assertEquals(TileAction.START, render.action)
     }
 }

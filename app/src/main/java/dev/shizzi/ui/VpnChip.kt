@@ -10,6 +10,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import dev.shizzi.R
 import dev.shizzi.ui.theme.ShizziTheme
 
 @Composable
@@ -31,7 +33,7 @@ fun VpnChip(isBypassed: Boolean = false) {
         )
 
         Text(
-            text = if (isBypassed) "VPN IGNORED" else "VPN CONNECTED",
+            text = stringResource(if (isBypassed) R.string.vpn_ignored_badge else R.string.vpn_connected_badge),
             style = ShizziTheme.typography.caption,
             color = tint,
         )

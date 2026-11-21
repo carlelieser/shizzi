@@ -19,12 +19,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -32,10 +34,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import dev.shizzi.BuildConfig
+import dev.shizzi.R
 import dev.shizzi.SessionUiState
 import dev.shizzi.UiStatus
 import dev.shizzi.ui.theme.ScreenPadding
 import dev.shizzi.ui.theme.ShizziTheme
+import dev.shizzi.ui.theme.currentLocale
 import dev.shizzi.ui.theme.standardTween
 import dev.shizzi.ui.theme.themedIndication
 
@@ -77,7 +81,7 @@ fun StatusRow(
 @Composable
 private fun StatusText(text: String) {
     Text(
-        text = text.uppercase(),
+        text = text.uppercase(currentLocale()),
         style = ShizziTheme.typography.caption,
         color = ShizziTheme.colors.onSurfaceMuted,
         textAlign = TextAlign.Center,
@@ -99,11 +103,11 @@ private fun StatusLabel(status: String) {
     ) { word ->
         Text(
             text = buildAnnotatedString {
-                append("STATUS ")
+                append(stringResource(R.string.status).uppercase(currentLocale()) + " ")
                 withStyle(
                     SpanStyle(color = colors.onSurface, fontWeight = FontWeight.W700),
                 ) {
-                    append(word.uppercase())
+                    append(word.uppercase(currentLocale()))
                 }
             },
             style = ShizziTheme.typography.caption,
@@ -154,7 +158,7 @@ private fun TunnelSegment(name: String) {
     val interaction = remember { MutableInteractionSource() }
 
     Text(
-        text = if (isShowingName) name.uppercase() else "TUNNEL ACTIVE",
+        text = if (isShowingName) name.uppercase() else stringResource(R.string.tunnel_active),
         style = ShizziTheme.typography.caption,
         color = ShizziTheme.colors.onSurfaceMuted,
         textAlign = TextAlign.Center,
@@ -178,15 +182,21 @@ private fun StatusDivider() {
     )
 }
 
+@Composable
+@ReadOnlyComposable
 private fun loadingWord(state: SessionUiState): String = when {
-    state.isWaitingForShizuku -> "Waiting for Shizuku"
-    state.isReconnecting -> "Reconnecting"
-    else -> "Starting"
+    state.isWaitingForShizuku -> stringResource(R.string.status_waiting_for_shizuku)
+    state.isReconnecting -> stringResource(R.string.status_reconnecting)
+    else -> stringResource(R.string.status_starting)
 }
 
+@Composable
+@ReadOnlyComposable
 private fun statusWord(state: SessionUiState): String = when (state.status) {
-    UiStatus.CONNECTED -> if (state.isWaitingForUsb) "Waiting for USB" else "Connected"
-    UiStatus.READY -> "Ready"
+    UiStatus.CONNECTED -> stringResource(
+        if (state.isWaitingForUsb) R.string.waiting_for_usb else R.string.status_connected,
+    )
+    UiStatus.READY -> stringResource(R.string.ready)
     UiStatus.LOADING -> loadingWord(state)
-    UiStatus.ERROR -> "Failed"
+    UiStatus.ERROR -> stringResource(R.string.status_failed)
 }

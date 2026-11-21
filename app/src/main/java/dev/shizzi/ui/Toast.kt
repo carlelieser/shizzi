@@ -1,9 +1,11 @@
 package dev.shizzi.ui
 
+import android.content.res.Resources
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
+import dev.shizzi.R
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -62,12 +64,12 @@ class ToastState {
 @Composable
 fun rememberToastState(): ToastState = remember { ToastState() }
 
-fun unopenedToast(label: String): Toast = Toast(
+fun unopenedToast(resources: Resources, label: String): Toast = Toast(
     key = ToastKeys.OPEN,
-    message = "Couldn't open $label",
+    message = resources.getString(R.string.could_not_open, label),
 )
 
-fun copiedToast(label: String): Toast = Toast(
+fun copiedToast(resources: Resources, label: String): Toast = Toast(
     key = ToastKeys.COPY,
-    message = "$label copied",
+    message = resources.getString(R.string.copied, label),
 )

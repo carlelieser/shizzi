@@ -18,8 +18,11 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import dev.shizzi.R
 import dev.shizzi.SessionUiState
 import dev.shizzi.UiStatus
 import dev.shizzi.ui.theme.HeaderHeight
@@ -28,8 +31,12 @@ import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.standardSpring
 import dev.shizzi.ui.theme.standardTween
 
-private fun buttonLabel(state: SessionUiState): String =
-    if (state.status == UiStatus.CONNECTED || state.isRecovering) "Stop" else "Start"
+@Composable
+@ReadOnlyComposable
+private fun buttonLabel(state: SessionUiState): String {
+    val isStoppable = state.status == UiStatus.CONNECTED || state.isRecovering
+    return stringResource(if (isStoppable) R.string.stop else R.string.start)
+}
 
 private fun buttonState(state: SessionUiState): ConnectButtonState = when {
     state.isRecovering -> ConnectButtonState.STOP
@@ -102,7 +109,7 @@ private fun HomeHeader(
 
         ShizziIconButton(
             icon = Icons.Filled.Settings,
-            contentDescription = "Settings",
+            contentDescription = stringResource(R.string.settings),
             onClick = onOpenSettings,
             tint = ShizziTheme.colors.onSurfaceMuted,
         )

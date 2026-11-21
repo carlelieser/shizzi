@@ -3,10 +3,10 @@ package dev.shizzi.ui
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -21,20 +21,23 @@ import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.launch
+import dev.shizzi.R
 import dev.shizzi.ui.theme.ShizziTheme
+import dev.shizzi.ui.theme.ThemeChoice
+import dev.shizzi.ui.theme.isPressed
 import dev.shizzi.ui.theme.standardSpring
 import dev.shizzi.ui.theme.themedIndication
-import dev.shizzi.ui.theme.ThemeChoice
 import dev.shizzi.ui.theme.themedSurface
-import dev.shizzi.ui.theme.isPressed
+import kotlinx.coroutines.launch
 
 private val OptionHeight = 44.dp
 
@@ -48,10 +51,12 @@ private fun glyphFor(choice: ThemeChoice): ImageVector = when (choice) {
     ThemeChoice.DARK -> Icons.Filled.DarkMode
 }
 
+@Composable
+@ReadOnlyComposable
 private fun labelFor(choice: ThemeChoice): String = when (choice) {
-    ThemeChoice.SYSTEM -> "Match system"
-    ThemeChoice.LIGHT -> "Light"
-    ThemeChoice.DARK -> "Dark"
+    ThemeChoice.SYSTEM -> stringResource(R.string.theme_match_system)
+    ThemeChoice.LIGHT -> stringResource(R.string.theme_light)
+    ThemeChoice.DARK -> stringResource(R.string.theme_dark)
 }
 
 @Composable

@@ -6,13 +6,11 @@ enum class TileAction { START, STOP, OPEN_APP, NONE }
 
 data class TileRender(
     val state: Int,
-    val subtitle: String,
+    val subtitle: UiText,
     val action: TileAction,
 )
 
 object SessionTile {
-
-    const val LABEL = "Shizzi"
 
     fun render(session: SessionUiState, shizuku: ShizukuState, isStopping: Boolean): TileRender {
         if (shizuku !is ShizukuState.Ready) return unavailable(shizuku)
@@ -32,13 +30,13 @@ object SessionTile {
 
             UiStatus.ERROR -> TileRender(
                 state = Tile.STATE_INACTIVE,
-                subtitle = "Tap to retry",
+                subtitle = text(R.string.tile_tap_retry),
                 action = TileAction.START,
             )
 
             UiStatus.READY -> TileRender(
                 state = Tile.STATE_INACTIVE,
-                subtitle = "Tap to share",
+                subtitle = text(R.string.tile_tap_share),
                 action = TileAction.START,
             )
         }
@@ -50,22 +48,27 @@ object SessionTile {
         action = TileAction.OPEN_APP,
     )
 
-    private fun describe(shizuku: ShizukuState): String = when (shizuku) {
-        ShizukuState.NotInstalled -> "Shizuku not installed"
-        ShizukuState.NotRunning -> "Shizuku not running"
-        ShizukuState.PermissionRequired -> "Permission required"
-        is ShizukuState.Ready -> ""
+    private fun describe(shizuku: ShizukuState): UiText = when (shizuku) {
+        ShizukuState.NotInstalled -> text(R.string.tile_shizuku_not_installed)
+        ShizukuState.NotRunning -> text(R.string.tile_shizuku_not_running)
+        ShizukuState.PermissionRequired -> text(R.string.permission_required)
+        is ShizukuState.Ready -> UiText.Verbatim("")
     }
 
-    private fun loadingSubtitle(session: SessionUiState, isStopping: Boolean): String = when {
-        isStopping -> "Stopping…"
-        session.isReconnecting -> "Reconnecting…"
-        else -> "Starting…"
+    private fun loadingSubtitle(session: SessionUiState, isStopping: Boolean): UiText = when {
+        isStopping -> text(R.string.tile_stopping)
+        session.isReconnecting -> text(R.string.tile_reconnecting)
+        else -> text(R.string.tile_starting)
     }
 
-    private fun describeConnected(session: SessionUiState): String = when (session.clientCount) {
-        0 -> "No devices"
-        1 -> "1 device · ${Traffic.format(session.traffic.down)}"
-        else -> "${session.clientCount} devices · ${Traffic.format(session.traffic.down)}"
+    private fun describeConnected(session: SessionUiState): UiText = when (session.clientCount) {
+        0 -> text(R.string.tile_no_devices)
+        else -> UiText.Plural(
+            id = R.plurals.tile_device_count,
+            quantity = session.clientCount,
+            formatArgs = listOf(session.clientCount, Traffic.format(session.traffic.down)),
+        )
     }
+
+    private fun text(id: Int) = UiText.Resource(id)
 }

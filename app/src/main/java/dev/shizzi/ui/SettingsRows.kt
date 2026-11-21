@@ -4,10 +4,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import dev.shizzi.ui.theme.DesignLanguage
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.Spacing
+import dev.shizzi.ui.theme.currentLocale
 
 private val RowIconSize = 20.dp
 
@@ -57,7 +58,7 @@ fun SettingsLabel(title: String, subtitle: String, modifier: Modifier = Modifier
 @Composable
 fun SectionLabel(text: String) {
     Text(
-        text = text.uppercase(),
+        text = text.uppercase(currentLocale()),
         style = ShizziTheme.typography.caption,
         color = ShizziTheme.colors.onSurfaceMuted,
         modifier = Modifier.padding(

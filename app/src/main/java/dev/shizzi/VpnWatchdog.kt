@@ -76,7 +76,7 @@ class VpnWatchdog(
             )
             return null
         }
-        return VpnBinding.Lost(VPN_LOST_DETAIL)
+        return VpnBinding.Lost(SessionError.VPN_LOST)
     }
 
     private fun adopt(observed: Long): VpnBinding? {
@@ -99,8 +99,5 @@ class VpnWatchdog(
         const val POLL_INTERVAL_MS = 5_000L
 
         const val MISSES_BEFORE_TEARDOWN = 2
-
-        const val VPN_LOST_DETAIL =
-            "VPN disconnected. Session stopped to keep devices protected."
     }
 }

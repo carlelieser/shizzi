@@ -1,14 +1,16 @@
 package dev.shizzi.ui
 
+import androidx.annotation.StringRes
 import dev.shizzi.AppPermission
 import dev.shizzi.PermissionStatus
+import dev.shizzi.R
 import dev.shizzi.ShizukuState
-import dev.shizzi.rationale
-import dev.shizzi.title
+import dev.shizzi.rationaleRes
+import dev.shizzi.titleRes
 
 data class PermissionRowState(
-    val title: String,
-    val rationale: String,
+    @StringRes val title: Int,
+    @StringRes val rationale: Int,
     val isGranted: Boolean,
     val onAct: () -> Unit,
 )
@@ -27,19 +29,17 @@ fun permissionRows(
 
     return listOf(shizuku) + sources.permissions.map { status ->
         PermissionRowState(
-            title = status.permission.title,
-            rationale = status.permission.rationale,
+            title = status.permission.titleRes,
+            rationale = status.permission.rationaleRes,
             isGranted = status.isGranted,
             onAct = { onGrantPermission(status.permission) },
         )
     }
 }
 
-private const val SHIZUKU_RATIONALE = "Required for core functionality"
-
 private fun shizukuRow(state: ShizukuState, onAct: () -> Unit) = PermissionRowState(
-    title = "Shizuku",
-    rationale = SHIZUKU_RATIONALE,
+    title = R.string.shizuku,
+    rationale = R.string.shizuku_rationale,
     isGranted = state is ShizukuState.Ready,
     onAct = onAct,
 )

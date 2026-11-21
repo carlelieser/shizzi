@@ -7,9 +7,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import dev.shizzi.CompatibilityDetail
 import dev.shizzi.CompatibilityState
+import dev.shizzi.R
+import dev.shizzi.ui.resolve
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.themedSurface
 
@@ -51,29 +56,31 @@ fun TetheringProviderInstallCard(state: CompatibilityState) {
 @Composable
 private fun InstallFailureDetail(reason: String) {
     Text(
-        text = breakableIdentifiers(reason),
+        text = breakableIdentifiers(CompatibilityDetail.describe(reason).resolve()),
         style = ShizziTheme.typography.log,
         color = ShizziTheme.colors.onSurfaceMuted,
         modifier = Modifier.padding(top = ShizziTheme.spacing.xs),
     )
 }
 
+@Composable
+@ReadOnlyComposable
 private fun titleFor(state: CompatibilityState): String = when (state) {
-    is CompatibilityState.Staged -> "Restart your phone to finish"
-    is CompatibilityState.InstallFailed -> "The module wasn't accepted"
-    else -> "Tethering module"
+    is CompatibilityState.Staged -> stringResource(R.string.module_restart_to_finish)
+    is CompatibilityState.InstallFailed -> stringResource(R.string.module_not_accepted)
+    else -> stringResource(R.string.tethering_module)
 }
 
+@Composable
+@ReadOnlyComposable
 private fun bodyFor(state: CompatibilityState): String = when (state) {
-    is CompatibilityState.Installing -> "Installing the module…"
+    is CompatibilityState.Installing -> stringResource(R.string.module_installing)
 
     is CompatibilityState.Staged ->
-        "The module is ready and will finish installing the next time your " +
-            "phone starts up. Come back here afterwards to check compatibility."
+        stringResource(R.string.module_staged_description)
 
     is CompatibilityState.InstallFailed ->
-        "Your phone refused this module, which some manufacturers' builds do. " +
-            "Nothing was changed."
+        stringResource(R.string.module_install_failed_description)
 
-    else -> "The module is downloaded and verified, ready to install."
+    else -> stringResource(R.string.module_ready_to_install)
 }

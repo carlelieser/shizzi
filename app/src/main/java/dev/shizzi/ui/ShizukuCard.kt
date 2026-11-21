@@ -11,9 +11,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import dev.shizzi.R
@@ -44,9 +46,12 @@ fun ShizukuCard(state: ShizukuState, onGrant: () -> Unit) {
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(ShizziTheme.spacing.sm),
         ) {
-            StatusRow(name = "Status", value = statusText(state))
-            StatusRow(name = "Service", value = serviceText(state))
-            StatusRow(name = "Version", value = ShizukuGate.installedVersion() ?: "Not installed")
+            StatusRow(name = stringResource(R.string.status), value = statusText(state))
+            StatusRow(name = stringResource(R.string.service), value = serviceText(state))
+            StatusRow(
+                name = stringResource(R.string.version),
+                value = ShizukuGate.installedVersion() ?: stringResource(R.string.not_installed),
+            )
 
             if (state is ShizukuState.PermissionRequired) {
                 GrantButton(onGrant)
@@ -86,18 +91,20 @@ private fun GrantButton(onGrant: () -> Unit) {
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = "GRANT PERMISSION",
+            text = stringResource(R.string.grant_permission_upper),
             style = ShizziTheme.typography.label,
             color = ShizziTheme.colors.onPrimary,
         )
     }
 }
 
+@Composable
+@ReadOnlyComposable
 private fun statusText(state: ShizukuState): String = when (state) {
-    is ShizukuState.Ready -> "Ready"
-    ShizukuState.NotInstalled -> "Not installed"
-    ShizukuState.NotRunning -> "Not running"
-    ShizukuState.PermissionRequired -> "Permission required"
+    is ShizukuState.Ready -> stringResource(R.string.ready)
+    ShizukuState.NotInstalled -> stringResource(R.string.not_installed)
+    ShizukuState.NotRunning -> stringResource(R.string.not_running)
+    ShizukuState.PermissionRequired -> stringResource(R.string.permission_required)
 }
 
 private fun serviceText(state: ShizukuState): String = when (state) {

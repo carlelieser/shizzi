@@ -74,9 +74,12 @@ class SessionTileService : TileService() {
         if (session.status != UiStatus.LOADING) isStopping = false
 
         tile.state = render.state
-        tile.label = SessionTile.LABEL
-        tile.subtitle = render.subtitle
-        tile.contentDescription = "${SessionTile.LABEL}, ${render.subtitle}"
+        val label = getString(R.string.app_name)
+        val subtitle = render.subtitle.resolve(resources)
+
+        tile.label = label
+        tile.subtitle = subtitle
+        tile.contentDescription = "$label, $subtitle"
         tile.updateTile()
     }
 

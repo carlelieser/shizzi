@@ -1,5 +1,7 @@
 package dev.shizzi.ui
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -7,8 +9,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,11 +21,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import dev.shizzi.R
 import dev.shizzi.ui.theme.ShizziTheme
-import dev.shizzi.ui.theme.themedLabel
 import dev.shizzi.ui.theme.isPressed
 import dev.shizzi.ui.theme.themedIndication
+import dev.shizzi.ui.theme.themedLabel
 import dev.shizzi.ui.theme.themedSurface
 
 private val PreviewHeight = 56.dp
@@ -40,7 +42,7 @@ fun ColorPickerSheet(onConfirm: (Int) -> Unit, onDismiss: () -> Unit) {
 
     ThemedBottomSheet(onDismiss = onDismiss) {
         Text(
-            text = "Color picker",
+            text = stringResource(R.string.color_picker),
             style = ShizziTheme.typography.heading,
             color = ShizziTheme.colors.onSurface,
         )
@@ -93,7 +95,7 @@ private fun AddColorButton(onClick: () -> Unit) {
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = themedLabel("Add color"),
+            text = themedLabel(stringResource(R.string.add_color)),
             style = ShizziTheme.typography.title,
             color = colors.onPrimary,
         )

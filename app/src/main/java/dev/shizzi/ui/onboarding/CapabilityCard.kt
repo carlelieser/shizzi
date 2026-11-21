@@ -14,10 +14,15 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import dev.shizzi.Capability
+import dev.shizzi.CompatibilityDetail
+import dev.shizzi.R
+import dev.shizzi.ui.resolve
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.themedSurface
 
@@ -65,7 +70,7 @@ fun CapabilityCard(capability: Capability, status: CapabilityStatus, detail: Str
 @Composable
 private fun CapabilityDetail(detail: String) {
     Text(
-        text = breakableIdentifiers(detail),
+        text = breakableIdentifiers(CompatibilityDetail.describe(detail).resolve()),
         style = ShizziTheme.typography.log,
         color = ShizziTheme.colors.onSurfaceMuted,
         modifier = Modifier.padding(top = ShizziTheme.spacing.xs),
@@ -89,14 +94,14 @@ private fun StatusMark(status: CapabilityStatus) {
 
             CapabilityStatus.SUCCESS -> Icon(
                 imageVector = Icons.Filled.Check,
-                contentDescription = "Supported",
+                contentDescription = stringResource(R.string.supported),
                 tint = colors.primary,
                 modifier = Modifier.size(MarkSize),
             )
 
             CapabilityStatus.FAILURE -> Icon(
                 imageVector = Icons.Filled.Close,
-                contentDescription = "Not supported",
+                contentDescription = stringResource(R.string.not_supported),
                 tint = colors.onSurfaceMuted,
                 modifier = Modifier.size(MarkSize),
             )
@@ -104,17 +109,19 @@ private fun StatusMark(status: CapabilityStatus) {
     }
 }
 
+@Composable
+@ReadOnlyComposable
 private fun titleFor(capability: Capability): String = when (capability) {
-    Capability.TEST_NETWORK -> "Test network API"
-    Capability.PREFER_TEST_NETWORKS -> "Prefer test networks"
+    Capability.TEST_NETWORK -> stringResource(R.string.capability_test_network)
+    Capability.PREFER_TEST_NETWORKS -> stringResource(R.string.capability_prefer_test_networks)
 }
 
+@Composable
+@ReadOnlyComposable
 private fun descriptionFor(capability: Capability): String = when (capability) {
     Capability.TEST_NETWORK ->
-        "Lets the app create the test network tunnel your hotspot traffic " +
-            "travels through."
+        stringResource(R.string.capability_test_network_description)
 
     Capability.PREFER_TEST_NETWORKS ->
-        "Lets the app route the hotspot through the test network tunnel. " +
-            "Added in Android 13."
+        stringResource(R.string.capability_prefer_test_networks_description)
 }

@@ -20,7 +20,7 @@ fun parseStagingOutcome(report: String): StagingOutcome {
     return StagingOutcome(
         isStaged = parsed?.optBoolean("staged") == true,
         rawOutput = parsed?.optString("output").orEmpty()
-            .ifEmpty { "not reported by the privileged process" },
+            .ifEmpty { CompatibilityDetail.NOT_REPORTED },
     )
 }
 
@@ -56,7 +56,7 @@ class ApexInstaller(private val deadlineMs: Long = DEFAULT_DEADLINE_MS) {
             isStaged = didExit && output.contains(SUCCESS_MARKER, ignoreCase = true),
             rawOutput = when {
                 didExit -> output
-                else -> "pm install did not exit within ${deadlineMs}ms\n$output"
+                else -> "${CompatibilityDetail.INSTALL_TIMED_OUT} ${deadlineMs}ms\n$output"
             },
         )
     }

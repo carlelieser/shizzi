@@ -12,7 +12,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
+import dev.shizzi.R
 import dev.shizzi.ui.theme.ShizziTheme
 import dev.shizzi.ui.theme.themedSurface
 
@@ -52,7 +54,7 @@ private fun TokenHeader(actions: TokenActions) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = "Token",
+            text = stringResource(R.string.token),
             style = ShizziTheme.typography.subheading,
             color = ShizziTheme.colors.onSurface,
             modifier = Modifier.weight(1f),
@@ -60,13 +62,13 @@ private fun TokenHeader(actions: TokenActions) {
 
         ShizziCompactIconButton(
             icon = Icons.Filled.ContentCopy,
-            contentDescription = "Copy token",
+            contentDescription = stringResource(R.string.copy_token),
             onClick = actions.onCopy,
         )
 
         ShizziCompactIconButton(
             icon = Icons.Filled.Refresh,
-            contentDescription = "Regenerate token",
+            contentDescription = stringResource(R.string.regenerate_token),
             onClick = actions.onRegenerate,
         )
     }
