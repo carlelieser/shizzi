@@ -49,7 +49,7 @@ class SessionStatusTest {
 
     @Test
     fun `waiting for usb is carried across the service boundary`() {
-        assertTrue(stateFrom("""{"state":"ACTIVE","isWaitingForUsb":true}""").isWaitingForUsb)
+        assertTrue(stateFrom("""{"state":"ACTIVE","isWaitingForWired":true}""").isWaitingForWired)
     }
 
     @Test
@@ -83,8 +83,8 @@ class SessionStatusTest {
 
     @Test
     fun `stopping clears waiting for usb`() {
-        val waiting = stateFrom("""{"state":"ACTIVE","isWaitingForUsb":true}""")
+        val waiting = stateFrom("""{"state":"ACTIVE","isWaitingForWired":true}""")
 
-        assertFalse(waiting.asStopped().isWaitingForUsb)
+        assertFalse(waiting.asStopped().isWaitingForWired)
     }
 }

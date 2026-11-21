@@ -68,11 +68,12 @@ fun SectionLabel(text: String) {
     )
 }
 
+/** A null [onCheckedChange] shows the switch disabled. */
 @Composable
 fun SettingsToggle(
     label: SettingsText,
     isChecked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
+    onCheckedChange: ((Boolean) -> Unit)?,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = RowPadding),
@@ -87,6 +88,7 @@ fun SettingsToggle(
         Switch(
             checked = isChecked,
             onCheckedChange = onCheckedChange,
+            enabled = onCheckedChange != null,
             modifier = Modifier.requiredHeight(SwitchLayoutHeight),
             colors = switchColors(),
         )

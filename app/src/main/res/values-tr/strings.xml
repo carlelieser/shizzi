@@ -213,24 +213,30 @@
     <string name="session_error_hotspot_may_be_on">%1$s Hotspot hâlâ açık olabilir.</string>
 
     <string name="tethering">Paylaşım</string>
-    <string name="usb_tethering">USB paylaşımı</string>
+    <string name="wired_tethering">Kablolu paylaşım</string>
     <string name="open_system_settings">Sistem ayarlarını aç</string>
     <string name="open_shizuku">Shizuku\'yu aç</string>
     <string name="hotspot_settings">Hotspot ayarları</string>
     <string name="system_settings">sistem ayarları</string>
-    <string name="usb_mode_auto">Otomatik</string>
-    <string name="usb_mode_always">Her zaman</string>
-    <string name="usb_mode_never">Asla</string>
-    <string name="usb_mode_auto_description">Kablo takılıyken USB üzerinden de paylaş</string>
-    <string name="usb_mode_always_description">Yalnızca USB üzerinden paylaş; kablo gerekir</string>
-    <string name="usb_mode_never_description">Yalnızca hotspot üzerinden paylaş</string>
-    <string name="waiting_for_usb">USB bekleniyor</string>
-    <plurals name="notification_usb_grace">
-        <item quantity="one">Paylaşımın sürmesi için %1$d dakika içinde USB ile bağlanın</item>
-        <item quantity="other">Paylaşımın sürmesi için %1$d dakika içinde USB ile bağlanın</item>
+    <string name="wired_mode_off">Kapalı</string>
+    <string name="wired_mode_auto">Otomatik</string>
+    <string name="wired_mode_usb">USB</string>
+    <string name="wired_mode_ethernet">Ethernet</string>
+    <string name="wired_mode_off_description">Yalnızca Wi‑Fi hotspot üzerinden paylaş</string>
+    <string name="wired_mode_auto_description">Hangisi bağlıysa USB veya Ethernet üzerinden paylaş</string>
+    <string name="wired_mode_usb_description">Bilgisayara USB kablosuyla paylaş</string>
+    <string name="wired_mode_ethernet_description">USB-C Ethernet adaptörüyle paylaş</string>
+    <string name="wifi_hotspot">Wi‑Fi hotspot</string>
+    <string name="wifi_hotspot_required">Kablolu paylaşım kapalıyken açık kalır</string>
+    <string name="waiting_for_wired">Kablolu bağlantı bekleniyor</string>
+    <plurals name="notification_wired_grace">
+        <item quantity="one">Paylaşımın sürmesi için %1$d dakika içinde bir kablo bağlayın</item>
+        <item quantity="other">Paylaşımın sürmesi için %1$d dakika içinde bir kablo bağlayın</item>
     </plurals>
 
     <string name="could_not_open">%1$s açılamadı</string>
     <string name="usb_cable_required">Başlatılamadı. USB bağlantısı gerekli.</string>
+    <string name="ethernet_connection_required">Başlatılamadı. Ethernet bağlantısı gerekli.</string>
+    <string name="wired_connection_required">Başlatılamadı. Kablolu bağlantı gerekli.</string>
     <string name="issue_tracker_label">hata takip sistemi</string>
 </resources>

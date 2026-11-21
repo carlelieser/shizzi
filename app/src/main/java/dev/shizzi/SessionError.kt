@@ -24,7 +24,9 @@ object SessionError {
     )
 
     private val known = mapOf(
-        UsbDownstream.NO_USB_CABLE to R.string.usb_cable_required,
+        WiredDownstream.NO_USB_CABLE to R.string.usb_cable_required,
+        WiredDownstream.NO_ETHERNET to R.string.ethernet_connection_required,
+        WiredDownstream.NO_WIRED to R.string.wired_connection_required,
         VPN_LOST to R.string.vpn_disconnected_session_stopped,
         SessionEnd.RESTART_FAILED.message(isHotspotPossiblyOn = false) to
             R.string.session_end_restart_failed,

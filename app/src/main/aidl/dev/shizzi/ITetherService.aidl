@@ -4,7 +4,7 @@ import android.os.ParcelFileDescriptor;
 
 interface ITetherService {
 
-    String start(boolean logging, String vpnMode, String usbTethering) = 0;
+    String start(boolean logging, String vpnMode, String wiredTethering, boolean isWifiHotspotOn) = 0;
 
     void setLogging(boolean enabled) = 1;
 

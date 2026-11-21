@@ -11,6 +11,7 @@ import dev.shizzi.ui.EasterEggPage
 import dev.shizzi.ui.HandleBack
 import dev.shizzi.ui.HomeActions
 import dev.shizzi.ui.HomePage
+import dev.shizzi.ui.TetheringActions
 import dev.shizzi.ui.LogActions
 import dev.shizzi.ui.LogPage
 import dev.shizzi.ui.Screen
@@ -42,7 +43,8 @@ data class AppActions(
     val onAddCustomAccent: (Int) -> Unit,
     val onSetLogging: (Boolean) -> Unit,
     val onSetVpnMode: (VpnMode) -> Unit,
-    val onSetUsbTethering: (UsbTethering) -> Unit,
+    val onSetWiredTethering: (WiredTethering) -> Unit,
+    val onSetWifiHotspot: (Boolean) -> Unit,
     val onRunProbes: () -> Unit,
     val onDismissDiagnostics: () -> Unit,
     val onClearLog: (onCleared: (String?) -> Unit) -> Unit,
@@ -153,7 +155,7 @@ private fun settingsState(state: AppState): SettingsState {
         customAccents = settings.customAccents,
         isLogging = settings.isLogging,
         vpnMode = settings.vpnMode,
-        usbTethering = settings.usbTethering,
+        sharing = settings.sharing,
         isRunningDiagnostics = state.diagnostics is DiagnosticsState.Running,
         automation = AutomationState(
             isEnabled = settings.isAutomationEnabled,
@@ -172,7 +174,10 @@ private fun settingsActions(context: ScreenContext): SettingsActions {
         onAddCustomAccent = actions.onAddCustomAccent,
         onSetLogging = actions.onSetLogging,
         onSetVpnMode = actions.onSetVpnMode,
-        onSetUsbTethering = actions.onSetUsbTethering,
+        tethering = TetheringActions(
+            onSetWiredTethering = actions.onSetWiredTethering,
+            onSetWifiHotspot = actions.onSetWifiHotspot,
+        ),
         onOpenLog = { context.navigation.open(Screen.LOG) },
         onRunProbes = actions.onRunProbes,
         onGrantPermission = actions.onGrantPermission,

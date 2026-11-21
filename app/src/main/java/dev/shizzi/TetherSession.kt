@@ -22,7 +22,7 @@ class TetherSession(private val context: Context) {
     private var vpnMode = VpnMode.AUTO
 
     @Volatile
-    private var usbTethering = UsbTethering.NEVER
+    private var setup = SharingSetup(WiredTethering.OFF, isWifiHotspotChosen = true)
 
     private var watchdog: SessionWatchdog? = null
     private var events: TetheringEvents? = null
@@ -30,25 +30,26 @@ class TetherSession(private val context: Context) {
     private val downstream = DownstreamInspector()
     private val started = StartedDownstreams()
     private val starter = DownstreamStarter(context, started)
-    private val usbLink = AndroidUsbLink(context, started)
+    private val links = listOf(AndroidUsbLink(context, started), AndroidEthernetLink(context, started))
 
     @Volatile
-    private var usbDownstream = UsbDownstream(UsbTethering.NEVER, usbLink)
+    private var wired = WiredDownstream(setup, links)
 
     private val vpn = VpnUpstream(context) { problem -> tearDownAfter(problem) }
 
     val isActive: Boolean get() = state == SessionState.ACTIVE
 
-    fun start(mode: VpnMode = VpnMode.AUTO, usb: UsbTethering = UsbTethering.NEVER): String {
+    fun start(mode: VpnMode, sharing: SharingSetup): String {
         if (isActive) return status()
 
         vpnMode = mode
-        usbTethering = usb
-        usbDownstream = UsbDownstream(usb, usbLink, SessionLog::info)
+        setup = sharing
+        wired = WiredDownstream(sharing, links, SessionLog::info)
         state = SessionState.STARTING
         SessionLog.info(
             "session start requested (vpn mode ${mode.name.lowercase()}, " +
-                "usb tethering ${usb.name.lowercase()})",
+                "wired tethering ${sharing.wired.name.lowercase()}, " +
+                "wifi hotspot ${if (sharing.isWifiHotspotOn) "on" else "off"})",
         )
 
         SessionLog.info(
@@ -57,7 +58,7 @@ class TetherSession(private val context: Context) {
                 "contract ${TetherService.CONTRACT_VERSION}",
         )
 
-        val startProblem = usbDownstream.startProblem()
+        val startProblem = wired.startProblem()
         if (startProblem != null) {
             SessionLog.warn("start refused: $startProblem")
             state = SessionState.ERROR
@@ -91,9 +92,9 @@ class TetherSession(private val context: Context) {
         followVpn(group)
 
         preferTestNetworks()
-        val isTethered = starter.start(usbDownstream.typesToStart())
+        val isTethered = starter.start(wired.typesToStart())
 
-        if (isTethered || !usbDownstream.canStartUntethered) {
+        if (isTethered || !wired.canStartUntethered) {
             verifyUpstream(name)
             SessionLog.info("upstream verified: $name is sole upstream")
         }
@@ -120,15 +121,14 @@ class TetherSession(private val context: Context) {
     }
 
     private fun startWatchdog(name: String) {
-        val checkUsb = { tethering: UpstreamObservation ->
-            val usbReading = readDownstream(tethering, listOf(TetheringType.USB))
-            usbDownstream.check(System.currentTimeMillis(), usbReading)
+        val checkWired = { tethering: UpstreamObservation ->
+            wired.check(System.currentTimeMillis()) { type -> readDownstream(tethering, listOf(type)) }
         }
-        val guard = SessionWatchdog(name, checkDownstream = checkUsb, onEnd = ::endFromWatchdog)
+        val guard = SessionWatchdog(name, checkDownstream = checkWired, onEnd = ::endFromWatchdog)
         watchdog = guard
         guard.start()
 
-        if (usbTethering == UsbTethering.NEVER) return
+        if (setup.wired == WiredTethering.OFF) return
         events = TetheringEvents(context, guard::wake).also(TetheringEvents::register)
     }
 
@@ -220,7 +220,7 @@ class TetherSession(private val context: Context) {
         put("state", state.name)
         put("detail", detail)
         put("downstreams", JSONArray(started.types.map { type -> type.name }))
-        put("isWaitingForUsb", isActive && usbDownstream.isWaitingForUsb)
+        put("isWaitingForWired", isActive && wired.isWaitingForWired)
         put("interface", interfaceName ?: JSONObject.NULL)
 
         put("isVpnBound", vpn.isBound)
@@ -229,7 +229,7 @@ class TetherSession(private val context: Context) {
         val traffic = interfaceName?.let(InterfaceCounters::read) ?: Traffic()
         put("bytesUp", traffic.up)
         put("bytesDown", traffic.down)
-        put("clientCount", if (isActive) downstream.countDevices(usbTethering.types) else 0)
+        put("clientCount", if (isActive) downstream.countDevices(setup.types) else 0)
     }.toString()
 
     private fun isVpnBypassed(): Boolean {
