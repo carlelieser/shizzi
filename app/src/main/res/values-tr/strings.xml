@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Shizzi</string>
-
     <string name="start">Başlat</string>
     <string name="stop">Durdur</string>
     <string name="cancel">İptal</string>
@@ -120,17 +118,18 @@
     <string name="grant_permission_upper">İZİN VER</string>
     <string name="shizuku_not_installed">Shizuku yüklü değil</string>
     <string name="shizuku_not_running">Shizuku yüklü ama çalışmıyor</string>
-    <string name="shizuku_permission_needed">Shizzi\'nin Shizuku izni alması gerekiyor</string>
+    <string name="shizuku_permission_needed">Shizuku izni gerekli</string>
 
     <string name="status_not_connected">Bağlı değil</string>
     <string name="status_connecting">Bağlanıyor</string>
     <string name="status_connected">Bağlı</string>
     <string name="status_starting">Başlatılıyor</string>
+    <string name="status_reconnecting">Yeniden bağlanılıyor</string>
+    <string name="status_waiting_for_shizuku">Shizuku bekleniyor</string>
     <string name="status_failed">Başarısız</string>
     <string name="badge_no_shizuku">SHIZUKU YOK</string>
     <string name="badge_shizuku_off">SHIZUKU KAPALI</string>
     <string name="badge_permission_needed">İZİN GEREKLİ</string>
-    <string name="status_prefix">DURUM %1$s</string>
     <string name="tunnel_active">TÜNEL ETKİN</string>
 
     <string name="welcome">Hoş geldiniz</string>
@@ -166,6 +165,9 @@
 
     <string name="notification_cleaning_up">Temizleniyor…</string>
     <string name="notification_getting_ready">Hazırlanıyor…</string>
+    <string name="notification_shizuku_stopped">Shizuku durdu</string>
+    <string name="notification_reconnecting">Yeniden bağlanılıyor…</string>
+    <string name="notification_start_shizuku">Paylaşımı sürdürmek için Shizuku\'yu başlatın.</string>
     <string name="notification_session_ended">Oturum sona erdi</string>
     <string name="notification_connected_vpn_ignored">Bağlı · VPN yok sayıldı</string>
     <string name="notification_connected_vpn">Bağlı · VPN</string>
@@ -178,13 +180,12 @@
         <item quantity="one">%d cihaz</item>
         <item quantity="other">%d cihaz</item>
     </plurals>
-    <string name="notification_shizuku_loss">Shizuku durduğu için oturum sona erdi. Hotspot kapatıldı. Hazır olduğunuzda yeniden başlatın.</string>
-    <string name="notification_session_loss_problem">Oturum sona erdi ancak hotspot hâlâ açık olabilir: %1$s — Ayarlar\'dan kapatın.</string>
     <string name="notification_channel_name">Paylaşım oturumu</string>
     <string name="notification_channel_description">Paylaşım oturumu çalışırken gösterilir</string>
 
     <string name="tile_stopping">Durduruluyor…</string>
     <string name="tile_starting">Başlatılıyor…</string>
+    <string name="tile_reconnecting">Yeniden bağlanılıyor…</string>
     <string name="tile_tap_retry">Tekrar denemek için dokunun</string>
     <string name="tile_tap_share">Paylaşmak için dokunun</string>
     <string name="tile_shizuku_not_installed">Shizuku yüklü değil</string>
@@ -195,12 +196,17 @@
         <item quantity="other">%1$d cihaz · %2$s</item>
     </plurals>
 
-    <string name="session_ended_unexpectedly">Oturum beklenmedik şekilde sona erdi — hotspot kapatılıyor…</string>
     <string name="vpn_disconnected_session_stopped">VPN bağlantısı kesildi. Cihazları korumak için oturum durduruldu.</string>
+    <string name="session_end_restart_failed">Paylaşım otomatik olarak yeniden başlatılamadı.</string>
+    <string name="session_end_restart_failed_hotspot_on">Paylaşım otomatik olarak yeniden başlatılamadı. Hotspot hâlâ açık olabilir.</string>
+    <string name="session_end_shizuku_stopped">Shizuku çalışmadığı için paylaşım durduruldu.</string>
+    <string name="session_end_shizuku_stopped_hotspot_on">Shizuku çalışmadığı için paylaşım durduruldu. Hotspot hâlâ açık olabilir.</string>
 
     <string name="tethering">Paylaşım</string>
     <string name="usb_tethering">USB paylaşımı</string>
     <string name="open_system_settings">Sistem ayarlarını aç</string>
+    <string name="open_shizuku">Shizuku\'yu aç</string>
+    <string name="hotspot_settings">Hotspot ayarları</string>
     <string name="system_settings">sistem ayarları</string>
     <string name="usb_mode_auto">Otomatik</string>
     <string name="usb_mode_always">Her zaman</string>
@@ -209,7 +215,10 @@
     <string name="usb_mode_always_description">Yalnızca USB üzerinden paylaş; kablo gerekir</string>
     <string name="usb_mode_never_description">Yalnızca hotspot üzerinden paylaş</string>
     <string name="waiting_for_usb">USB bekleniyor</string>
-    <string name="notification_usb_grace">Paylaşımın sürmesi için %1$d dakika içinde USB ile bağlanın</string>
+    <plurals name="notification_usb_grace">
+        <item quantity="one">Paylaşımın sürmesi için %1$d dakika içinde USB ile bağlanın</item>
+        <item quantity="other">Paylaşımın sürmesi için %1$d dakika içinde USB ile bağlanın</item>
+    </plurals>
 
     <string name="could_not_open">%1$s açılamadı</string>
     <string name="usb_cable_required">Başlatılamadı. USB bağlantısı gerekli.</string>
