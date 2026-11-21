@@ -209,26 +209,32 @@
     <string name="session_error_teardown_incomplete">共享已停止，但热点可能仍处于开启状态。</string>
     <string name="session_error_hotspot_may_be_on">%1$s热点可能仍处于开启状态。</string>
 
-    <!-- USB tethering and reconnect states (0.5.0) -->
+    <!-- Wired tethering and reconnect states -->
     <string name="tethering">网络共享</string>
-    <string name="usb_tethering">USB 网络共享</string>
+    <string name="wired_tethering">有线网络共享</string>
     <string name="open_system_settings">打开系统设置</string>
     <string name="open_shizuku">打开 Shizuku</string>
     <string name="hotspot_settings">热点设置</string>
     <string name="system_settings">系统设置</string>
-    <string name="usb_mode_auto">自动</string>
-    <string name="usb_mode_always">始终</string>
-    <string name="usb_mode_never">从不</string>
-    <string name="usb_mode_auto_description">连接数据线时同时通过 USB 共享</string>
-    <string name="usb_mode_always_description">仅通过 USB 共享；需要连接数据线</string>
-    <string name="usb_mode_never_description">仅通过热点共享</string>
-    <string name="waiting_for_usb">正在等待 USB</string>
-    <plurals name="notification_usb_grace">
-        <item quantity="other">请在 %1$d 分钟内通过 USB 连接以继续共享</item>
+    <string name="wired_mode_off">关闭</string>
+    <string name="wired_mode_auto">自动</string>
+    <string name="wired_mode_usb">USB</string>
+    <string name="wired_mode_ethernet">以太网</string>
+    <string name="wired_mode_off_description">仅通过 WLAN 热点共享</string>
+    <string name="wired_mode_auto_description">通过已连接的 USB 或以太网共享</string>
+    <string name="wired_mode_usb_description">通过 USB 数据线共享给电脑</string>
+    <string name="wired_mode_ethernet_description">通过 USB-C 以太网转接器共享</string>
+    <string name="wifi_hotspot">WLAN 热点</string>
+    <string name="wifi_hotspot_required">有线网络共享关闭时保持开启</string>
+    <string name="waiting_for_wired">正在等待有线连接</string>
+    <plurals name="notification_wired_grace">
+        <item quantity="other">请在 %1$d 分钟内连接数据线以继续共享</item>
     </plurals>
 
     <!-- Session and settings messages -->
     <string name="could_not_open">无法打开%1$s</string>
     <string name="usb_cable_required">启动失败。需要 USB 连接。</string>
+    <string name="ethernet_connection_required">启动失败。需要以太网连接。</string>
+    <string name="wired_connection_required">启动失败。需要有线连接。</string>
     <string name="issue_tracker_label">问题跟踪器</string>
 </resources>
