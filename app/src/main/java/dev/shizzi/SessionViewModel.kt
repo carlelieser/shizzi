@@ -102,8 +102,12 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch { settingsStore.setVpnMode(mode) }
     }
 
-    fun setUsbTethering(mode: UsbTethering) {
-        viewModelScope.launch { settingsStore.setUsbTethering(mode) }
+    fun setWiredTethering(mode: WiredTethering) {
+        viewModelScope.launch { settingsStore.setWiredTethering(mode) }
+    }
+
+    fun setWifiHotspot(isOn: Boolean) {
+        viewModelScope.launch { settingsStore.setWifiHotspot(isOn) }
     }
 
     fun setTheme(choice: ThemeChoice) {

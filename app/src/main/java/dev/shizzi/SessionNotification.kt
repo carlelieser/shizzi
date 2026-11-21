@@ -43,7 +43,7 @@ class SessionNotification(private val context: Context) {
     }
 
     private fun connectedTitle(state: SessionUiState): String = when {
-        state.isWaitingForUsb -> context.getString(R.string.waiting_for_usb)
+        state.isWaitingForWired -> context.getString(R.string.waiting_for_wired)
         state.isVpnBypassed -> context.getString(R.string.notification_connected_vpn_ignored)
         state.isVpnBound -> context.getString(R.string.notification_connected_vpn)
         else -> context.getString(R.string.status_connected)
@@ -53,10 +53,10 @@ class SessionNotification(private val context: Context) {
         state.lastError.isNotEmpty() -> SessionError.describe(state.lastError).resolve(context.resources)
         state.isWaitingForShizuku -> context.getString(R.string.notification_start_shizuku)
         state.status == UiStatus.LOADING -> loadingBody(isStopping)
-        state.isWaitingForUsb -> context.resources.getQuantityString(
-            R.plurals.notification_usb_grace,
-            USB_GRACE_MINUTES,
-            USB_GRACE_MINUTES,
+        state.isWaitingForWired -> context.resources.getQuantityString(
+            R.plurals.notification_wired_grace,
+            WIRED_GRACE_MINUTES,
+            WIRED_GRACE_MINUTES,
         )
         state.status == UiStatus.CONNECTED -> connectedBody(state)
         else -> context.getString(R.string.notification_not_sharing)
@@ -123,6 +123,6 @@ class SessionNotification(private val context: Context) {
         const val DOWN_ARROW = "\u2193"
         const val UP_ARROW = "\u2191"
 
-        const val USB_GRACE_MINUTES = (WiredReconnect.GIVE_UP_AFTER_MS / 60_000).toInt()
+        const val WIRED_GRACE_MINUTES = (WiredReconnect.GIVE_UP_AFTER_MS / 60_000).toInt()
     }
 }

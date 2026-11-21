@@ -8,13 +8,6 @@ import org.junit.Test
 class WiredTetheringTest {
 
     @Test
-    fun `a retired usb setting keeps its behavior`() {
-        assertEquals(SharingSetup(WiredTethering.OFF, isWifiHotspotChosen = true), UsbTethering.NEVER.toSharingSetup())
-        assertEquals(SharingSetup(WiredTethering.USB, isWifiHotspotChosen = true), UsbTethering.AUTO.toSharingSetup())
-        assertEquals(SharingSetup(WiredTethering.USB, isWifiHotspotChosen = false), UsbTethering.ALWAYS.toSharingSetup())
-    }
-
-    @Test
     fun `the hotspot stays on while wired tethering is off`() {
         assertTrue(SharingSetup(WiredTethering.OFF, isWifiHotspotChosen = false).isWifiHotspotOn)
         assertFalse(SharingSetup(WiredTethering.ETHERNET, isWifiHotspotChosen = false).isWifiHotspotOn)

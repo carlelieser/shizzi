@@ -13,7 +13,7 @@ data class SessionUiState(
     val lastError: String = "",
     val isVpnBound: Boolean = false,
     val isVpnBypassed: Boolean = false,
-    val isWaitingForUsb: Boolean = false,
+    val isWaitingForWired: Boolean = false,
 
     val clientCount: Int = 0,
 
@@ -40,7 +40,7 @@ fun SessionUiState.asStopped(): SessionUiState = copy(
     interfaceName = "",
     isVpnBound = false,
     isVpnBypassed = false,
-    isWaitingForUsb = false,
+    isWaitingForWired = false,
     clientCount = 0,
     traffic = Traffic(),
     downstreams = emptySet(),
@@ -79,7 +79,7 @@ fun SessionUiState.applyOutcome(outcome: Result<String>): SessionUiState {
             interfaceName = "",
             isVpnBound = false,
             isVpnBypassed = false,
-            isWaitingForUsb = false,
+            isWaitingForWired = false,
             clientCount = 0,
             traffic = Traffic(),
             downstreams = emptySet(),
@@ -99,7 +99,7 @@ fun SessionUiState.applyOutcome(outcome: Result<String>): SessionUiState {
 
         isVpnBound = parsed?.optBoolean("isVpnBound") == true,
         isVpnBypassed = parsed?.optBoolean("isVpnBypassed") == true,
-        isWaitingForUsb = parsed?.optBoolean("isWaitingForUsb") == true,
+        isWaitingForWired = parsed?.optBoolean("isWaitingForWired") == true,
         clientCount = parsed?.optInt("clientCount") ?: 0,
         traffic = Traffic(
             up = parsed?.optLong("bytesUp") ?: 0,

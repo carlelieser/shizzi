@@ -220,7 +220,7 @@ class TetherSession(private val context: Context) {
         put("state", state.name)
         put("detail", detail)
         put("downstreams", JSONArray(started.types.map { type -> type.name }))
-        put("isWaitingForUsb", isActive && wired.isWaitingForWired)
+        put("isWaitingForWired", isActive && wired.isWaitingForWired)
         put("interface", interfaceName ?: JSONObject.NULL)
 
         put("isVpnBound", vpn.isBound)

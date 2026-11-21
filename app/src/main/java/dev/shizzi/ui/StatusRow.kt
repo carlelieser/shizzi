@@ -194,7 +194,7 @@ private fun loadingWord(state: SessionUiState): String = when {
 @ReadOnlyComposable
 private fun statusWord(state: SessionUiState): String = when (state.status) {
     UiStatus.CONNECTED -> stringResource(
-        if (state.isWaitingForUsb) R.string.waiting_for_usb else R.string.status_connected,
+        if (state.isWaitingForWired) R.string.waiting_for_wired else R.string.status_connected,
     )
     UiStatus.READY -> stringResource(R.string.ready)
     UiStatus.LOADING -> loadingWord(state)

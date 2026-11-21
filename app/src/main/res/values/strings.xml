@@ -215,23 +215,27 @@
     <string name="session_error_teardown_incomplete">Sharing stopped, but the hotspot may still be on.</string>
     <string name="session_error_hotspot_may_be_on">%1$s The hotspot may still be on.</string>
 
-    <!-- USB tethering and reconnect states (0.5.0) -->
+    <!-- Wired tethering and reconnect states -->
     <string name="tethering">Tethering</string>
-    <string name="usb_tethering">USB tethering</string>
+    <string name="wired_tethering">Wired tethering</string>
     <string name="open_system_settings">Open system settings</string>
     <string name="open_shizuku">Open Shizuku</string>
     <string name="hotspot_settings">Hotspot settings</string>
     <string name="system_settings">system settings</string>
-    <string name="usb_mode_auto">Auto</string>
-    <string name="usb_mode_always">Always</string>
-    <string name="usb_mode_never">Never</string>
-    <string name="usb_mode_auto_description">Also share over USB when a cable is connected</string>
-    <string name="usb_mode_always_description">Share over USB only; requires a cable</string>
-    <string name="usb_mode_never_description">Share through the hotspot only</string>
-    <string name="waiting_for_usb">Waiting for USB</string>
-    <plurals name="notification_usb_grace">
-        <item quantity="one">Connect over USB within %1$d minute to keep sharing</item>
-        <item quantity="other">Connect over USB within %1$d minutes to keep sharing</item>
+    <string name="wired_mode_off">Off</string>
+    <string name="wired_mode_auto">Auto</string>
+    <string name="wired_mode_usb">USB</string>
+    <string name="wired_mode_ethernet">Ethernet</string>
+    <string name="wired_mode_off_description">Share through the Wi‑Fi hotspot only</string>
+    <string name="wired_mode_auto_description">Share over USB or Ethernet, whichever is connected</string>
+    <string name="wired_mode_usb_description">Share over a USB cable to a computer</string>
+    <string name="wired_mode_ethernet_description">Share over a USB-C Ethernet adapter</string>
+    <string name="wifi_hotspot">Wi‑Fi hotspot</string>
+    <string name="wifi_hotspot_required">Stays on while wired tethering is off</string>
+    <string name="waiting_for_wired">Waiting for a wired connection</string>
+    <plurals name="notification_wired_grace">
+        <item quantity="one">Connect a cable within %1$d minute to keep sharing</item>
+        <item quantity="other">Connect a cable within %1$d minutes to keep sharing</item>
     </plurals>
 
     <!-- Session and settings messages -->
