@@ -17,6 +17,7 @@ class TetherService : ITetherService.Stub {
     private val teardown: SessionTeardown by lazy { SessionTeardown(shellContext) }
     private val compatibility: CompatibilityCheck by lazy { CompatibilityCheck(shellContext) }
     private val apexInstaller: ApexInstaller by lazy { ApexInstaller() }
+    private val succession: HelperSuccession by lazy { HelperSuccession() }
 
     @Suppress("unused")
     constructor() : this(acquireSystemContext())
@@ -43,6 +44,7 @@ class TetherService : ITetherService.Stub {
     override fun start(logging: Boolean, vpnMode: String?, usbTethering: String?): String {
         SessionLog.setEnabled(logging)
         return runCatching {
+            succession.retirePredecessors()
             session.start(parseVpnMode(vpnMode), parseUsbTethering(usbTethering))
         }
             .getOrElse { failure -> sessionError("start", failure) }
