@@ -17,6 +17,8 @@ object TetheringApex {
 
     const val FILE_NAME = "tethering-311314000.apex"
 
+    const val ABI = "arm64-v8a"
+
     val INSTALLABLE_SDK_INTS = setOf(
         Build.VERSION_CODES.R,
         Build.VERSION_CODES.S,
