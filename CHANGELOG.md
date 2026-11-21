@@ -7,6 +7,13 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Ethernet tethering.** Share over a USB-C Ethernet adapter, alongside or
+  instead of the hotspot. Devices behind the adapter, including ones on a
+  switch, are counted.
+- **Wired tethering setting.** Settings → Tethering now has Wired tethering
+  (Off, Auto, USB, Ethernet; Auto by default) and a Wi-Fi hotspot switch, in
+  place of USB tethering. Turning the hotspot off shares over the cable only.
+  An existing USB tethering choice carries over unchanged.
 - Builds for 32-bit ARM (armeabi-v7a) alongside arm64. The tethering module
   offered on Android 11 and 12 is 64-bit only, so it is not offered to 32-bit
   devices.

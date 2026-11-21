@@ -124,6 +124,31 @@ The app ships for `arm64-v8a` and `armeabi-v7a`. The tethering APEX carries
 that ABI. A 32-bit device on 30-32 is told it cannot tether instead; on 33 and
 up it is in the same position as any other device.
 
+## Ethernet tethering
+
+Ethernet tethering (`TETHERING_ETHERNET`, API 30+) shares over a USB-C
+Ethernet adapter: the phone drives the adapter as a USB host, and the device
+on the other end of the network cable sees an ordinary wired network. It is
+the same request the stock Ethernet tethering toggle makes, and it takes the
+session's upstream like any other downstream.
+
+- **The kernel needs a driver for the adapter's chipset.** Without one no
+  `ethN` interface appears and there is nothing to tether. Common Realtek and
+  ASIX chipsets are usually covered; others vary by device.
+- **One cable at a time per port.** The port either serves a computer (USB
+  tethering) or drives an adapter, so Auto shares over whichever is plugged in.
+- **Pulling the adapter ends Ethernet tethering**, and plugging it back in
+  leaves it off, as with USB. A session requests it again once the adapter's
+  link is back up.
+- **IPv6 reaches one downstream.** The session's upstream carries a single
+  /64, which tethering gives to one downstream, so with the hotspot and a cable
+  both on only one of them gets IPv6.
+- **Devices behind a router count as one.** Clients are counted from the
+  link's neighbor table, so a switch shows each device, but a router doing NAT
+  shows only itself.
+
+Verified on a Pixel 10a (Android 17) with a USB-C Ethernet adapter.
+
 ## What the shell UID buys
 
 Shizuku runs as shell (UID 2000), which holds the permissions gating these APIs

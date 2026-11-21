@@ -5,7 +5,7 @@
 <h1 align="center">Shizzi</h1>
 
 <p align="center">
-  Wi-Fi and USB tethering over a Shizuku-privileged test network.
+  Wi-Fi, USB, and Ethernet tethering over a Shizuku-privileged test network.
 </p>
 
 Creates a test TUN interface, sets it as the preferred tethering upstream, and
@@ -32,8 +32,11 @@ Download the APK from the
   hotspot allowance.
 - 🛡️ **VPN compatible.** Stay private on every connected device.
 - ⚙️ **Uses your existing hotspot.** No extra configuration required.
-- 🔌 **USB tethering.** Share over a USB cable alongside, or instead of, the
-  hotspot. Pick it under Settings → Tethering → USB tethering.
+- 🔌 **Wired tethering.** Share over a USB cable to a computer, or over a USB-C
+  Ethernet adapter, alongside or instead of the hotspot. Pick it under
+  Settings → Tethering → Wired tethering; turn off Wi-Fi hotspot there to share
+  over the cable only. See [Ethernet tethering](docs/android-compatibility.md#ethernet-tethering)
+  for what an adapter needs.
 - 🙌 **No root.** Shizuku is all it needs.
 - 🎛️ **One tap away.** A quick settings tile starts and stops sharing from the
   notification shade.
@@ -42,7 +45,7 @@ Download the APK from the
 
 ## Troubleshooting
 
-**Shizuku stops when the hotspot or USB tethering turns on.** If you start
+**Shizuku stops when the hotspot or wired tethering turns on.** If you start
 Shizuku with Wireless Debugging, a network change can turn Wireless Debugging
 off and take Shizuku with it. Sharing resumes once Shizuku is started again.
 Starting Shizuku with root, or over adb in TCP mode, avoids the problem.
