@@ -29,6 +29,7 @@ class TetherSession(private val context: Context) {
     private val teardown = SessionTeardown(context)
     private val downstream = DownstreamInspector()
     private val started = StartedDownstreams()
+    private val starter = DownstreamStarter(context, started)
     private val usbLink = AndroidUsbLink(context, started)
 
     @Volatile
@@ -90,7 +91,7 @@ class TetherSession(private val context: Context) {
         followVpn(group)
 
         preferTestNetworks()
-        val isTethered = restartDownstream()
+        val isTethered = starter.start(usbDownstream.typesToStart())
 
         if (isTethered || !usbDownstream.canStartUntethered) {
             verifyUpstream(name)
@@ -154,46 +155,6 @@ class TetherSession(private val context: Context) {
         runCatching { api.setPreferTestNetworks(false) }
             .onFailure { SessionLog.warn("could not clear the stale test-network preference: ${it.message}") }
         api.setPreferTestNetworks(true)
-    }
-
-    /** True once a started downstream is tethered. */
-    private fun restartDownstream(): Boolean {
-        val control = DownstreamControl(context)
-        val types = usbDownstream.typesToStart()
-        val usbReading = downstream.findTetheredDownstream(listOf(TetheringType.USB))
-        control.stopTethering(typesToRestart(types, usbReading))
-
-        val (succeeded, failed) = types
-            .associateWith(control::startTethering)
-            .entries
-            .partition { (_, outcome) -> outcome.first }
-        succeeded.forEach { (type, _) -> started.add(type) }
-
-        val failures = failed.map { (type, outcome) -> "${type.label} did not start (${outcome.second})" }
-        check(succeeded.isNotEmpty()) {
-            "${SessionError.DOWNSTREAM_NOT_STARTED} ${failures.joinToString("; ")}"
-        }
-
-        failures.forEach(SessionLog::warn)
-        return awaitDownstreamTethered(succeeded.map { it.key })
-    }
-
-    private fun awaitDownstreamTethered(types: List<TetheringType>): Boolean {
-        val deadline = System.currentTimeMillis() + DOWNSTREAM_SETTLE_MS
-        val downstream = DownstreamInspector()
-
-        while (System.currentTimeMillis() < deadline) {
-
-            if (downstream.findTetheredDownstream(types) is DownstreamReading.Tethered) {
-                SessionLog.info("downstream tethered")
-                return true
-            }
-            Thread.sleep(DOWNSTREAM_POLL_MS)
-        }
-
-        val hint = if (TetheringType.USB in types) " (is a USB cable connected to a computer?)" else ""
-        SessionLog.warn("downstream not tethered after ${DOWNSTREAM_SETTLE_MS}ms$hint; continuing")
-        return false
     }
 
     private fun verifyUpstream(name: String) {
@@ -295,8 +256,5 @@ class TetherSession(private val context: Context) {
         const val AVAILABILITY_TIMEOUT_MS = 10_000
         const val UPSTREAM_SETTLE_MS = 8_000L
         const val UPSTREAM_POLL_MS = 500L
-
-        const val DOWNSTREAM_SETTLE_MS = 10_000L
-        const val DOWNSTREAM_POLL_MS = 500L
     }
 }

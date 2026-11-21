@@ -1,9 +1,12 @@
 package dev.shizzi
 
-/** TetheringManager.TETHERING_* constants for the downstreams Shizzi can bring up. */
+/** TetheringManager.TETHERING_* constants for the downstreams Shizzi starts, stops, or restores. */
 enum class TetheringType(val code: Int, val label: String) {
     WIFI(0, "hotspot"),
     USB(1, "usb tethering"),
+    BLUETOOTH(2, "bluetooth tethering"),
+    NCM(4, "ncm tethering"),
+    ETHERNET(5, "ethernet tethering"),
 }
 
 private val USB_INTERFACE_PATTERN = Regex("""^(rndis|ncm|usb)\d*$""")
@@ -28,3 +31,19 @@ fun tetheringTypeOf(interfaceName: String): TetheringType? = when {
  */
 fun typesToRestart(types: List<TetheringType>, usbReading: DownstreamReading): List<TetheringType> =
     types.filter { type -> type != TetheringType.USB || usbReading != DownstreamReading.None }
+
+/** What a start stops first, and which of those it brings back without owning them. */
+data class DownstreamRestart(val toStop: List<TetheringType>, val toRestore: List<TetheringType>)
+
+/**
+ * Tethering picks its upstream only when its first downstream comes up, so
+ * every downstream already up is stopped, even ones the session does not start.
+ */
+fun planDownstreamRestart(
+    types: List<TetheringType>,
+    active: Set<TetheringType>,
+    usbReading: DownstreamReading,
+): DownstreamRestart {
+    val toRestore = (active - types.toSet()).sortedBy(TetheringType::ordinal)
+    return DownstreamRestart(toStop = typesToRestart(types, usbReading) + toRestore, toRestore = toRestore)
+}
