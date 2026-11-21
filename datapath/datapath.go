@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net"
 
+	"golang.org/x/sys/unix"
 	"gvisor.dev/gvisor/pkg/tcpip"
 	"gvisor.dev/gvisor/pkg/tcpip/header"
 	"gvisor.dev/gvisor/pkg/tcpip/link/fdbased"
@@ -30,12 +31,78 @@ const nicID tcpip.NICID = 1
 type Session struct {
 	stack   *stack.Stack
 	binding *networkBinding
+	ping    *pingForwarder
+	udp     *udpMapper
 }
 
 // Start builds a netstack over tunFD, already open, and attaches it to the TUN.
 // Ownership does not transfer -- SessionResources holds the TUN, the framework
 // interface, and the network handle as one atomic group. mtu is the link MTU.
 func Start(tunFD int, mtu int) (*Session, error) {
+	netStack, err := newNetStack(tunFD, mtu)
+	if err != nil {
+		return nil, err
+	}
+
+	binding := &networkBinding{}
+	udp := installForwarders(netStack, &net.Dialer{
+		Timeout: dialTimeout,
+		Control: binding.control,
+	}, binding.handle.Load)
+
+	// Echo replies go straight onto the TUN: they are whole IPv4 packets, and
+	// the kernel side routes them back through tethering's NAT like any reply.
+	ping := newPingForwarder(binding.echo, func(packet []byte) error {
+		_, err := unix.Write(tunFD, packet)
+		return err
+	})
+	ping.install(netStack)
+
+	return &Session{stack: netStack, binding: binding, ping: ping, udp: udp}, nil
+}
+
+// SetNetwork pins every subsequent dial to a handle from
+// Network.getNetworkHandle; 0 unbinds, which is how a session with no VPN runs.
+//
+// Binding is what makes VPN loss fail rather than fall back: an unbound socket
+// follows the default network, so a dropped VPN leaves over the physical one
+// and tethered clients keep browsing untunneled with nothing noticing.
+//
+// int64 because gomobile has no unsigned type. A handle packs a netid above a
+// magic word, so it is routinely negative signed; the conversion reinterprets
+// the bits without changing them.
+func (s *Session) SetNetwork(handle int64) {
+	if s.binding == nil {
+		return
+	}
+	s.binding.set(uint64(handle))
+
+	// UDP mappings stay pinned to the network they opened on.
+	if s.udp != nil {
+		s.udp.retireAll()
+	}
+}
+
+// Stop tears the netstack down. It does not close the TUN fd.
+func (s *Session) Stop() {
+	if s.stack == nil {
+		return
+	}
+	// Fence ping replies first: they write to the raw TUN fd, which the caller
+	// closes as soon as Stop returns.
+	if s.ping != nil {
+		s.ping.close()
+	}
+	if s.udp != nil {
+		s.udp.close()
+	}
+	s.stack.Close()
+	s.stack = nil
+}
+
+// newNetStack builds the netstack over tunFD with a promiscuous NIC that
+// routes every destination to it.
+func newNetStack(tunFD int, mtu int) (*stack.Stack, error) {
 	// ICMP is registered for both families so the stack can answer and relay
 	// errors. IPv6 in particular cannot fragment in flight, so a client only
 	// learns a path MTU from the ICMPv6 Packet Too Big it gets back.
@@ -75,38 +142,5 @@ func Start(tunFD int, mtu int) (*Session, error) {
 		{Destination: header.IPv4EmptySubnet, NIC: nicID},
 		{Destination: header.IPv6EmptySubnet, NIC: nicID},
 	})
-
-	binding := &networkBinding{}
-	installForwarders(netStack, &net.Dialer{
-		Timeout: dialTimeout,
-		Control: binding.control,
-	})
-
-	return &Session{stack: netStack, binding: binding}, nil
-}
-
-// SetNetwork pins every subsequent dial to a handle from
-// Network.getNetworkHandle; 0 unbinds, which is how a session with no VPN runs.
-//
-// Binding is what makes VPN loss fail rather than fall back: an unbound socket
-// follows the default network, so a dropped VPN leaves over the physical one
-// and tethered clients keep browsing untunneled with nothing noticing.
-//
-// int64 because gomobile has no unsigned type. A handle packs a netid above a
-// magic word, so it is routinely negative signed; the conversion reinterprets
-// the bits without changing them.
-func (s *Session) SetNetwork(handle int64) {
-	if s.binding == nil {
-		return
-	}
-	s.binding.set(uint64(handle))
-}
-
-// Stop tears the netstack down. It does not close the TUN fd.
-func (s *Session) Stop() {
-	if s.stack == nil {
-		return
-	}
-	s.stack.Close()
-	s.stack = nil
+	return netStack, nil
 }
