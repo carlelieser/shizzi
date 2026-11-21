@@ -47,6 +47,12 @@ Shizuku with Wireless Debugging, a network change can turn Wireless Debugging
 off and take Shizuku with it. Sharing resumes once Shizuku is started again.
 Starting Shizuku with root, or over adb in TCP mode, avoids the problem.
 
+**Connected devices bypass the VPN, or sharing won't start with VPN set to
+Always.**
+Shizzi only sees a VPN that covers every app. If your VPN app has per-app proxy
+or split tunneling turned on (v2rayNG and AmneziaVPN, for example), Shizzi
+cannot detect the VPN. Turn that setting off in the VPN app.
+
 ## Build
 
 Needs the Android SDK with NDK, Go, and gomobile:
