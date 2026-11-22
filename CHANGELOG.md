@@ -5,8 +5,34 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-21
+
+Adds Ethernet tethering, a DNS setting, and Russian, Turkish and Simplified
+Chinese translations, and keeps a session running when its helper or Shizuku
+stops. Thanks to [@salasxchristian](https://github.com/salasxchristian) for
+the ping and UDP fixes in
+[#74](https://github.com/carlelieser/shizzi/pull/74) and
+[#75](https://github.com/carlelieser/shizzi/pull/75),
+[@SHAREN](https://github.com/SHAREN) for the Russian translation and the
+string extraction behind every translation in
+[#60](https://github.com/carlelieser/shizzi/pull/60),
+[@7tg](https://github.com/7tg) for the Turkish translation in
+[#68](https://github.com/carlelieser/shizzi/pull/68), and
+[@LimAimo](https://github.com/LimAimo) for the Simplified Chinese strings
+reused from [#45](https://github.com/carlelieser/shizzi/pull/45).
+
 ### Added
 
+- **Translations.** Shizzi follows the system language in Russian, Turkish
+  and Simplified Chinese. Session errors stay in English for automation
+  receivers and are translated only where they are shown.
+- **DNS setting.** Settings → Advanced → DNS chooses the servers tethered
+  devices resolve names through. Auto, the default, uses the VPN's DNS
+  servers when a VPN is shared, so names it serves, such as Tailscale
+  MagicDNS or a home resolver, work for tethered devices; with no VPN it
+  uses Google DNS as before. Cloudflare, Google, Quad9, OpenDNS and AdGuard
+  DNS can be picked in one tap, or custom IPv4 and IPv6 servers entered.
+  The servers are chosen when a session starts.
 - **Ethernet tethering.** Share over a USB-C Ethernet adapter, alongside or
   instead of the hotspot. Devices behind the adapter, including ones on a
   switch, are counted.
@@ -40,6 +66,18 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   games, and site-to-site VPNs such as UniFi Teleport failed or reconnected
   every few seconds. When a VPN connects, drops, or is replaced, open UDP
   flows are cut and each device's outside port changes.
+- Starting a session while USB, Ethernet or Bluetooth tethering was already
+  on failed with "Android didn't route the hotspot through the app". Shizzi
+  now restarts those downstreams so they share the session too, and leaves
+  them running when the session stops.
+- A hotspot saved as 5 GHz only failed to start on devices that refuse that
+  band for a hotspot, such as some Samsung phones. Shizzi retries with
+  2.4 GHz allowed, as system settings do, without changing the saved
+  setting.
+- Stopping a session, or updating the app during one, left the privileged
+  helper running. A session could keep running in the old helper with
+  nothing controlling it. The helper now exits when Shizuku stops it.
+- A long status no longer breaks the status row.
 
 ## [0.5.0] - 2026-10-30
 
@@ -224,6 +262,7 @@ First public build.
 - IPv6 was not suppressed on the downstream; v6 traffic could bypass the
   tunnel. Fixed in 0.2.0.
 
+[0.6.0]: https://github.com/carlelieser/shizzi/releases/tag/v0.6.0
 [0.5.0]: https://github.com/carlelieser/shizzi/releases/tag/v0.5.0
 [0.4.0-rc.3]: https://github.com/carlelieser/shizzi/releases/tag/v0.4.0-rc.3
 [0.3.0]: https://github.com/carlelieser/shizzi/releases/tag/v0.3.0
