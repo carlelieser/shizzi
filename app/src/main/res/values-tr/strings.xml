@@ -56,7 +56,8 @@
     <string name="vpn_ignored_badge">VPN YOK SAYILDI</string>
     <string name="dns">DNS</string>
     <string name="dns_automatic">Otomatik</string>
-    <string name="dns_servers_description">VPN\'in DNS\'ini, VPN bağlı değilse Google DNS\'i kullanmak için boş bırakın.</string>
+    <string name="dns_auto_description">VPN\'in DNS\'i veya VPN bağlı değilse Google DNS</string>
+    <string name="dns_custom">Özel</string>
     <string name="dns_servers_hint">192.168.1.2, 1.1.1.1</string>
     <string name="dns_server_invalid">%1$s bir IP adresi değil</string>
 

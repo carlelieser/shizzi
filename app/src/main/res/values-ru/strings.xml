@@ -56,7 +56,8 @@
     <string name="vpn_ignored_badge">VPN ИГНОРИРУЕТСЯ</string>
     <string name="dns">DNS</string>
     <string name="dns_automatic">Авто</string>
-    <string name="dns_servers_description">Оставьте пустым, чтобы использовать DNS VPN, или Google DNS, если VPN не подключён.</string>
+    <string name="dns_auto_description">DNS VPN или Google DNS, если VPN не подключён</string>
+    <string name="dns_custom">Свои серверы</string>
     <string name="dns_servers_hint">192.168.1.2, 1.1.1.1</string>
     <string name="dns_server_invalid">%1$s не является IP-адресом</string>
 
