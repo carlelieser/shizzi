@@ -3,6 +3,8 @@ package dev.shizzi
 import android.content.Context
 import android.os.Build
 import android.util.Log
+import java.net.Inet6Address
+import java.net.InetAddress
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -20,6 +22,7 @@ class TetherSession(private val context: Context) {
 
     private var activeSince: Long = 0
     private var vpnMode = VpnMode.AUTO
+    private var customDns = emptyList<InetAddress>()
 
     @Volatile
     private var setup = SharingSetup(WiredTethering.OFF, isWifiHotspotChosen = true)
@@ -39,10 +42,11 @@ class TetherSession(private val context: Context) {
 
     val isActive: Boolean get() = state == SessionState.ACTIVE
 
-    fun start(mode: VpnMode, sharing: SharingSetup): String {
+    fun start(mode: VpnMode, sharing: SharingSetup, dnsServers: List<InetAddress>): String {
         if (isActive) return status()
 
         vpnMode = mode
+        customDns = dnsServers
         setup = sharing
         wired = WiredDownstream(sharing, links, SessionLog::info)
         state = SessionState.STARTING
@@ -83,7 +87,7 @@ class TetherSession(private val context: Context) {
         val group = SessionResources(testNetworkApi, context.connectivityManager())
         resources = group
 
-        val name = group.acquire(tunAddresses(), TEST_NETWORK_DNS_SERVERS, AVAILABILITY_TIMEOUT_MS)
+        val name = group.acquire(tunAddresses(), sessionDns().servers, AVAILABILITY_TIMEOUT_MS)
         interfaceName = name
         SessionLog.info("tun up: $name (mtu $TUN_MTU, $TUN_ADDRESS, $TUN_ADDRESS_V6)")
 
@@ -106,6 +110,25 @@ class TetherSession(private val context: Context) {
         teardown.installShutdownHook(started)
         startWatchdog(name)
         return status()
+    }
+
+    private fun sessionDns(): SessionDns {
+        val vpnDns = when (vpnMode) {
+            VpnMode.NEVER -> emptyList()
+            else -> vpn.dnsServers().getOrElse { failure ->
+                SessionLog.warn("could not read the vpn's dns servers: ${failure.message}")
+                emptyList()
+            }
+        }
+        val dns = chooseDns(customDns, vpnDns)
+        SessionLog.info(
+            "dns: ${dns.source.name.lowercase()} " +
+                dns.servers.joinToString(prefix = "[", postfix = "]") { it.hostAddress.orEmpty() },
+        )
+        if (dns.servers.none { it is Inet6Address }) {
+            SessionLog.warn("dns: no ipv6 server, so tethering provisions ipv4 only")
+        }
+        return dns
     }
 
     private fun followVpn(group: SessionResources) {

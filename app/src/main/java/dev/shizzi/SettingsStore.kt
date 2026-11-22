@@ -26,6 +26,7 @@ data class Settings(
     val isLogging: Boolean = true,
 
     val vpnMode: VpnMode = VpnMode.AUTO,
+    val customDns: String = "",
     val sharing: SharingSetup = SharingSetup(WiredTethering.AUTO, isWifiHotspotChosen = true),
 
     val hasCompletedOnboarding: Boolean = false,
@@ -80,6 +81,10 @@ class SettingsStore(private val context: Context) {
         context.dataStore.edit { it[VPN_MODE] = mode.name }
     }
 
+    suspend fun setCustomDns(servers: String) {
+        context.dataStore.edit { it[CUSTOM_DNS] = servers }
+    }
+
     suspend fun setWiredTethering(mode: WiredTethering) {
         context.dataStore.edit { it[WIRED_TETHERING] = mode.name }
     }
@@ -117,6 +122,7 @@ internal val ACCENT = stringPreferencesKey("accent")
 internal val CUSTOM_ACCENTS = stringPreferencesKey("custom_accents")
 internal val LOGGING = booleanPreferencesKey("logging")
 internal val VPN_MODE = stringPreferencesKey("vpn_mode")
+internal val CUSTOM_DNS = stringPreferencesKey("custom_dns")
 internal val WIRED_TETHERING = stringPreferencesKey("wired_tethering")
 internal val WIFI_HOTSPOT = booleanPreferencesKey("wifi_hotspot")
 internal val ONBOARDED = booleanPreferencesKey("onboarded")
@@ -132,6 +138,7 @@ internal fun toSettings(preferences: Preferences) = Settings(
     customAccents = parseAccents(preferences[CUSTOM_ACCENTS]),
     isLogging = preferences[LOGGING] ?: true,
     vpnMode = parseVpnMode(preferences[VPN_MODE]),
+    customDns = preferences[CUSTOM_DNS].orEmpty(),
     sharing = SharingSetup(
         wired = parseWiredTethering(preferences[WIRED_TETHERING]),
         isWifiHotspotChosen = preferences[WIFI_HOTSPOT] ?: true,

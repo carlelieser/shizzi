@@ -3,6 +3,7 @@ package dev.shizzi
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
+import java.net.InetAddress
 
 internal const val UNBOUND = 0L
 
@@ -24,6 +25,14 @@ class ConnectivityVpnLocator(
     }.getOrElse { failure ->
         SessionLog.warn("could not read the active network: ${failure.message}")
         UNBOUND
+    }
+
+    /** The active VPN's DNS servers; empty when no VPN is active. */
+    fun currentVpnDnsServers(): Result<List<InetAddress>> = runCatching {
+        val active = connectivityManager.activeNetwork ?: return@runCatching emptyList()
+        if (!isVpn(active)) return@runCatching emptyList()
+
+        connectivityManager.getLinkProperties(active)?.dnsServers.orEmpty()
     }
 
     private fun candidates(): List<VpnCandidate> {

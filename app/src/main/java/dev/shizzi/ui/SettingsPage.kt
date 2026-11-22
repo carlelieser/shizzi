@@ -59,6 +59,7 @@ data class SettingsState(
     val customAccents: List<Int>,
     val isLogging: Boolean,
     val vpnMode: VpnMode,
+    val customDns: String,
     val sharing: SharingSetup,
     val isRunningDiagnostics: Boolean,
     val automation: AutomationState,
@@ -71,6 +72,7 @@ data class SettingsActions(
     val onAddCustomAccent: (Int) -> Unit,
     val onSetLogging: (Boolean) -> Unit,
     val onSetVpnMode: (VpnMode) -> Unit,
+    val onSetCustomDns: (String) -> Unit,
     val tethering: TetheringActions,
     val onOpenLog: () -> Unit,
     val onRunProbes: () -> Unit,
@@ -165,6 +167,8 @@ private fun settingsSections(
 
     SettingsSectionSpec(stringResource(R.string.advanced)) {
         VpnSection(selected = state.vpnMode, onSelect = actions.onSetVpnMode)
+
+        DnsSection(servers = state.customDns, onSave = actions.onSetCustomDns)
 
         AutomationSection(
             state = state.automation,

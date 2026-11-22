@@ -102,6 +102,10 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch { settingsStore.setVpnMode(mode) }
     }
 
+    fun setCustomDns(servers: String) {
+        viewModelScope.launch { settingsStore.setCustomDns(servers) }
+    }
+
     fun setWiredTethering(mode: WiredTethering) {
         viewModelScope.launch { settingsStore.setWiredTethering(mode) }
     }

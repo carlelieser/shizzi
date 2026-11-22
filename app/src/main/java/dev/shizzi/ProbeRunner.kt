@@ -91,7 +91,7 @@ class ProbeRunner(private val context: Context) {
         if (attemptTethering) restartDownstreamBeforeTun(report)
 
         val acquired = runCatching {
-            group.acquire(tunAddresses(), TEST_NETWORK_DNS_SERVERS, availabilityTimeoutMs)
+            group.acquire(tunAddresses(), DEFAULT_DNS_SERVERS, availabilityTimeoutMs)
         }
 
         acquired.fold(
