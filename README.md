@@ -14,7 +14,8 @@ forwards hotspot traffic through a Go datapath. Supports IPv4 and IPv6.
 ## Requirements
 
 - Android 11 (API 30+), 64-bit or 32-bit ARM (arm64-v8a or armeabi-v7a)
-- [Shizuku](https://shizuku.rikka.app/) 13.6.0+
+- [Shizuku](https://shizuku.rikka.app/) 13.6.0+, **or** this phone's own Wireless
+  debugging paired once with Shizzi (see [Without Shizuku](#without-shizuku))
 
 Android 13 and up work outright. On Android 11 and 12 it depends on the device's
 tethering module; the app checks on first launch and offers to install the
@@ -37,11 +38,34 @@ Download the APK from the
   Settings → Tethering → Wired tethering; turn off Wi-Fi hotspot there to share
   over the cable only. See [Ethernet tethering](docs/android-compatibility.md#ethernet-tethering)
   for what an adapter needs.
-- 🙌 **No root.** Shizuku is all it needs.
+- 🙌 **No root.** Shizuku is all it needs, or pair Shizzi with the phone's own
+  Wireless debugging and skip Shizuku.
 - 🎛️ **One tap away.** A quick settings tile starts and stops sharing from the
   notification shade.
 - 🤖 **Automatable.** Start and stop from Tasker or MacroDroid. See
   [automation](docs/automation.md).
+
+## Without Shizuku
+
+Shizzi can start its helper through the phone's own Wireless debugging. No PC
+and no Shizuku are needed after a one-time pairing. Shizuku is still used
+whenever it is running.
+
+1. Open Settings → Permissions → Wireless debugging (adb) in Shizzi.
+2. Turn on Wireless debugging in Developer options and choose Pair device with
+   pairing code.
+3. Tap Pair from a notification and type the code in the notification, or enter
+   the port and code in the app. Settings can stay open; the code changes if
+   that dialog closes.
+
+The first start after each boot needs Wi-Fi so Wireless debugging is available.
+With Keep a TCP port (5555) on (the default), the helper can restart later
+without Wi-Fi. While the port is open, any device on the same network can reach
+it, and it is cleared on reboot. Turn the option off if that is a concern.
+
+The pairing flow is based on the idea of
+[vincentng295/Magic_V2Ray](https://github.com/vincentng295/magic_v2ray), a
+system-level transparent proxy routing engine using Xray-core.
 
 ## Troubleshooting
 
