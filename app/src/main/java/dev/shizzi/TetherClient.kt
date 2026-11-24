@@ -220,10 +220,10 @@ class TetherClient {
         deathRecipient = null
 
         if (isAdbBound) {
-            if (shouldTerminate) {
-                runCatching { boundService?.destroy() }
-                AdbHelperRegistry.expectNew().also { AdbHelperRegistry.cancelWaiting() }
-            }
+            // Keep the adb-started helper running. Destroying it on every stop would force the next
+            // start to reconnect over adb and launch a new helper, which hangs when Wireless
+            // debugging dropped with the hotspot's network change. The helper is idle between
+            // sessions and ends itself when the app is gone.
             isAdbBound = false
         } else {
             runCatching { Shizuku.unbindUserService(userServiceArgs, connection, shouldTerminate) }
