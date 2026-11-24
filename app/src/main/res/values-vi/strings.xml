@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="adb_title">Gỡ lỗi không dây (không cần Shizuku)</string>
+    <string name="adb_intro">Shizzi có thể khởi động trình trợ giúp đặc quyền qua Gỡ lỗi không dây của chính điện thoại này thay cho Shizuku. Chỉ cần ghép nối một lần, sau đó không cần máy tính hay Shizuku.</string>
+    <string name="adb_status">Trạng thái</string>
+    <string name="adb_paired">Đã ghép nối</string>
+    <string name="adb_not_paired">Chưa ghép nối</string>
+    <string name="adb_paired_hint">Shizzi sẽ tự dùng adb khi không có Shizuku.</string>
+    <string name="adb_pair_section">Ghép nối</string>
+    <string name="adb_open_dev_settings">Mở Tùy chọn nhà phát triển</string>
+    <string name="adb_open_dev_settings_hint">Bật Gỡ lỗi không dây, rồi chọn Ghép nối thiết bị bằng mã ghép nối.</string>
+    <string name="adb_pair_with_notification">Ghép nối từ thông báo</string>
+    <string name="adb_pair_with_notification_hint">Nhập mã ngay trong thông báo để Cài đặt vẫn mở.</string>
+    <string name="adb_port_hint">Cổng ghép nối</string>
+    <string name="adb_code_hint">Mã ghép nối 6 chữ số</string>
+    <string name="adb_enter_both">Hãy nhập cổng ghép nối và mã 6 chữ số.</string>
+    <string name="adb_pairing">Đang ghép nối…</string>
+    <string name="adb_paired_ok">Ghép nối thành công.</string>
+    <string name="adb_pair_failed">Ghép nối thất bại: %1$s</string>
+    <string name="adb_pair_refused">Thiết bị đã từ chối mã ghép nối.</string>
+    <string name="adb_pair_now">Ghép nối ngay</string>
+    <string name="adb_options">Tùy chọn</string>
+    <string name="adb_tcp_mode">Giữ cổng TCP (5555)</string>
+    <string name="adb_tcp_mode_hint">Cho phép trình trợ giúp khởi động lại sau này mà không cần Wi-Fi, miễn là đã khởi động một lần sau khi bật máy. Mọi thiết bị cùng mạng đều truy cập được cổng này khi nó đang mở.</string>
+    <string name="adb_entry_title">Gỡ lỗi không dây (adb)</string>
+    <string name="adb_entry_active">Đang dùng: kết nối adb riêng của Shizzi.</string>
+    <string name="adb_entry_hint">Dùng adb thay cho Shizuku. Cần ghép nối một lần.</string>
+    <string name="adb_no_port">Không tìm thấy cổng Gỡ lỗi không dây. Đã bật và kết nối Wi-Fi chưa?</string>
+    <string name="adb_launch_failed">Phản hồi bất thường từ shell</string>
+    <string name="adb_no_binder">Trình trợ giúp đã chạy nhưng không phản hồi; xem %1$s</string>
+    <string name="adb_channel">Ghép nối ADB</string>
+    <string name="adb_notif_title">Ghép nối với adb</string>
+    <string name="adb_notif_searching">Đang tìm hộp thoại ghép nối…</string>
+    <string name="adb_notif_enter">Nhập mã ghép nối tại đây</string>
+    <string name="adb_notif_reopen">Mở Cài đặt > Gỡ lỗi không dây > Ghép nối thiết bị</string>
+    <string name="adb_notif_discovery_failed">Dịch vụ ghép nối không khả dụng (%1$s)</string>
+    <string name="adb_notif_cancel">Hủy</string>
+    <string name="adb_notif_label_code">Mã ghép nối</string>
+    <string name="adb_notif_action_code">Nhập mã</string>
+    <string name="adb_notif_closed">Hộp thoại ghép nối đã đóng. Hãy mở lại để lấy mã mới.</string>
+    <string name="adb_notif_no_code">Hãy nhập mã ghép nối.</string>
+</resources>
