@@ -64,6 +64,10 @@ class TetherClient {
         if (!ShizukuGate.isShizukuUsable() && AdbBridge.isPaired(App.instance)) return bindViaAdb()
         isAdbBound = false
 
+        check(ShizukuGate.isShizukuUsable()) {
+            "No privileged helper: start Shizuku, or pair Wireless debugging in Settings > Permissions"
+        }
+
         val deferred = CompletableDeferred<ITetherService>()
         pendingBind = deferred
         Shizuku.bindUserService(userServiceArgs, connection)

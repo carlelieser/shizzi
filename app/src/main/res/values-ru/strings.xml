@@ -115,7 +115,7 @@
     <string name="permission_notifications_rationale">Нужны, чтобы поддерживать активную раздачу</string>
     <string name="permission_background_activity_rationale">Нужна для внешнего управления раздачей</string>
     <string name="shizuku">Shizuku</string>
-    <string name="shizuku_rationale">Необходимо для работы приложения</string>
+    <string name="shizuku_rationale">Необязательно. Можно использовать беспроводную отладку</string>
     <string name="status">Статус</string>
     <string name="service">Сервис</string>
     <string name="version">Версия</string>

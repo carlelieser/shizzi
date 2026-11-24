@@ -115,7 +115,7 @@
     <string name="permission_notifications_rationale">Required to keep your session running</string>
     <string name="permission_background_activity_rationale">Required for external session management</string>
     <string name="shizuku">Shizuku</string>
-    <string name="shizuku_rationale">Required for core functionality</string>
+    <string name="shizuku_rationale">Optional. You can pair Wireless debugging instead</string>
     <string name="status">Status</string>
     <string name="service">Service</string>
     <string name="version">Version</string>

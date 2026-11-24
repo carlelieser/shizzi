@@ -113,7 +113,7 @@
     <string name="permission_notifications_rationale">Oturumun çalışmaya devam etmesi için gerekli</string>
     <string name="permission_background_activity_rationale">Oturumun dışarıdan yönetilmesi için gerekli</string>
     <string name="shizuku">Shizuku</string>
-    <string name="shizuku_rationale">Temel işlevler için gerekli</string>
+    <string name="shizuku_rationale">İsteğe bağlı. Bunun yerine Kablosuz hata ayıklamayı eşleştirebilirsiniz</string>
     <string name="status">Durum</string>
     <string name="service">Servis</string>
     <string name="version">Sürüm</string>

@@ -39,4 +39,5 @@
     <string name="adb_notif_action_code">Nhập mã</string>
     <string name="adb_notif_closed">Hộp thoại ghép nối đã đóng. Hãy mở lại để lấy mã mới.</string>
     <string name="adb_notif_no_code">Hãy nhập mã ghép nối.</string>
+    <string name="shizuku_rationale">Không bắt buộc. Có thể ghép Gỡ lỗi không dây thay thế</string>
 </resources>

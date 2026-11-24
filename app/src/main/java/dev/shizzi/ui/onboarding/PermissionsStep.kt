@@ -1,5 +1,6 @@
 package dev.shizzi.ui.onboarding
 
+import android.content.Intent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,8 +17,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import dev.shizzi.AdbPairActivity
+import dev.shizzi.R
 import dev.shizzi.ShizukuState
 import dev.shizzi.ui.PermissionRowState
 import dev.shizzi.ui.ShizukuCard
@@ -39,7 +43,24 @@ fun PermissionsStep(
         ShizukuCard(state = shizuku, onGrant = onShizukuAction)
 
         rows.forEach { row -> PermissionCard(row) }
+
+        AdbCard()
     }
+}
+
+/** Shizuku is optional: the app can also pair with this phone's own Wireless debugging. */
+@Composable
+private fun AdbCard() {
+    val context = LocalContext.current
+    PermissionCard(
+        PermissionRowState(
+            title = R.string.adb_entry_title,
+            rationale = R.string.adb_entry_hint,
+            isGranted = false,
+            onAct = { context.startActivity(Intent(context, AdbPairActivity::class.java)) },
+            isRequired = false,
+        ),
+    )
 }
 
 @Composable

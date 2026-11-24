@@ -112,7 +112,7 @@
     <string name="permission_notifications_rationale">保持会话运行所必需</string>
     <string name="permission_background_activity_rationale">外部会话管理所必需</string>
     <string name="shizuku">Shizuku</string>
-    <string name="shizuku_rationale">核心功能所必需</string>
+    <string name="shizuku_rationale">可选。也可以改为配对无线调试</string>
     <string name="status">状态</string>
     <string name="service">服务</string>
     <string name="version">版本</string>

@@ -5,6 +5,14 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Start the helper over the phone's own Wireless debugging when Shizuku is
+  unavailable. Pair once in Settings → Permissions; no PC or Shizuku needed
+  afterwards. Based on the idea of
+  [vincentng295/Magic_V2Ray](https://github.com/vincentng295/magic_v2ray).
+- Vietnamese translation for the pairing screens.
+
 ## [0.6.0] - 2026-11-21
 
 Adds Ethernet tethering, a DNS setting, and Russian, Turkish and Simplified
