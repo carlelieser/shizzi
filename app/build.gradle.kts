@@ -156,6 +156,9 @@ dependencies {
 
     implementation("org.lsposed.hiddenapibypass:hiddenapibypass:4.3")
 
+    // Pairing and connecting to this phone's own Wireless debugging (no Shizuku).
+    implementation("com.github.MuntashirAkon:libadb-android:3.1.1")
+
     testImplementation("junit:junit:4.13.2")
 
     testImplementation("org.json:json:20250107")

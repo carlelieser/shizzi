@@ -18,3 +18,13 @@
 
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile
+
+# adb-started helper: launched by name through app_process, receiver/service by manifest.
+-keep class dev.shizzi.TetherMain { *; }
+-keep class dev.shizzi.AdbHelperReceiver
+-keep class dev.shizzi.AdbPairReplyReceiver
+-keep class dev.shizzi.AdbPairingService
+-keep class dev.shizzi.AdbPairActivity
+-keep class io.github.muntashirakon.adb.** { *; }
+-dontwarn io.github.muntashirakon.adb.**
+-dontwarn org.conscrypt.**

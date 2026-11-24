@@ -1,5 +1,6 @@
 package dev.shizzi;
 
+import android.os.IBinder;
 import android.os.ParcelFileDescriptor;
 
 interface ITetherService {
@@ -25,6 +26,9 @@ interface ITetherService {
     String rebootDevice() = 9;
 
     int getContractVersion() = 10;
+
+    // The adb-started helper learns that an app process holds its Binder (stops re-sending it).
+    void attach(IBinder client) = 11;
 
     // Shizuku calls this on an old helper when a new version starts or the app unbinds with remove.
     void destroy() = 16777114;

@@ -65,6 +65,28 @@
                 android:value="false" />
         </service>
 
+        <activity
+            android:name=".AdbPairActivity"
+            android:exported="false" />
+
+        <service
+            android:name=".AdbPairingService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Finds the Wireless debugging pairing port and takes the pairing code from a notification" />
+        </service>
+
+        <receiver
+            android:name=".AdbPairReplyReceiver"
+            android:exported="false" />
+
+        <!-- Exported: the sender is the shell user; it is authenticated by a shared secret. -->
+        <receiver
+            android:name=".AdbHelperReceiver"
+            android:exported="true" />
+
         <receiver
             android:name=".AutomationReceiver"
             android:exported="true">

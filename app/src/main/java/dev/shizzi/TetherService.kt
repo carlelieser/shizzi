@@ -3,6 +3,7 @@ package dev.shizzi
 import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
+import android.os.IBinder
 import android.os.ParcelFileDescriptor
 import android.util.Log
 import kotlin.system.exitProcess
@@ -28,6 +29,15 @@ class TetherService : ITetherService.Stub {
     }
 
     override fun getContractVersion(): Int = CONTRACT_VERSION
+
+    override fun attach(client: IBinder?) {
+        if (client != null) TetherMain.onAttached(client)
+    }
+
+    internal fun hasActiveSession(): Boolean = session.isActive
+
+    /** Context that acts as the shell package; also what the helper broadcasts with. */
+    internal fun shell(): Context = shellContext
 
     /**
      * Shizuku stops a user service only by asking it to exit, when the app
