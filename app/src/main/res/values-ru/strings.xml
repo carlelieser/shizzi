@@ -276,7 +276,7 @@
     <string name="adb_pair_refused">Устройство отклонило код сопряжения.</string>
     <string name="adb_pair_now">Сопрячь</string>
     <string name="adb_options">Параметры</string>
-    <string name="adb_tcp_mode">Оставить TCP-порт (5555)</string>
+    <string name="adb_tcp_mode">Оставить TCP-порт</string>
     <string name="adb_tcp_mode_hint">Позволяет перезапускать помощник без Wi-Fi, если он уже был запущен после загрузки. Пока порт открыт, к нему может подключиться любое устройство в той же сети.</string>
     <string name="adb_entry_title">Беспроводная отладка (adb)</string>
     <string name="adb_entry_active">Активно: используется собственное adb-подключение Shizzi.</string>
@@ -295,4 +295,8 @@
     <string name="adb_notif_action_code">Ввести код</string>
     <string name="adb_notif_closed">Окно сопряжения закрыто. Откройте его снова для нового кода.</string>
     <string name="adb_notif_no_code">Введите код сопряжения.</string>
+    <string name="adb_tcp_random">Случайный порт</string>
+    <string name="adb_tcp_random_hint">Выбирать другой порт (1024-65535) при каждом открытии, чтобы его было сложнее найти. Помощник находит его сам.</string>
+    <string name="adb_tcp_port_hint">TCP-порт (1024-65535)</string>
+    <string name="adb_tcp_port_invalid">Введите порт от 1024 до 65535.</string>
 </resources>

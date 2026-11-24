@@ -59,9 +59,9 @@ whenever it is running.
    that dialog closes.
 
 The first start after each boot needs Wi-Fi so Wireless debugging is available.
-With Keep a TCP port (5555) on (the default), the helper can restart later
-without Wi-Fi. While the port is open, any device on the same network can reach
-it, and it is cleared on reboot. Turn the option off if that is a concern.
+With Keep a TCP port on (the default, port 5555), the helper can restart later
+without Wi-Fi. You can pick another port (1024-65535) or a random one each time. While the port is open, any device on the same network can reach
+it (adbd cannot bind to localhost only), and it is cleared on reboot. Turn the option off if that is a concern.
 
 The pairing flow is based on the idea of
 [vincentng295/Magic_V2Ray](https://github.com/vincentng295/magic_v2ray), a

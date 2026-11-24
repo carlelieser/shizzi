@@ -266,7 +266,7 @@
     <string name="adb_pair_refused">Cihaz eşleştirme kodunu reddetti.</string>
     <string name="adb_pair_now">Şimdi eşleştir</string>
     <string name="adb_options">Seçenekler</string>
-    <string name="adb_tcp_mode">TCP bağlantı noktasını koru (5555)</string>
+    <string name="adb_tcp_mode">TCP bağlantı noktasını koru</string>
     <string name="adb_tcp_mode_hint">Önyüklemeden sonra bir kez başlatıldıysa yardımcının Wi-Fi olmadan yeniden başlamasını sağlar. Port açıkken aynı ağdaki her cihaz ona erişebilir.</string>
     <string name="adb_entry_title">Kablosuz hata ayıklama (adb)</string>
     <string name="adb_entry_active">Etkin: Shizzi\'nin kendi adb bağlantısı kullanılıyor.</string>
@@ -285,4 +285,8 @@
     <string name="adb_notif_action_code">Kodu gir</string>
     <string name="adb_notif_closed">Eşleştirme penceresi kapandı. Yeni kod için yeniden açın.</string>
     <string name="adb_notif_no_code">Eşleştirme kodunu girin.</string>
+    <string name="adb_tcp_random">Rastgele bağlantı noktası</string>
+    <string name="adb_tcp_random_hint">Her açılışta farklı bir bağlantı noktası (1024-65535) seçer, bulunması zorlaşır. Yardımcı onu kendisi bulur.</string>
+    <string name="adb_tcp_port_hint">TCP bağlantı noktası (1024-65535)</string>
+    <string name="adb_tcp_port_invalid">1024 ile 65535 arasında bir bağlantı noktası girin.</string>
 </resources>

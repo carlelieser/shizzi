@@ -271,7 +271,7 @@
     <string name="adb_pair_refused">Thiết bị đã từ chối mã ghép nối.</string>
     <string name="adb_pair_now">Ghép nối ngay</string>
     <string name="adb_options">Tùy chọn</string>
-    <string name="adb_tcp_mode">Giữ cổng TCP (5555)</string>
+    <string name="adb_tcp_mode">Giữ cổng TCP</string>
     <string name="adb_tcp_mode_hint">Cho phép trình trợ giúp khởi động lại sau này mà không cần Wi-Fi, miễn là đã khởi động một lần sau khi bật máy. Mọi thiết bị cùng mạng đều truy cập được cổng này khi nó đang mở.</string>
     <string name="adb_entry_title">Gỡ lỗi không dây (adb)</string>
     <string name="adb_entry_active">Đang dùng: kết nối adb riêng của Shizzi.</string>
@@ -290,4 +290,8 @@
     <string name="adb_notif_action_code">Nhập mã</string>
     <string name="adb_notif_closed">Hộp thoại ghép nối đã đóng. Hãy mở lại để lấy mã mới.</string>
     <string name="adb_notif_no_code">Hãy nhập mã ghép nối.</string>
+    <string name="adb_tcp_random">Cổng ngẫu nhiên</string>
+    <string name="adb_tcp_random_hint">Chọn cổng khác (1024-65535) mỗi lần mở, khó dò hơn. Trình trợ giúp tự tìm lại cổng đó.</string>
+    <string name="adb_tcp_port_hint">Cổng TCP (1024-65535)</string>
+    <string name="adb_tcp_port_invalid">Hãy nhập cổng từ 1024 đến 65535.</string>
 </resources>

@@ -271,7 +271,7 @@
     <string name="adb_pair_refused">The device refused the pairing code.</string>
     <string name="adb_pair_now">Pair now</string>
     <string name="adb_options">Options</string>
-    <string name="adb_tcp_mode">Keep a TCP port (5555)</string>
+    <string name="adb_tcp_mode">Keep a TCP port</string>
     <string name="adb_tcp_mode_hint">Lets the helper restart later without Wi-Fi, once it has been started after boot. Any device on the same network can reach this port while it is open.</string>
     <string name="adb_entry_title">Wireless debugging (adb)</string>
     <string name="adb_entry_active">Active: using Shizzi\'s own adb connection.</string>
@@ -290,4 +290,8 @@
     <string name="adb_notif_action_code">Enter code</string>
     <string name="adb_notif_closed">The pairing dialog was closed. Reopen it for a new code.</string>
     <string name="adb_notif_no_code">Enter the pairing code.</string>
+    <string name="adb_tcp_random">Random port</string>
+    <string name="adb_tcp_random_hint">Pick a different port (1024-65535) each time it is opened, so it is harder to find. The helper finds it again by itself.</string>
+    <string name="adb_tcp_port_hint">TCP port (1024-65535)</string>
+    <string name="adb_tcp_port_invalid">Enter a port between 1024 and 65535.</string>
 </resources>

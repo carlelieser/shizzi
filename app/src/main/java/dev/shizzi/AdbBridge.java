@@ -28,6 +28,10 @@ final class AdbBridge extends AbsAdbConnectionManager {
     private static final String K_CERT = "cert";
     private static final String K_PAIRED = "paired";
     private static final String K_TCP = "tcp_mode";
+    private static final String K_TCP_PORT = "tcp_port";
+    private static final String K_TCP_RANDOM = "tcp_random";
+    private static final String K_TCP_ACTIVE = "tcp_active";
+    static final int DEFAULT_TCP_PORT = 5555;
     private static final long TWENTY_YEARS_MS = 20L * 365 * 24 * 3600 * 1000;
 
     private static AdbBridge instance;
@@ -114,5 +118,41 @@ final class AdbBridge extends AbsAdbConnectionManager {
     static void setTcpMode(Context c, boolean on) {
         c.getApplicationContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE)
                 .edit().putBoolean(K_TCP, on).apply();
+    }
+
+    private static android.content.SharedPreferences prefs(Context c) {
+        return c.getApplicationContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+    }
+
+    static boolean validPort(int port) {
+        return port >= 1024 && port <= 65535;
+    }
+
+    /** The fixed port used when random is off. */
+    static int tcpPort(Context c) {
+        int p = prefs(c).getInt(K_TCP_PORT, DEFAULT_TCP_PORT);
+        return validPort(p) ? p : DEFAULT_TCP_PORT;
+    }
+
+    static void setTcpPort(Context c, int port) {
+        if (validPort(port)) prefs(c).edit().putInt(K_TCP_PORT, port).apply();
+    }
+
+    /** A new random port (1024-65535) is picked every time the port is opened. */
+    static boolean isTcpRandom(Context c) {
+        return prefs(c).getBoolean(K_TCP_RANDOM, false);
+    }
+
+    static void setTcpRandom(Context c, boolean on) {
+        prefs(c).edit().putBoolean(K_TCP_RANDOM, on).apply();
+    }
+
+    /** The port adbd was last asked to open (0 = none); only meaningful until the next reboot. */
+    static int tcpActivePort(Context c) {
+        return prefs(c).getInt(K_TCP_ACTIVE, 0);
+    }
+
+    static void setTcpActivePort(Context c, int port) {
+        prefs(c).edit().putInt(K_TCP_ACTIVE, port).apply();
     }
 }

@@ -23,7 +23,6 @@ import io.github.muntashirakon.adb.AdbStream;
 public final class AdbHelper {
 
     static final String LOG_FILE = "/data/local/tmp/shizzi_helper.log";
-    static final int TCP_PORT = 5555;
     private static final long CONNECT_TIMEOUT_MS = 10_000;
     private static final long BINDER_TIMEOUT_S = 25;
 
@@ -73,16 +72,21 @@ public final class AdbHelper {
         try {
             boolean connected = false;
             // 1. The classic port a previous start left open (TCP mode): no Wi-Fi, no Wireless debugging.
-            if (AdbPorts.listening(TCP_PORT)) connected = tryConnect(b, TCP_PORT, 2);
+            int active = AdbBridge.tcpActivePort(app);
+            if (active > 0 && AdbPorts.listening(active)) connected = tryConnect(b, active, 2);
             // 2. Otherwise Wireless debugging, which needs Wi-Fi: the first start after every boot.
             if (!connected) {
                 connectWireless(app, b);
                 // 3. TCP mode: open the classic port now, BEFORE the helper starts. `tcpip` restarts
                 //    adbd and takes down anything it spawned, so a helper started first would die.
                 if (AdbBridge.isTcpMode(app)) {
-                    boolean onTcp = openTcpPort(b);
+                    int tcpPort = AdbBridge.isTcpRandom(app) ? randomPort() : AdbBridge.tcpPort(app);
+                    boolean onTcp = openTcpPort(b, tcpPort);
                     closeQuietly(b);
-                    if (onTcp) onTcp = tryConnect(b, TCP_PORT, 6);
+                    if (onTcp) {
+                        AdbBridge.setTcpActivePort(app, tcpPort);
+                        onTcp = tryConnect(b, tcpPort, 6);
+                    }
                     if (!onTcp) connectWireless(app, b);     // adbd restarted underneath us: back to wireless
                 }
             }
@@ -164,11 +168,20 @@ public final class AdbHelper {
         return false;
     }
 
-    /** Asks adbd (over the live wireless connection) to also listen on TCP_PORT, and waits for it. */
-    private static boolean openTcpPort(AdbBridge b) {
+    /** Asks adbd (over the live wireless connection) to also listen on the given port, and waits for it. */
+    private static int randomPort() {
+        java.util.Random r = new java.security.SecureRandom();
+        for (int i = 0; i < 50; i++) {
+            int p = 1024 + r.nextInt(65536 - 1024);
+            if (!AdbPorts.listening(p)) return p;
+        }
+        return 1024 + r.nextInt(65536 - 1024);
+    }
+
+    private static boolean openTcpPort(AdbBridge b, int port) {
         AdbStream s = null;
         try {
-            s = b.openStream("tcpip:" + TCP_PORT);
+            s = b.openStream("tcpip:" + port);
             InputStream in = s.openInputStream();
             byte[] buf = new byte[256];
             while (in.read(buf) > 0) {
@@ -185,7 +198,7 @@ public final class AdbHelper {
             }
         }
         for (int i = 0; i < 40; i++) {           // up to 10 s
-            if (AdbPorts.listening(TCP_PORT)) return true;
+            if (AdbPorts.listening(port)) return true;
             try {
                 Thread.sleep(250);
             } catch (InterruptedException e) {

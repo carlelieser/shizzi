@@ -264,7 +264,7 @@
     <string name="adb_pair_refused">设备拒绝了该配对码。</string>
     <string name="adb_pair_now">立即配对</string>
     <string name="adb_options">选项</string>
-    <string name="adb_tcp_mode">保留 TCP 端口 (5555)</string>
+    <string name="adb_tcp_mode">保留 TCP 端口</string>
     <string name="adb_tcp_mode_hint">开机后启动过一次，之后无需 Wi-Fi 也能重新启动辅助进程。端口开放期间，同一网络中的任何设备都可访问。</string>
     <string name="adb_entry_title">无线调试 (adb)</string>
     <string name="adb_entry_active">已启用：正在使用 Shizzi 自己的 adb 连接。</string>
@@ -283,4 +283,8 @@
     <string name="adb_notif_action_code">输入配对码</string>
     <string name="adb_notif_closed">配对对话框已关闭。请重新打开以获取新的配对码。</string>
     <string name="adb_notif_no_code">请输入配对码。</string>
+    <string name="adb_tcp_random">随机端口</string>
+    <string name="adb_tcp_random_hint">每次打开时选择不同的端口 (1024-65535)，更难被发现。辅助进程会自行找到它。</string>
+    <string name="adb_tcp_port_hint">TCP 端口 (1024-65535)</string>
+    <string name="adb_tcp_port_invalid">请输入 1024 到 65535 之间的端口。</string>
 </resources>

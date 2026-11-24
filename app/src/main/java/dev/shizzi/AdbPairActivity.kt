@@ -68,6 +68,8 @@ private fun PairScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     var paired by remember { mutableStateOf(AdbBridge.isPaired(context)) }
     var tcp by remember { mutableStateOf(AdbBridge.isTcpMode(context)) }
+    var tcpRandom by remember { mutableStateOf(AdbBridge.isTcpRandom(context)) }
+    var tcpPort by remember { mutableStateOf(AdbBridge.tcpPort(context).toString()) }
     var port by remember { mutableStateOf("") }
     var code by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
@@ -211,6 +213,40 @@ private fun PairScreen(onBack: () -> Unit) {
                     AdbBridge.setTcpMode(context, it)
                 },
             )
+
+            if (tcp) {
+                SettingsToggle(
+                    label = SettingsText(
+                        title = stringResource(R.string.adb_tcp_random),
+                        subtitle = stringResource(R.string.adb_tcp_random_hint),
+                    ),
+                    isChecked = tcpRandom,
+                    onCheckedChange = {
+                        tcpRandom = it
+                        AdbBridge.setTcpRandom(context, it)
+                    },
+                )
+
+                if (!tcpRandom) {
+                    val portValue = tcpPort.toIntOrNull()
+                    ThemedTextField(
+                        value = tcpPort,
+                        onValueChange = {
+                            tcpPort = it.filter(Char::isDigit).take(5)
+                            tcpPort.toIntOrNull()?.let { value -> AdbBridge.setTcpPort(context, value) }
+                        },
+                        decoration = TextFieldDecoration(
+                            placeholder = stringResource(R.string.adb_tcp_port_hint),
+                            error = if (portValue == null || !AdbBridge.validPort(portValue)) {
+                                stringResource(R.string.adb_tcp_port_invalid)
+                            } else {
+                                null
+                            },
+                            keyboard = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        ),
+                    )
+                }
+            }
 
             Spacer(Modifier.height(ShizziTheme.spacing.xxl))
         }
