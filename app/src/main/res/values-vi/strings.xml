@@ -1,5 +1,256 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="app_name" translatable="false">Shizzi</string>
+
+    <string name="start">Bắt đầu</string>
+    <string name="stop">Dừng</string>
+    <string name="cancel">Hủy</string>
+    <string name="settings">Cài đặt</string>
+    <string name="back">Quay lại</string>
+    <string name="more_options">Tùy chọn khác</string>
+    <string name="grant">Cấp quyền</string>
+    <string name="clear">Xóa</string>
+    <string name="export">Xuất</string>
+    <string name="continue_label">Tiếp tục</string>
+    <string name="finish">Hoàn tất</string>
+    <string name="check">Kiểm tra</string>
+    <string name="install">Cài đặt</string>
+    <string name="installing">Đang cài đặt</string>
+    <string name="restart">Khởi động lại</string>
+    <string name="retry">Thử lại</string>
+    <string name="download">Tải xuống</string>
+
+    <string name="appearance">Giao diện</string>
+    <string name="permissions">Quyền</string>
+    <string name="advanced">Nâng cao</string>
+    <string name="developer">Nhà phát triển</string>
+    <string name="about">Giới thiệu</string>
+    <string name="logging">Ghi nhật ký</string>
+    <string name="view_logs">Xem nhật ký</string>
+    <string name="run_diagnostics">Chạy chẩn đoán</string>
+    <string name="restart_onboarding">Khởi động lại hướng dẫn ban đầu</string>
+    <string name="github">GitHub</string>
+    <string name="report_a_bug">Báo lỗi</string>
+    <string name="author">Tác giả</string>
+
+    <string name="theme_match_system">Theo hệ thống</string>
+    <string name="theme_light">Sáng</string>
+    <string name="theme_dark">Tối</string>
+    <string name="design">Thiết kế</string>
+    <string name="accent">Màu nhấn</string>
+    <string name="accent_default">Mặc định</string>
+    <string name="accent_wallpaper">Hình nền</string>
+    <string name="color_picker">Bảng chọn màu</string>
+    <string name="add_color">Thêm màu</string>
+    <string name="design_neobrutalism">Neobrutalism</string>
+    <string name="design_material_expressive">Material Expressive</string>
+    <string name="design_neobrutalism_description">Góc cạnh sắc nét, viền đậm, đổ bóng lệch</string>
+    <string name="design_material_expressive_description">Bề mặt bo tròn, màu sắc hài hòa, chuyển động mượt mà</string>
+
+    <string name="vpn">VPN</string>
+    <string name="vpn_mode_auto">Tự động</string>
+    <string name="vpn_mode_always">Luôn bật</string>
+    <string name="vpn_mode_never">Không bao giờ</string>
+    <string name="vpn_mode_auto_description">Liên kết với VPN đang hoạt động nếu có</string>
+    <string name="vpn_mode_always_description">Từ chối kết nối nếu không có VPN đang hoạt động</string>
+    <string name="vpn_mode_never_description">Bỏ qua VPN đang hoạt động</string>
+    <string name="vpn_connected_badge">ĐÃ KẾT NỐI VPN</string>
+    <string name="vpn_ignored_badge">ĐÃ BỎ QUA VPN</string>
+    <string name="dns">DNS</string>
+    <string name="dns_automatic">Tự động</string>
+    <string name="dns_auto_description">DNS của VPN, hoặc Google DNS khi không kết nối VPN</string>
+    <string name="dns_custom">Tùy chỉnh</string>
+    <string name="dns_servers_hint">192.168.1.2, 1.1.1.1</string>
+    <string name="dns_server_invalid">%1$s không phải là địa chỉ IP hợp lệ</string>
+
+    <string name="automation">Tự động hóa</string>
+    <string name="automation_description">Cho phép các ứng dụng tác vụ (như Tasker) quản lý Shizzi</string>
+    <string name="view_setup_instructions">Xem hướng dẫn thiết lập</string>
+    <string name="setup">Thiết lập</string>
+    <string name="setup_description">Gửi một broadcast intent với các giá trị sau.</string>
+    <string name="field_action">Action</string>
+    <string name="field_package">Package</string>
+    <string name="field_class">Class</string>
+    <string name="field_target">Target</string>
+    <string name="field_extra_name">Extra name</string>
+    <string name="field_extra_value">Extra value</string>
+    <string name="broadcast_receiver">Broadcast receiver</string>
+    <string name="copy_field">Sao chép %1$s</string>
+    <string name="copied">Đã sao chép %1$s</string>
+    <string name="token">Token</string>
+    <string name="copy_token">Sao chép token</string>
+    <string name="regenerate_token">Tạo lại token</string>
+    <string name="command_start">Bắt đầu</string>
+    <string name="command_stop">Dừng</string>
+    <string name="command_toggle">Bật/tắt</string>
+    <string name="command_status">Trạng thái</string>
+
+    <string name="clear_log_question">Xóa nhật ký?</string>
+    <string name="clear_log_warning">Hành động này không thể hoàn tác.</string>
+    <string name="log_cleared">Đã xóa nhật ký</string>
+    <string name="app_log_entries_cleared">Chỉ xóa các mục của ứng dụng này</string>
+    <string name="running_diagnostics">Đang chạy chẩn đoán…</string>
+    <string name="diagnostics_completed">Chẩn đoán hoàn tất</string>
+    <string name="diagnostics_failed">Chẩn đoán thất bại</string>
+    <string name="export_report">Xuất báo cáo</string>
+    <string name="log_title">Nhật ký</string>
+    <string name="no_logs_yet">Chưa có nhật ký nào</string>
+    <string name="logging_disabled">Tính năng ghi nhật ký đang tắt</string>
+    <string name="logs_will_appear_here">Nhật ký sẽ xuất hiện tại đây</string>
+    <string name="start_a_session">Bắt đầu một phiên</string>
+    <string name="enable_logging">Bật ghi nhật ký</string>
+    <string name="scroll_to_top">CUỘN LÊN ĐẦU</string>
+    <string name="scroll_to_bottom">CUỘN XUỐNG CUỐI</string>
+    <string name="select_all">CHỌN TẤT CẢ</string>
+    <string name="deselect_all">BỎ CHỌN TẤT CẢ</string>
+    <string name="clear_upper">XÓA</string>
+    <string name="copy_all">SAO CHÉP TẤT CẢ</string>
+    <plurals name="copy_lines">
+        <item quantity="one">SAO CHÉP %d DÒNG</item>
+        <item quantity="other">SAO CHÉP %d DÒNG</item>
+    </plurals>
+
+    <string name="permission_notifications">Thông báo</string>
+    <string name="permission_background_activity">Hoạt động trong nền</string>
+    <string name="permission_notifications_rationale">Cần thiết để duy trì phiên hoạt động của bạn</string>
+    <string name="permission_background_activity_rationale">Cần thiết cho việc quản lý phiên từ bên ngoài</string>
+    <string name="shizuku">Shizuku</string>
+    <string name="shizuku_rationale">Không bắt buộc. Có thể ghép Gỡ lỗi không dây thay thế</string>
+    <string name="status">Trạng thái</string>
+    <string name="service">Dịch vụ</string>
+    <string name="version">Phiên bản</string>
+    <string name="not_installed">Chưa cài đặt</string>
+    <string name="not_running">Không chạy</string>
+    <string name="permission_required">Yêu cầu quyền</string>
+    <string name="ready">Sẵn sàng</string>
+    <string name="grant_permission_upper">CẤP QUYỀN</string>
+    <string name="shizuku_not_installed">Chưa cài đặt Shizuku</string>
+    <string name="shizuku_not_running">Đã cài đặt Shizuku nhưng chưa chạy</string>
+    <string name="shizuku_permission_needed">Cần cấp quyền Shizuku</string>
+
+    <string name="status_not_connected">Chưa kết nối</string>
+    <string name="status_connecting">Đang kết nối</string>
+    <string name="status_connected">Đã kết nối</string>
+    <string name="status_starting">Đang khởi động</string>
+    <string name="status_reconnecting">Đang kết nối lại</string>
+    <string name="status_waiting_for_shizuku">Đang chờ Shizuku</string>
+    <string name="status_failed">Thất bại</string>
+    <string name="badge_no_shizuku">KHÔNG CÓ SHIZUKU</string>
+    <string name="badge_shizuku_off">SHIZUKU ĐANG TẮT</string>
+    <string name="badge_permission_needed">CẦN CẤP QUYỀN</string>
+    <string name="tunnel_active">ĐƯỜNG HẦM ĐANG HOẠT ĐỘNG</string>
+
+    <string name="welcome">Chào mừng</string>
+    <string name="welcome_description">Chia sẻ mạng Wi-Fi không cần root với Shizuku.</string>
+    <string name="get_started">Bắt đầu ngay</string>
+    <string name="grant_permissions">Cấp quyền</string>
+    <string name="compatibility">Tính tương thích</string>
+    <string name="capability_test_network">API mạng thử nghiệm</string>
+    <string name="capability_prefer_test_networks">Ưu tiên mạng thử nghiệm</string>
+    <string name="capability_test_network_description">Cho phép ứng dụng tạo đường hầm mạng thử nghiệm để lưu lượng điểm phát sóng đi qua.</string>
+    <string name="capability_prefer_test_networks_description">Cho phép ứng dụng định tuyến điểm phát sóng qua đường hầm mạng thử nghiệm. Được thêm từ Android 13.</string>
+    <string name="supported">Hỗ trợ</string>
+    <string name="not_supported">Không hỗ trợ</string>
+    <string name="device_compatible">Thiết bị này tương thích</string>
+    <string name="device_not_compatible">Thiết bị này không tương thích</string>
+    <string name="module_restart_required">Yêu cầu khởi động lại</string>
+    <string name="module_download_failed">Tải xuống thất bại</string>
+    <string name="module_install_failed">Cài đặt thất bại</string>
+    <string name="module_downloaded_verified">Đã tải xuống và xác minh</string>
+    <string name="module_available">Có sẵn mô-đun</string>
+    <string name="tethering_module">Mô-đun chia sẻ kết nối</string>
+    <string name="module_downloading">Đang tải xuống mô-đun…</string>
+    <string name="module_download_network_error">Không thể kết nối mạng để tải xuống mô-đun. Hãy kết nối lại và thử sức.</string>
+    <string name="module_download_verify_error">Không thể xác minh tệp tải xuống nên chưa có gì được cài đặt.</string>
+    <string name="module_download_needed">Điện thoại của bạn cần mô-đun chia sẻ kết nối mới hơn để định tuyến điểm phát sóng. Hãy kết nối mạng để tải xuống.</string>
+    <string name="module_download_available">Điện thoại của bạn có thể chạy ứng dụng này sau khi có mô-đun chia sẻ kết nối mới hơn. Dung lượng khoảng 3 MB và cần khởi động lại một lần để hoàn tất cài đặt.</string>
+    <string name="module_restart_to_finish">Khởi động lại điện thoại để hoàn tất</string>
+    <string name="module_not_accepted">Mô-đun không được chấp nhận</string>
+    <string name="module_installing">Đang cài đặt mô-đun…</string>
+    <string name="module_staged_description">Mô-đun đã sẵn sàng và sẽ hoàn tất cài đặt ở lần khởi động tiếp theo. Hãy quay lại đây sau khi khởi động lại để kiểm tra tính tương thích.</string>
+    <string name="module_install_failed_description">Điện thoại của bạn đã từ chối mô-đun này (thường gặp ở bản dựng của một số nhà sản xuất). Không có thay đổi nào được thực hiện.</string>
+    <string name="module_ready_to_install">Mô-đun đã được tải xuống, xác minh và sẵn sàng cài đặt.</string>
+    <string name="module_install_timed_out">Trình cài đặt không hoàn tất kịp thời gian.</string>
+    <string name="compatibility_check_failed">Không thể chạy kiểm tra. Hãy đảm bảo Shizuku đang chạy rồi thử lại.</string>
+    <string name="compatibility_not_reported">Shizuku không báo cáo kết quả kiểm tra này.</string>
+    <string name="compatibility_test_network_unavailable">Điện thoại này không cung cấp dịch vụ mạng thử nghiệm.</string>
+    <string name="detail_with_output" translatable="false">%1$s\n%2$s</string>
+
+    <string name="notification_cleaning_up">Đang dọn dẹp…</string>
+    <string name="notification_getting_ready">Đang chuẩn bị…</string>
+    <string name="notification_shizuku_stopped">Shizuku đã dừng</string>
+    <string name="notification_reconnecting">Đang kết nối lại…</string>
+    <string name="notification_start_shizuku">Khởi động Shizuku để tiếp tục chia sẻ.</string>
+    <string name="notification_session_ended">Phiên đã kết thúc</string>
+    <string name="notification_connected_vpn_ignored">Đã kết nối · Đã bỏ qua VPN</string>
+    <string name="notification_connected_vpn">Đã kết nối · VPN</string>
+    <string name="notification_not_sharing">Không chia sẻ</string>
+    <string name="notification_turning_hotspot_off">Đang tắt điểm phát sóng…</string>
+    <string name="notification_turning_hotspot_on">Đang bật điểm phát sóng…</string>
+    <string name="notification_no_devices">Không có thiết bị nào kết nối</string>
+    <plurals name="notification_device_count">
+        <item quantity="one">%d thiết bị</item>
+        <item quantity="other">%d thiết bị</item>
+    </plurals>
+    <string name="notification_channel_name">Phiên chia sẻ kết nối</string>
+    <string name="notification_channel_description">Hiển thị khi phiên chia sẻ kết nối đang chạy</string>
+
+    <string name="tile_stopping">Đang dừng…</string>
+    <string name="tile_starting">Đang bắt đầu…</string>
+    <string name="tile_reconnecting">Đang kết nối lại…</string>
+    <string name="tile_tap_retry">Chạm để thử lại</string>
+    <string name="tile_tap_share">Chạm để chia sẻ</string>
+    <string name="tile_shizuku_not_installed">Chưa cài đặt Shizuku</string>
+    <string name="tile_shizuku_not_running">Shizuku chưa chạy</string>
+    <string name="tile_no_devices">Không có thiết bị</string>
+    <plurals name="tile_device_count">
+        <item quantity="one">%1$d thiết bị · %2$s</item>
+        <item quantity="other">%1$d thiết bị · %2$s</item>
+    </plurals>
+
+    <string name="vpn_disconnected_session_stopped">VPN đã ngắt kết nối. Phiên đã dừng để bảo vệ các thiết bị.</string>
+    <string name="session_end_restart_failed">Không thể tự động khởi động lại việc chia sẻ.</string>
+    <string name="session_end_restart_failed_hotspot_on">Không thể tự động khởi động lại việc chia sẻ. Điểm phát sóng có thể vẫn đang bật.</string>
+    <string name="session_end_shizuku_stopped">Đã dừng chia sẻ vì Shizuku không chạy.</string>
+    <string name="session_end_shizuku_stopped_hotspot_on">Đã dừng chia sẻ vì Shizuku không chạy. Điểm phát sóng có thể vẫn đang bật.</string>
+    <string name="session_error_generic">Đã xảy ra lỗi khi chia sẻ. Xem chi tiết trong nhật ký.</string>
+    <string name="session_error_vpn_required">Không thể bắt đầu chia sẻ vì chế độ VPN là Luôn bật nhưng chưa kết nối VPN.</string>
+    <string name="session_error_hotspot_not_started">Không thể bật điểm phát sóng.</string>
+    <string name="session_error_upstream_not_verified">Không thể bắt đầu chia sẻ vì Android không định tuyến điểm phát sóng qua ứng dụng.</string>
+    <string name="session_error_upstream_lost">Đã dừng chia sẻ vì Android ngừng định tuyến điểm phát sóng qua ứng dụng.</string>
+    <string name="session_error_teardown_incomplete">Đã dừng chia sẻ, nhưng điểm phát sóng có thể vẫn đang bật.</string>
+    <string name="session_error_hotspot_may_be_on">%1$s Điểm phát sóng có thể vẫn đang bật.</string>
+
+    <!-- Wired tethering and reconnect states -->
+    <string name="tethering">Chia sẻ kết nối</string>
+    <string name="wired_tethering">Chia sẻ kết nối qua dây</string>
+    <string name="open_system_settings">Mở cài đặt hệ thống</string>
+    <string name="open_shizuku">Mở Shizuku</string>
+    <string name="hotspot_settings">Cài đặt điểm phát sóng</string>
+    <string name="system_settings">cài đặt hệ thống</string>
+    <string name="wired_mode_off">Tắt</string>
+    <string name="wired_mode_auto">Tự động</string>
+    <string name="wired_mode_usb">USB</string>
+    <string name="wired_mode_ethernet">Ethernet</string>
+    <string name="wired_mode_off_description">Chỉ chia sẻ qua điểm phát sóng Wi‑Fi</string>
+    <string name="wired_mode_auto_description">Chia sẻ qua USB hoặc Ethernet, tùy cổng nào được kết nối</string>
+    <string name="wired_mode_usb_description">Chia sẻ qua cáp USB tới máy tính</string>
+    <string name="wired_mode_ethernet_description">Chia sẻ qua bộ chuyển đổi USB-C sang Ethernet</string>
+    <string name="wifi_hotspot">Điểm phát sóng Wi‑Fi</string>
+    <string name="wifi_hotspot_required">Luôn bật khi tính năng chia sẻ kết nối qua dây đang tắt</string>
+    <string name="waiting_for_wired">Đang chờ kết nối có dây</string>
+    <plurals name="notification_wired_grace">
+        <item quantity="one">Kết nối cáp trong vòng %1$d phút để tiếp tục chia sẻ</item>
+        <item quantity="other">Kết nối cáp trong vòng %1$d phút để tiếp tục chia sẻ</item>
+    </plurals>
+
+    <!-- Session and settings messages -->
+    <string name="could_not_open">Không thể mở %1$s</string>
+    <string name="usb_cable_required">Khởi động thất bại. Yêu cầu kết nối USB.</string>
+    <string name="ethernet_connection_required">Khởi động thất bại. Yêu cầu kết nối Ethernet.</string>
+    <string name="wired_connection_required">Khởi động thất bại. Yêu cầu kết nối có dây.</string>
+    <string name="issue_tracker_label">trình theo dõi lỗi</string>
+
     <string name="adb_title">Gỡ lỗi không dây (không cần Shizuku)</string>
     <string name="adb_intro">Shizzi có thể khởi động trình trợ giúp đặc quyền qua Gỡ lỗi không dây của chính điện thoại này thay cho Shizuku. Chỉ cần ghép nối một lần, sau đó không cần máy tính hay Shizuku.</string>
     <string name="adb_status">Trạng thái</string>
@@ -32,12 +283,11 @@
     <string name="adb_notif_title">Ghép nối với adb</string>
     <string name="adb_notif_searching">Đang tìm hộp thoại ghép nối…</string>
     <string name="adb_notif_enter">Nhập mã ghép nối tại đây</string>
-    <string name="adb_notif_reopen">Mở Cài đặt > Gỡ lỗi không dây > Ghép nối thiết bị</string>
+    <string name="adb_notif_reopen">Mở Cài đặt &gt; Gỡ lỗi không dây &gt; Ghép nối thiết bị</string>
     <string name="adb_notif_discovery_failed">Dịch vụ ghép nối không khả dụng (%1$s)</string>
     <string name="adb_notif_cancel">Hủy</string>
     <string name="adb_notif_label_code">Mã ghép nối</string>
     <string name="adb_notif_action_code">Nhập mã</string>
     <string name="adb_notif_closed">Hộp thoại ghép nối đã đóng. Hãy mở lại để lấy mã mới.</string>
     <string name="adb_notif_no_code">Hãy nhập mã ghép nối.</string>
-    <string name="shizuku_rationale">Không bắt buộc. Có thể ghép Gỡ lỗi không dây thay thế</string>
 </resources>
