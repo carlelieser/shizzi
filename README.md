@@ -64,3 +64,7 @@ Needs the Android SDK with NDK, Go, and gomobile:
 go install golang.org/x/mobile/cmd/gomobile@latest && gomobile init
 ./gradlew assembleDebug
 ```
+
+## License
+
+[MIT](LICENSE)
