@@ -108,7 +108,7 @@ private fun permissionsAction(
     actions: OnboardingActions,
     onNext: () -> Unit,
 ): WizardAction {
-    if (rows.all { it.isGranted }) {
+    if (rows.filter { it.isRequired }.all { it.isGranted }) {
         return WizardAction(label = stringResource(R.string.continue_label), onClick = onNext)
     }
 

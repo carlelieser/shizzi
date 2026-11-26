@@ -53,10 +53,19 @@ class TetherClient {
         }
     }
 
+    private var isAdbBound = false
+
     private suspend fun service(): ITetherService {
         boundService?.let { existing ->
             if (existing.asBinder().pingBinder()) return existing
             boundService = null
+        }
+
+        if (!ShizukuGate.isShizukuUsable() && AdbBridge.isPaired(App.instance)) return bindViaAdb()
+        isAdbBound = false
+
+        check(ShizukuGate.isShizukuUsable()) {
+            "No privileged helper: start Shizuku, or pair Wireless debugging in Settings > Permissions"
         }
 
         val deferred = CompletableDeferred<ITetherService>()
@@ -64,6 +73,23 @@ class TetherClient {
         Shizuku.bindUserService(userServiceArgs, connection)
 
         val bound = awaitBind(deferred)
+        observeDeath(bound)
+        return bound
+    }
+
+    /** Shizuku is unavailable: use (or start) the helper that the app launches through its own adb. */
+    private suspend fun bindViaAdb(): ITetherService {
+        val app = App.instance
+        var bound = AdbHelper.launch(app)
+        if (bound.contractVersion != TetherService.CONTRACT_VERSION) {
+            // A helper from an older build is still alive: retire it and start the current one.
+            runCatching { bound.destroy() }
+            AdbHelperRegistry.expectNew().also { AdbHelperRegistry.cancelWaiting() }
+            Thread.sleep(500)
+            bound = AdbHelper.launch(app)
+        }
+        isAdbBound = true
+        boundService = bound
         observeDeath(bound)
         return bound
     }
@@ -193,7 +219,15 @@ class TetherClient {
         }
         deathRecipient = null
 
-        runCatching { Shizuku.unbindUserService(userServiceArgs, connection, shouldTerminate) }
+        if (isAdbBound) {
+            // Keep the adb-started helper running. Destroying it on every stop would force the next
+            // start to reconnect over adb and launch a new helper, which hangs when Wireless
+            // debugging dropped with the hotspot's network change. The helper is idle between
+            // sessions and ends itself when the app is gone.
+            isAdbBound = false
+        } else {
+            runCatching { Shizuku.unbindUserService(userServiceArgs, connection, shouldTerminate) }
+        }
         boundService = null
     }
 

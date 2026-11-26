@@ -5,11 +5,18 @@ import android.content.pm.PackageManager
 import dev.shizzi.ui.openUrl
 import rikka.shizuku.Shizuku
 
+/** How the shell-level helper is reached: through Shizuku, or started by the app over adb. */
+enum class Privilege { SHIZUKU, ADB }
+
 sealed interface ShizukuState {
     data object NotInstalled : ShizukuState
     data object NotRunning : ShizukuState
     data object PermissionRequired : ShizukuState
-    data class Ready(val uid: Int, val isRoot: Boolean) : ShizukuState
+    data class Ready(
+        val uid: Int,
+        val isRoot: Boolean,
+        val via: Privilege = Privilege.SHIZUKU,
+    ) : ShizukuState
 }
 
 object ShizukuGate {
@@ -19,7 +26,17 @@ object ShizukuGate {
     private const val SHELL_UID = 2000
     private const val ROOT_UID = 0
 
+    /** Shizuku when it is usable; otherwise the app's own paired adb, if there is one. */
     fun currentState(): ShizukuState {
+        val shizuku = shizukuState()
+        if (shizuku is ShizukuState.Ready) return shizuku
+        if (AdbBridge.isPaired(App.instance)) return ShizukuState.Ready(SHELL_UID, false, Privilege.ADB)
+        return shizuku
+    }
+
+    fun isShizukuUsable(): Boolean = shizukuState() is ShizukuState.Ready
+
+    private fun shizukuState(): ShizukuState {
         if (!isBinderLive()) return resolveAbsentBinder()
         if (Shizuku.isPreV11()) return ShizukuState.NotRunning
         if (!hasPermission()) return ShizukuState.PermissionRequired

@@ -150,8 +150,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun requestNextOutstanding() {
-        if (requestShizuku()) return
-
         val outstanding = viewModel.permissionState.value.firstOrNull { !it.isGranted }
         val permission = outstanding?.permission
 
@@ -161,18 +159,6 @@ class MainActivity : ComponentActivity() {
         }
 
         grantPermission(permission)
-    }
-
-    // Only PermissionRequired reports back through the Shizuku listener; the other
-    // states hand off to another app, so the chain ends there.
-    private fun requestShizuku(): Boolean {
-        val state = viewModel.state.value.shizukuState
-        if (state is ShizukuState.Ready) return false
-
-        if (state !is ShizukuState.PermissionRequired) stopChain()
-
-        viewModel.actOnShizuku()
-        return true
     }
 
     // A permission with no manifest name is granted on a settings screen in

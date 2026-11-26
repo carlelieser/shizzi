@@ -13,6 +13,8 @@ data class PermissionRowState(
     @StringRes val rationale: Int,
     val isGranted: Boolean,
     val onAct: () -> Unit,
+    /** False for rows that must not hold up onboarding (Shizuku: adb can stand in for it). */
+    val isRequired: Boolean = true,
 )
 
 data class PermissionRowSources(
@@ -42,4 +44,5 @@ private fun shizukuRow(state: ShizukuState, onAct: () -> Unit) = PermissionRowSt
     rationale = R.string.shizuku_rationale,
     isGranted = state is ShizukuState.Ready,
     onAct = onAct,
+    isRequired = false,
 )
